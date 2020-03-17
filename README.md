@@ -2,14 +2,31 @@
 Code to clean, normalize, and characterize transcriptome data in multi-dimensional space
 
 ### Download
-* GTF: ftp://ftp.ensembl.org/pub/release-74/gtf/homo_sapiens/Homo_sapiens.GRCh37.74.gtf.gz
+* GTF:  
 * Transcript based expression counts: MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz from https://research.themmrf.org/ (login required)
 
 Files in data/transcriptome-dimensions
 
-### Code
+### Select first sample for each patient
+
+### Select protein coding transcripts
 ```
 cd data/transcriptome-dimensions
 
 zgrep 'protein_coding' Homo_sapiens.GRCh37.74.gtf.gz > Homo_sapiens.GRCh37.74.protein_coding.gtf
+
+grep -E 'transcript_id '$'"ENST'$'[0-9]{11}' -o Homo_sapiens.GRCh37.74.protein_coding.gtf \
+| sed -e 's/transcript_id "//g' \
+| uniq \
+> Homo_sapiens.GRCh37.74.protein_coding.transcript_id.txt
+
+gunzip -k MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz
+
+grep -F --file=Homo_sapiens.GRCh37.74.protein_coding.transcript_id.txt \
+MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt \
+> MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts_Protein-Coding.txt
+```
+### Remove transcripts with >5% samples <100 counts
+```
+
 ```
