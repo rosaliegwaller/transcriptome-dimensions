@@ -6,15 +6,15 @@ library(dplyr)
 library(data.table)
 
 # Functions
-setup <- function(gtf.path,counts.path){
+get_data <- function(gtf.path,counts.path){
   gtf <- readGFF(filepath=gtf.path) #read in GTF
   gtf$TRANSCRIPT_LENGTH <- gtf$end-gtf$start+1 #compute length of each feature
   #select protein coding exons
   tmp <- subset(gtf,gene_biotype=='protein_coding' & type=='exon',)
   #sum exon lengths for each transcript
-  sum_exons<-aggregate(TRANSCRIPT_LENGTH~gene_name+gene_id+transcript_id,
+  sum_exons<-aggregate(TRANSCRIPT_LENGTH~seqid+gene_name+gene_id+transcript_id,
     data = tmp, FUN=sum)
-  colnames(sum_exons)<-c("GENE_NAME","GENE_ID",
+  colnames(sum_exons)<-c("CHR","GENE_NAME","GENE_ID",
                           "TRANSCRIPT_ID","TRANSCRIPT_LENGTH")
   #count number of transcripts for each gene name
   n_name <- sum_exons %>% count(GENE_NAME)
@@ -61,37 +61,17 @@ process_transcripts<-function(qc.counts) {
   return(final.dt)
 }
 
-# Step 0: get data
-## feature annotation
-gtf.dt <- process_gtf("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/Homo_sapiens.GRCh37.74.gtf.gz")
-## feature counts from Salmon
-molten.counts <- process_counts("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
-## or, if already processed, load rdata
-#load("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/molten.counts.rdata")
+# Step 0: Get transcript-based counts and GTF data
+setwd("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/")
+#counts.melt<-get_data("Homo_sapiens.GRCh37.74.gtf.gz","MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
+load("rdata/counts.melt")
 
-# Step 1: quality control
-# remove low count genes in baseline samples
-low.genes<-molten.counts[SAMPLE_ID %like% "_1_BM",list(GENE_COUNT=sum(SAMPLE_COUNT)),by=c('GENE_NAME','SAMPLE_ID')][,quantile(GENE_COUNT,0.05,type=3),by='GENE_NAME'][V1<100]$GENE_NAME
-qc.counts <- counts.gtf[!GENE_NAME%in%low.genes] %>% dplyr::select(contains("GENE_NAME") | contains("TRANSCRIPT_") | contains("_1_BM"))
+# Step 1: Quality control
+## Select baseline samples and remove low count genes in baseline samples
+low.genes<-counts.melt[SAMPLE_ID %like% "_1_BM",list(GENE_COUNT=sum(SAMPLE_COUNT)),by=c('GENE_NAME','SAMPLE_ID')][,quantile(GENE_COUNT,0.05,type=3),by='GENE_NAME'][V1<100]$GENE_NAME
+qc.melt<-counts.melt[SAMPLE_ID%like%"_1_BM"&GENE_NAME%in%low.genes]
 
-norm.dt<-process_transcripts(qc.counts)
-
-samples <- colnames(qc.counts )[-1:-4] #get list of sample ids
-qc.melt<-data.table::melt(qc.counts,
-  id.vars=c("GENE_NAME","TRANSCRIPT_ID"),
-  measure.vars=list("GENE_NAME_N_TRANSCRIPTS","TRANSCRIPT_LENGTH",samples),
-  variable.name="SAMPLE_ID",
-  value.name=c("GENE_NAME_N_TRANSCRIPTS","TRANSCRIPT_LENGTH","SAMPLE_COUNT"))
-setattr(qc.melt[["SAMPLE_ID"]],"levels",samples)
-
-## method to aggregate in long format
-#dt2 <- counts.gtf[!GENE_NAME%in%low.genes] %>% dplyr::select(contains("GENE_NAME") | contains("_1_BM"))
-#dt.gene <- aggregate(.~GENE_NAME+GENE_NAME_N_TRANSCRIPTS,data=dt2,FUN=sum)
-
-#qc.counts<-molten.counts[SAMPLE_ID%like%"_1_BM" & !GENE_NAME%in%low.genes] #na bug
-
-# Step 2: normalization & truncation
-norm.melt<-process_transcripts(qc.melt)
+# Step 2: Normalize and truncate
 med.molten<-process_transcripts(qc.melt)
 med.molten[,mean:=mean(logcpkmed),by='GENE_NAME']
 med.molten[,sd:=sd(logcpkmed),by='GENE_NAME']
@@ -121,3 +101,32 @@ all.final.dt<-merge(tissue.map,all.pc.scores,by='sample_id')
 
 # now save these
 save(pca,elbow.dt,final.dt,all.final.dt,good.genes,file='rsem_iso_median_normalized_rep_summed_20200304.RData')
+
+
+
+
+
+# working
+
+qc.counts <- counts.gtf[!GENE_NAME%in%low.genes] %>% dplyr::select(contains("GENE_NAME") | contains("TRANSCRIPT_") | contains("_1_BM"))
+
+norm.dt<-process_transcripts(qc.counts)
+
+samples <- colnames(qc.counts )[-1:-4] #get list of sample ids
+qc.melt<-data.table::melt(qc.counts,
+  id.vars=c("GENE_NAME","TRANSCRIPT_ID"),
+  measure.vars=list("GENE_NAME_N_TRANSCRIPTS","TRANSCRIPT_LENGTH",samples),
+  variable.name="SAMPLE_ID",
+  value.name=c("GENE_NAME_N_TRANSCRIPTS","TRANSCRIPT_LENGTH","SAMPLE_COUNT"))
+setattr(qc.melt[["SAMPLE_ID"]],"levels",samples)
+
+dt.seq[,lapply(.SD,function(x)sum(is.na(x)))],
+
+keep.genes<-
+keep.samples<-
+
+## method to aggregate in long format
+#dt2 <- counts.gtf[!GENE_NAME%in%low.genes] %>% dplyr::select(contains("GENE_NAME") | contains("_1_BM"))
+#dt.gene <- aggregate(.~GENE_NAME+GENE_NAME_N_TRANSCRIPTS,data=dt2,FUN=sum)
+
+#qc.counts<-molten.counts[SAMPLE_ID%like%"_1_BM" & !GENE_NAME%in%low.genes] #na bug
