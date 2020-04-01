@@ -8,125 +8,117 @@ library(data.table)
 # Functions
 get_data <- function(gtf.path,counts.path){
   gtf <- readGFF(filepath=gtf.path) #read in GTF
-  gtf$TRANSCRIPT_LENGTH <- gtf$end-gtf$start+1 #compute length of each feature
-  #select protein coding exons
-  tmp <- subset(gtf,gene_biotype=='protein_coding' & type=='exon',)
-  #sum exon lengths for each transcript
-  sum_exons<-aggregate(TRANSCRIPT_LENGTH~seqid+gene_name+gene_id+transcript_id,
-    data = tmp, FUN=sum)
-  colnames(sum_exons)<-c("CHR","GENE_NAME","GENE_ID",
-                          "TRANSCRIPT_ID","TRANSCRIPT_LENGTH")
-  #count number of transcripts for each gene name
-  n_name <- sum_exons %>% count(GENE_NAME)
-  colnames(n_name)[2] <- "GENE_NAME_N_TRANSCRIPTS"
-  #count number of transcripts for each ensemble gene id
-  n_id <- sum_exons %>% count(GENE_ID)
-  colnames(n_id)[2] <- "GENE_ID_N_TRANSCRIPTS"
-  #join
-  gtf.dt <- data.table(
-    inner_join(
-      inner_join(n_name,sum_exons,by='GENE_NAME'),
-      n_id,by='GENE_ID')
-    )
-  gtf.dt <- gtf.dt[,c("GENE_NAME","GENE_NAME_N_TRANSCRIPTS",
-                  "GENE_ID","GENE_ID_N_TRANSCRIPTS",
-                  "TRANSCRIPT_ID","TRANSCRIPT_LENGTH")]
+  gtf$length <- gtf$end - gtf$start + 1 #compute length of each feature
+  tmp <- subset(gtf,type=='exon',)
+  sum_exons<-aggregate(length ~ seqid + gene_name + gene_id + gene_biotype + transcript_id,
+    data=tmp, FUN=sum)
+  n_name <- sum_exons %>% count(gene_name) #count number transcripts/gene_name
+  colnames(n_name)[2] <- "name_n_transcripts"
+  gtf.dt <- data.table(inner_join(n_name,sum_exons,by='gene_name'))
+
   # read in rnaseq transcript counts
   counts <- read.csv(file = counts.path,header = T,sep = "\t") #read in counts
-  counts.dt <- data.table(counts)
+  setDT(counts)
+  colnames(counts)[1]<-"transcript_id"
+
   # merge with gtf data
-  counts.gtf <- inner_join(gtf.dt,counts.dt,by="TRANSCRIPT_ID")
+  counts.gtf <- inner_join(gtf.dt,counts,by="transcript_id")
   setDT(counts.gtf)
-  samples <- colnames(counts.gtf)[-1:-6] #get list of sample ids
-  molten.counts<-data.table::melt(counts.gtf,
-    id.vars=c("GENE_NAME","GENE_ID","TRANSCRIPT_ID"),
-    measure.vars=list("GENE_NAME_N_TRANSCRIPTS","GENE_ID_N_TRANSCRIPTS",
-      "TRANSCRIPT_LENGTH",samples),
-    variable.name="SAMPLE_ID",
-    value.name=c("GENE_NAME_N_TRANSCRIPTS","GENE_ID_N_TRANSCRIPTS",
-      "TRANSCRIPT_LENGTH","SAMPLE_COUNT"))
-  setattr(molten.counts[["SAMPLE_ID"]],"levels",samples)
-  return(molten.counts)
+  return(counts.gtf)
 }
 
-process_transcripts<-function(qc.counts) {
-  setDT(qc.counts)
-  temp.dt<-[,total_raw_counts:=sum(SAMPLE_COUNT),by=c('SAMPLE_ID','GENE_NAME')]
-  temp.dt[,kb_length:=TRANSCRIPT_LENGTH/1000]
-  final.dt<-temp.dt[,list(cpk=sum((SAMPLE_COUNT+1/GENE_NAME_N_TRANSCRIPTS)/kb_length)),by=c('SAMPLE_ID','GENE_NAME','total_raw_counts')]
+quality_control <- function(counts.gtf.dt){
+  # genes
+  ## select protein coding exons on autosomal chromosomes
+  tmp <- counts.gtf[seqid %in% c(1:22) & gene_biotype=='protein_coding']
+  ## remove genes with low counts in baseline samples
+  dt <- tmp %>% dplyr::select("gene_name" | contains("_1_BM"))
+  gene <- data.table(aggregate(. ~ gene_name,data=dt,FUN=sum))
+  genes<-gene[,"gene_name"]
+  genes$p_samples_lt100 <- rowSums(gene < 100) / ncol(gene)
 
-  final.dt[,size_factor:=median(cpk),by='SAMPLE_ID']
+  keep.genes <- genes[p_samples_lt100 < 0.05]$gene_name
+
+  # samples
+  ## remove samples if total count is <10M
+  total_reads <- gene[,-1][,lapply(.SD,sum)]
+  total_reads_keep_genes <- gene[gene_name%in%keep.genes,-1][,lapply(.SD,sum)]
+  ## remove samples if counts <100 in >10% of genes
+  p_genes_lt100 <- gene[gene_name%in%keep.genes,-1][,lapply(.SD,function(x)sum(x<100)/length(keep.genes))]
+  samples<-data.table(t((rbind(total_reads,total_reads_keep_genes,p_genes_lt100))))
+  samples$id <- colnames(gene)[-1]
+  colnames(samples)<-c("total_reads","total_reads_keep_genes","p_genes_lt100","sample_id")
+
+  keep.samples <- samples[total_reads>10000000 & total_reads_keep_genes>10000000 & p_genes_lt100<0.1]$sample_id
+
+  # subset data to genes (no sample filtering) and melt
+  out.dt <- counts.gtf[gene_name%in%keep.genes] %>% dplyr::select(-seqid,-gene_id,-gene_biotype)
+  out.melt <- data.table::melt(out.dt,
+    id.vars=c("gene_name","name_n_transcripts","transcript_id","length"),
+    variable.name="sample_id",
+    value.name="count")
+
+  out <- list("keep.genes"=keep.genes,"keep.samples"=keep.samples,"melt"=out.melt)
+  return(out)
+}
+
+process_transcripts <- function(qc.melt.dt){
+  temp.dt <- qc.melt.dt[,total_raw_counts:=sum(count),by=c('sample_id','gene_name')]
+  temp.dt[,kb_length:=length/1000]
+  final.dt<-temp.dt[,list(cpk=sum((count+1/name_n_transcripts)/kb_length)),by=c('sample_id','gene_name','total_raw_counts')]
+
+  final.dt[,size_factor:=median(cpk),by='sample_id']
   final.dt[,cpkmed:=cpk/size_factor]
   final.dt[,logcpkmed:=log2(cpkmed)]
-  return(final.dt)
+
+  med.molten <- final.dt[,mean:=mean(logcpkmed),by='gene_name']
+  med.molten[,sd:=sd(logcpkmed),by='gene_name']
+  med.molten[,adjlogcpkmed:=logcpkmed]
+  med.molten[(logcpkmed-mean)/sd>=5,adjlogcpkmed:=mean+5*sd]
+  med.molten[(logcpkmed-mean)/sd<= -5,adjlogcpkmed:=mean-5*sd]
+
+  out<-list("melt"=med.molten)
+  return(out)
+}
+
+elbow_finder<-function(data) {
+  elbow.dt<-data[order(-value)][,idx:=.I-1]
+  elbow.dt[,selected:=as.factor('Not used')]
+
+  slope<-(min(elbow.dt$value)-max(elbow.dt$value))/(nrow(elbow.dt)-1)
+  perpslope<-(-1/slope)
+  intercept<-max(elbow.dt$value) # Is this accurate?
+  elbow.dt[,perpcept:=value - perpslope*idx]
+
+  elbow.dt[,y:=(perpcept*slope - intercept*perpslope)/(slope-perpslope)]
+  elbow.dt[,x:=(intercept-perpcept)/(perpslope - slope)]
+  elbow.dt[,dist:=sqrt((value-y)^2 + (idx-x)^2)]
+
+  maxidx<-which.max(elbow.dt$dist)
+  elbow.dt[idx<maxidx]$selected<-as.factor('Selected')
+  elbow.dt[,propvar:=cumsum(value)/sum(value)]
+  elbow.dt
 }
 
 # Step 0: Get transcript-based counts and GTF data
 setwd("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/")
-#counts.melt<-get_data("Homo_sapiens.GRCh37.74.gtf.gz","MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
-load("rdata/counts.melt")
+counts.gtf <- get_data("Homo_sapiens.GRCh37.74.gtf.gz","MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
 
 # Step 1: Quality control
-## Select baseline samples and remove low count genes in baseline samples
-low.genes<-counts.melt[SAMPLE_ID %like% "_1_BM",list(GENE_COUNT=sum(SAMPLE_COUNT)),by=c('GENE_NAME','SAMPLE_ID')][,quantile(GENE_COUNT,0.05,type=3),by='GENE_NAME'][V1<100]$GENE_NAME
-qc.melt<-counts.melt[SAMPLE_ID%like%"_1_BM"&GENE_NAME%in%low.genes]
+## Select baseline samples and remove low count genes and samples
+qc <- quality_control(counts.gtf)
 
 # Step 2: Normalize and truncate
-med.molten<-process_transcripts(qc.melt)
-med.molten[,mean:=mean(logcpkmed),by='GENE_NAME']
-med.molten[,sd:=sd(logcpkmed),by='GENE_NAME']
-med.molten[,adjlogcpkmed:=logcpkmed]
-med.molten[(logcpkmed-mean)/sd>=5,adjlogcpkmed:=mean+5*sd]
-med.molten[(logcpkmed-mean)/sd<= -5,adjlogcpkmed:=mean-5*sd]
+norm <- process_transcripts(qc$melt)
+## Convert to wide format of normalized values
+all.dt<-dcast(norm$melt,sample_id+size_factor~gene_name,value.var='adjlogcpkmed')
 
-# Sample QC?? -------------
-sample.qc.dt<-merge(med.molten[total_raw_counts>=100,list(prop100plus=.N/10188),by='sample_id'],
-      med.molten[,list(total_reads=sum(total_raw_counts)),by='sample_id'],by='sample_id')
-sample.qc.dt$replicate<-as.factor('no')
-sample.qc.dt[sample_id%in%a5581.rsem.iso.rep.molten$sample_id,replicate:=as.factor('yes')]
-
-# Step 3: PCA on all features -----
-temp1.dt<-dcast(med.molten,sample_id+size_factor~geneid,value.var='adjlogcpkmed')
-pca<-prcomp(temp1.dt[,-c(1:2),with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
+# Step 3: PCA on selected genes and samples
+base.dt <- all.dt[sample_id%in%qc$keep.samples] #select baseline qc samples
+pca<-prcomp(base.dt[,-c(1:2),with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
 pcvar<-data.table(pc=colnames(pca$x),value=pca$sdev^2)
 elbow.dt<-elbow_finder(pcvar)
-pc.scores<-cbind(temp1.dt[,c(1:2)],pca$x[,elbow.dt[selected=='Selected']$pc])
-final.dt<-merge(tissue.map,pc.scores,by='sample_id')
-
-# Apply dimensions to tumor samples
-all.molten<-process_rsem_isoforms(rsem.molten,good.genes)
-temp1.dt<-dcast(all.molten,sample_id~geneid,value.var='logcpkmed')
-all.pc.scores<-cbind(temp1.dt[,1],scale(data.matrix(temp1.dt[,-1]),center=colMeans(temp1.dt[,-1]),scale=FALSE)%*%pca$rotation[,1:12])
-all.final.dt<-merge(tissue.map,all.pc.scores,by='sample_id')
+pc.scores<-cbind(base.dt[,c(1:2)],pca$x[,elbow.dt[selected=='Selected']$pc])
 
 # now save these
-save(pca,elbow.dt,final.dt,all.final.dt,good.genes,file='rsem_iso_median_normalized_rep_summed_20200304.RData')
-
-
-
-
-
-# working
-
-qc.counts <- counts.gtf[!GENE_NAME%in%low.genes] %>% dplyr::select(contains("GENE_NAME") | contains("TRANSCRIPT_") | contains("_1_BM"))
-
-norm.dt<-process_transcripts(qc.counts)
-
-samples <- colnames(qc.counts )[-1:-4] #get list of sample ids
-qc.melt<-data.table::melt(qc.counts,
-  id.vars=c("GENE_NAME","TRANSCRIPT_ID"),
-  measure.vars=list("GENE_NAME_N_TRANSCRIPTS","TRANSCRIPT_LENGTH",samples),
-  variable.name="SAMPLE_ID",
-  value.name=c("GENE_NAME_N_TRANSCRIPTS","TRANSCRIPT_LENGTH","SAMPLE_COUNT"))
-setattr(qc.melt[["SAMPLE_ID"]],"levels",samples)
-
-dt.seq[,lapply(.SD,function(x)sum(is.na(x)))],
-
-keep.genes<-
-keep.samples<-
-
-## method to aggregate in long format
-#dt2 <- counts.gtf[!GENE_NAME%in%low.genes] %>% dplyr::select(contains("GENE_NAME") | contains("_1_BM"))
-#dt.gene <- aggregate(.~GENE_NAME+GENE_NAME_N_TRANSCRIPTS,data=dt2,FUN=sum)
-
-#qc.counts<-molten.counts[SAMPLE_ID%like%"_1_BM" & !GENE_NAME%in%low.genes] #na bug
+save(counts.gtf,qc,norm,pca,elbow.dt,pc.scores,all.dt,file='rdata/process_20200331.RData')
