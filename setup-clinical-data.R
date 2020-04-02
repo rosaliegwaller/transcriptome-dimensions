@@ -14,11 +14,11 @@ library(naniar)
 # Functions
 seq_samples <- function(counts.file){
   samples<-read.csv(file=counts.file,header=F,nrows=1,sep="\t")
-  tmp<-data.table(t(samples))[-1]
-  seq.ids<-tmp[V1%like%"_1_BM"] #select baseline samples only
-  seq.ids$public_id<-gsub("_1_BM","",samples.dt$V1)
-  colnames(seq.ids)[1]<-"seq_id"
-  return(seq.ids)
+  ids<-data.table(t(samples))[-1]
+  #seq.ids<-tmp[V1%like%"_1_BM"] #select baseline samples only
+  ids$public_id<-gsub("_([1-9])_(BM|PB)","",ids$V1)
+  colnames(ids)[1]<-"seq_id"
+  return(ids)
 }
 
 clinical_data <- function(clin.file,seq.ids){
@@ -49,9 +49,32 @@ pat<-clinical_data("MMRF_CoMMpass_IA14_PER_PATIENT.csv",seq.ids)
 sur<-clinical_data("MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL.csv",seq.ids)
 
 ## save counts of missing data in seq samples
-write.csv(pat$key,file="rdata/MMRF_CoMMpass_IA14_PER_PATIENT_KEY.csv")
-write.csv(pat$dt,file="rdata/MMRF_CoMMpass_IA14_PER_PATIENT_DT.csv")
-write.csv(sur$key,file="rdata/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL_KEY.csv")
-write.csv(sur$dt,file="rdata/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL_DT.csv")
+#write.csv(pat$key,file="rdata/MMRF_CoMMpass_IA14_PER_PATIENT_KEY.csv")
+#write.csv(pat$dt,file="rdata/MMRF_CoMMpass_IA14_PER_PATIENT_DT.csv")
+#write.csv(sur$key,file="rdata/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL_KEY.csv")
+#write.csv(sur$dt,file="rdata/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL_DT.csv")
 
-## TO DO: additional clinical files (not per-patient)
+## read in all data keys and merge
+key.pat <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_PER_PATIENT.csv")
+key.vis <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_PER_PATIENT_VISIT.csv")
+key.adm <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_ADMISSIONS.csv")
+key.ae <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_AE.csv")
+key.eme <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_EMERGENCY_DEPT.csv")
+key.fam <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_FAMHX.csv")
+key.med <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_MEDHX.csv")
+key.sur <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL.csv")
+key.reg <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_TREATMENT_REGIMEN.csv")
+key.res <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_TRTRESP.csv")
+
+keys <- unique(data.table(rbind(key.pat,key.vis,key.adm,key.ae,key.eme,key.fam,key.med,key.sur,key.reg,key.res))[,-1])
+
+# SEQ QC Data
+seq_qc <- data.table(read.csv("MMRF_CoMMpass_IA14_Seq_QC_Summary.csv"))[MMRF_Release_Status=="RNA-Yes"]
+
+## TO DO: subset clinical data to seq samples from QC_Summary and select relevant data, save as rdata to load in pc analysis
+seq_qc[,c("ï..Patients..KBase_Patient_ID","Visits..Study.Visit.ID",
+  "Visits..Reason_For_Collection","QC.Link.SampleName","Batch","Creation.Date",
+  "Process.Date","MMRF_Release_Status",
+  "QC_Percent_IgH","QC_Percent_IgK","QC_Percent_IgL",
+  "QC_Percent_Immunoglobulin","QC_Percent_Mapped","QC_Percent_Mitochondrial",
+  "QC_Percent_Q20_Bases","QC_Percent_Uniq_Mapping","QC_Read_Counts")]

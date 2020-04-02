@@ -120,5 +120,8 @@ pcvar<-data.table(pc=colnames(pca$x),value=pca$sdev^2)
 elbow.dt<-elbow_finder(pcvar)
 pc.scores<-cbind(base.dt[,c(1:2)],pca$x[,elbow.dt[selected=='Selected']$pc])
 
+## apply to all samples
+all.pc.scores<-cbind(all.dt[,1],scale(data.matrix(all.dt[,-c(1:2)]),center=colMeans(all.dt[,-c(1:2)]),scale=FALSE)%*%pca$rotation[,1:31])
+
 # now save these
-save(counts.gtf,qc,norm,pca,elbow.dt,pc.scores,all.dt,file='rdata/process_20200331.RData')
+save(counts.gtf,qc,norm,pca,elbow.dt,pc.scores,all.dt,all.pc.scores,file='rdata/process_20200401.RData')
