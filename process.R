@@ -27,38 +27,26 @@ get_data <- function(gtf.path,counts.path){
   return(counts.gtf)
 }
 
-quality_control <- function(counts.gtf.dt){
-  # genes
-  ## select protein coding exons on autosomal chromosomes
-  tmp <- counts.gtf[seqid %in% c(1:22) & gene_biotype=='protein_coding']
-  ## remove genes with low counts in baseline samples
-  dt <- tmp %>% dplyr::select("gene_name" | contains("_1_BM"))
-  gene <- data.table(aggregate(. ~ gene_name,data=dt,FUN=sum))
-  genes<-gene[,"gene_name"]
-  genes$p_samples_lt100 <- rowSums(gene < 100) / ncol(gene)
+quality_control <- function(counts.gtf,baseline.samples){
+  # select protein coding exons on autosomal chromosomes and baseline samples
+  tmp <- counts.gtf[seqid %in% c(1:22) & gene_biotype=='protein_coding'] %>% select("gene_name",contains("MMRF"))
+  # aggregate trasncript counts to gene_name counts
+  gene <- data.table(aggregate(. ~ gene_name,data=tmp,FUN=sum))
+  # find proportion of genes with <100 counts in baseline samples only
+  base <- gene %>% select("gene_name",all_of(baseline.samples))
+  base$prop_base_lt100 <- rowSums(base[,-1] < 100) / length(baseline.samples)
 
-  keep.genes <- genes[p_samples_lt100 < 0.05]$gene_name
+  keep.genes <- base[prop_base_lt100 < 0.05]$gene_name
 
-  # samples
-  ## remove samples if total count is <10M
+  # count all samples total reads and proportion of qc genes with > 100 reads
   total_reads <- gene[,-1][,lapply(.SD,sum)]
-  total_reads_keep_genes <- gene[gene_name%in%keep.genes,-1][,lapply(.SD,sum)]
-  ## remove samples if counts <100 in >10% of genes
-  p_genes_lt100 <- gene[gene_name%in%keep.genes,-1][,lapply(.SD,function(x)sum(x<100)/length(keep.genes))]
-  samples<-data.table(t((rbind(total_reads,total_reads_keep_genes,p_genes_lt100))))
-  samples$id <- colnames(gene)[-1]
-  colnames(samples)<-c("total_reads","total_reads_keep_genes","p_genes_lt100","sample_id")
+  total_reads_keep_genes <- gene[gene_name %in% keep.genes,-1][,lapply(.SD,sum)]
+  prop_gene_lt100 <- gene[gene_name %in% keep.genes,-1][,lapply(.SD,function(x)sum(x<100)/length(keep.genes))]
+  samples<-data.table(t((rbind(total_reads,total_reads_keep_genes,prop_gene_lt100))))
+  colnames(samples)<-c("total_reads","total_reads_keep_genes","prop_gene_lt100")
+  samples$sample_id <- colnames(total_reads)
 
-  keep.samples <- samples[total_reads>10000000 & total_reads_keep_genes>10000000 & p_genes_lt100<0.1]$sample_id
-
-  # subset data to genes (no sample filtering) and melt
-  out.dt <- counts.gtf[gene_name%in%keep.genes] %>% dplyr::select(-seqid,-gene_id,-gene_biotype)
-  out.melt <- data.table::melt(out.dt,
-    id.vars=c("gene_name","name_n_transcripts","transcript_id","length"),
-    variable.name="sample_id",
-    value.name="count")
-
-  out <- list("keep.genes"=keep.genes,"keep.samples"=keep.samples,"melt"=out.melt)
+  out <- list("keep.genes"=keep.genes,"samples"=samples)
   return(out)
 }
 
@@ -102,26 +90,41 @@ elbow_finder<-function(data) {
 
 # Step 0: Get transcript-based counts and GTF data
 setwd("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/")
-counts.gtf <- get_data("Homo_sapiens.GRCh37.74.gtf.gz","MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
+#counts.gtf <- get_data("Homo_sapiens.GRCh37.74.gtf.gz","MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
+#save(counts.gtf,file="rdata/counts_gtf_20200402.RData")
+load("rdata/counts_gtf_20200402.RData")
 
 # Step 1: Quality control
+## Get list of baseline samples
+load("rdata/setup-clinical-data-20200402.rdata")
+baseline <- clin.dt[collection_reason=="Baseline"]$sample_id
+rm(clin.dt,key)
 ## Select baseline samples and remove low count genes and samples
-qc <- quality_control(counts.gtf)
+qc <- quality_control(counts.gtf,baseline)
+qc.counts <- counts.gtf[gene_name %in% qc$keep.genes] %>% select(-seqid,-gene_id,-gene_biotype)
+qc.melt <- data.table::melt(qc.counts,
+  id.vars=c("gene_name","name_n_transcripts","transcript_id","length"),
+  variable.name="sample_id",
+  value.name="count")
 
 # Step 2: Normalize and truncate
-norm <- process_transcripts(qc$melt)
+norm <- process_transcripts(qc.melt)
 ## Convert to wide format of normalized values
 all.dt<-dcast(norm$melt,sample_id+size_factor~gene_name,value.var='adjlogcpkmed')
+## Annotate sample qc data
+all.qc.dt<-data.table(inner_join(qc$samples,all.dt,by='sample_id'))
 
 # Step 3: PCA on selected genes and samples
-base.dt <- all.dt[sample_id%in%qc$keep.samples] #select baseline qc samples
-pca<-prcomp(base.dt[,-c(1:2),with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
-pcvar<-data.table(pc=colnames(pca$x),value=pca$sdev^2)
-elbow.dt<-elbow_finder(pcvar)
-pc.scores<-cbind(base.dt[,c(1:2)],pca$x[,elbow.dt[selected=='Selected']$pc])
+## select baseline samples with >100 reads in 90% of selected genes
+base.dt <- all.qc.dt[sample_id %in% baseline & prop_gene_lt100 < 0.1][,-c(1:3,5)]
+pca <- prcomp(base.dt[,-1,with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
+pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2)
+elbow.dt <- elbow_finder(pcvar)
+pc.scores <- cbind(base.dt[,1],pca$x[,elbow.dt[selected=='Selected']$pc])
 
 ## apply to all samples
-all.pc.scores<-cbind(all.dt[,1],scale(data.matrix(all.dt[,-c(1:2)]),center=colMeans(all.dt[,-c(1:2)]),scale=FALSE)%*%pca$rotation[,1:31])
+all.pc.scores<-cbind(all.qc.dt[,c(1:5)],scale(data.matrix(all.qc.dt[,-c(1:5)]),
+  center=colMeans(base.dt[,-1]),scale=FALSE)%*%pca$rotation[,1:31])
 
 # now save these
-save(counts.gtf,qc,norm,pca,elbow.dt,pc.scores,all.dt,all.pc.scores,file='rdata/process_20200401.RData')
+save(pca,elbow.dt,pc.scores,all.qc.dt,all.pc.scores,file='rdata/process_20200402.RData')
