@@ -88,34 +88,58 @@ key.dt <- unique(data.table(rbind(key.pat,key.vis,key.sur))[,-1])
 key<-count_missing(key.dt,clin.dt)
 
 ## and save
-save(clin.dt,key,file = "rdata/setup-clinical-data-20200402.rdata")
+#save(clin.dt,key,file = "rdata/setup-clinical-data-20200402.rdata")
 
+## subset clinical data
+vars <- c(
+  "sample_id",
+  "collection_reason",
+  "batch",
+  "D_PT_age",
+  "D_PT_gender",
+  "D_PT_race",
+  "D_PT_ethnic",
+  "ttcos", #Time to OS event (censored)
+  "censos", #Censor flag: overall survival
+  "ttcpfs", #Time to PFS event (censored)
+  "censpfs", #Censor flag: progression-free survival
+  "ttctf1", #Line 1 time to treatment failure (censored)
+  "censtf1", #Line 1 censor flag: time to treatment failure
+  #"lstalive", #Last known alive
+  "D_PT_iss", #ISS Disease Stage
+  "D_LAB_serum_m_protein", #Serum M Protein (g/dL)
+  "D_LAB_serum_kappa", #Serum Kappa (mg/dL)
+  "D_LAB_serum_lambda", #Serum Lambda (mg/dL)
+  "D_LAB_serum_beta2_microglobulin", #Beta 2 Microglobulin (mcg/mL)
+  "D_TRI_CF_ABNORMALITYPR6",	#t(11;14) abnormality present standard risk
+  "D_TRI_CF_ABNORMALITYPR4",	#t(6;14) abnormality present standard risk
+  "D_TRI_CF_ABNORMALITYPR3",	#t(4;14) abnormality present intermediate risk
+  "D_TRI_CF_ABNORMALITYPR13",	#1q amplification abnormality present intermediate risk
+  "D_TRI_CF_ABNORMALITYPR8",	#t(14;16) abnormality present high risk
+  "D_TRI_CF_ABNORMALITYPR9",	#t(14;20) abnormality present high risk
+  "D_TRI_CF_ABNORMALITYPR11"	#del 17p abnormality present high risk
+)
 
-## old
-## get list of samples with seq data avaliable
-#seq.ids<-seq_samples(
-#  "MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
+clin <- select(clin.dt,all_of(vars))
 
-## read in clinical data and count number missing in seq data
-#pat<-clinical_data("MMRF_CoMMpass_IA14_PER_PATIENT.csv",seq.ids)
-#sur<-clinical_data("MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL.csv",seq.ids)
+## clean up selected data
+clin$collection_reason <- as.factor(clin$collection_reason)
+clin$batch <- as.factor(clin$batch)
+clin$D_PT_gender <- as.factor(clin$D_PT_gender)
+clin$D_PT_race <- as.factor(clin$D_PT_race)
+clin$D_PT_ethnic <- as.factor(clin$D_PT_ethnic)
+clin$censos <- as.factor(clin$censos)
+clin$censpfs <- as.factor(clin$censpfs)
+clin$censtf1 <- as.factor(clin$censtf1)
+clin$D_PT_iss <- as.factor(clin$D_PT_iss)
+clin[clin==""] <- NA
+clin[clin=="Not Done"] <- NA
+clin$D_TRI_CF_ABNORMALITYPR6 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR6)
+clin$D_TRI_CF_ABNORMALITYPR4 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR4)
+clin$D_TRI_CF_ABNORMALITYPR3 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR3)
+clin$D_TRI_CF_ABNORMALITYPR13 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR13)
+clin$D_TRI_CF_ABNORMALITYPR8 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR8)
+clin$D_TRI_CF_ABNORMALITYPR9 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR9)
+clin$D_TRI_CF_ABNORMALITYPR11 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR11)
 
-## save counts of missing data in seq samples
-#write.csv(pat$key,file="rdata/MMRF_CoMMpass_IA14_PER_PATIENT_KEY.csv")
-#write.csv(pat$dt,file="rdata/MMRF_CoMMpass_IA14_PER_PATIENT_DT.csv")
-#write.csv(sur$key,file="rdata/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL_KEY.csv")
-#write.csv(sur$dt,file="rdata/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL_DT.csv")
-
-## read in all data keys and merge
-#key.pat <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_PER_PATIENT.csv")
-#key.vis <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_PER_PATIENT_VISIT.csv")
-#key.adm <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_ADMISSIONS.csv")
-#key.ae <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_AE.csv")
-#key.eme <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_EMERGENCY_DEPT.csv")
-#key.fam <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_FAMHX.csv")
-#key.med <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_MEDHX.csv")
-#key.sur <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL.csv")
-#key.reg <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_TREATMENT_REGIMEN.csv")
-#key.res <- read.csv("CoMMpass_IA14_FlatFile_Dictionaries/MMRF_CoMMpass_IA14_STAND_ALONE_TRTRESP.csv")
-
-#keys <- unique(data.table(rbind(key.pat,key.vis,key.adm,key.ae,key.eme,key.fam,key.med,key.sur,key.reg,key.res))[,-1])
+save(clin,file = "rdata/clin_20200405.rdata")
