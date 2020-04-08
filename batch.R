@@ -36,6 +36,9 @@ load("rdata/process_20200402.RData")
 #rm(clin.dt,key)
 load(file = "rdata/clin_20200405.rdata")
 
+## Load normalized expression data
+load(file = "rdata/norm_data_20200406.rdata")
+
 ## Merge and remove extra objects
 dt <- merge(clin,pc.scores)
 rm(all.pc.scores,elbow.dt,pc.scores,pca)
@@ -58,7 +61,7 @@ rm(DATA,X,Y)
 
 # Categorical variables
 Y <- colnames(dt[,c(5:7,9,11,13:14,19:25)])
-DATA <- select(dt,Y)
+DATA <- dt %>% dplyr::select(all_of(Y))
 p <- 1
 for(col in DATA){
   p <- rbind(p,fisher.test(x=dt$batch,y=col,simulate.p.value=TRUE,B=5000)$p.value)
@@ -112,17 +115,37 @@ save(all.combat,base.combat,
   pc.scores.combat,all.pc.scores.combat,
   file='rdata/batch_pca_20200405.RData')
 
+# COMBAT with all clinical variables of interest
+load(file = "rdata/norm_data_20200406.rdata")
+load(file = "rdata/clin_20200405.rdata")
+dt <- merge(clin,base.dt,by="sample_id")
+DAT = t(dt[,-c(1:25)])
+colnames(DAT) <- dt$sample_id
+MOD <- data.matrix(dt[,c(4:25)])
+MOD[is.na(MOD)] <- -9
+BATCH = as.numeric(dt$batch)
 
-# test for batch sig associations with new pcs
-## Merge and remove extra objects
-dt2 <- merge(clin,pc.scores.combat)
+## run combat
+cbat <- ComBat(dat = DAT, batch = BATCH, mod = MOD)
 
-# Logistic regression
-Y <- colnames(dt2[,c(26:62)])
+## transpose data
+cbat.dt <- data.table(t(cbat))
+cbat.dt$sample_id <- dt$sample_id
+rm(DAT,MOD,BATCH,cbat,clin,base.dt,all.dt)
+
+## run pca on combat corrected data
+pca <- prcomp(cbat.dt[,-"sample_id",with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
+pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2)
+elbow <- elbow_finder(pcvar)
+score <- cbind(cbat.dt[,"sample_id"],
+  pca$x[,elbow[selected=='Selected']$pc])
+
+## test for batch sig associations with new pcs
+DATA <- merge(dt[,c(1:25)],score)
+Y <- colnames(dplyr::select(DATA,starts_with('PC')))
 X <- "batch"
-DATA <- dt2
 
-pc2.batch <- expand.grid(y=Y, x=X, stringsAsFactors = T) %>%
+batch <- expand.grid(y=Y, x=X, stringsAsFactors = T) %>%
   mutate(formula = paste(y,"~",x)) %>%
   group_by(formula) %>%
   mutate(F = summary(lm(formula, data=DATA))$fstatistic[1]) %>%
@@ -130,93 +153,45 @@ pc2.batch <- expand.grid(y=Y, x=X, stringsAsFactors = T) %>%
   mutate(DF2 = summary(lm(formula, data=DATA))$fstatistic[3]) %>%
   mutate(R2 = summary(lm(formula, data=DATA))$r.squared) %>%
   ungroup()
-pc2.batch$P <- pf(pc2.batch$F,pc2.batch$DF1,pc2.batch$DF2,lower.tail=F)
-rm(DATA,X,Y)
+batch$P <- pf(batch$F,batch$DF1,batch$DF2,lower.tail=F)
 
+# -----------------------------------------------------------------------------
+# COMBAT with subset of clinical variables of interest
+load(file = "rdata/norm_data_20200406.rdata")
+load(file = "rdata/clin_20200405.rdata")
+dt <- merge(clin,base.dt,by="sample_id")
+DAT = t(dt[,-c(1:25)])
+colnames(DAT) <- dt$sample_id
+MOD <- data.matrix(dt[,c(4)])
+MOD[is.na(MOD)] <- -9
+BATCH = as.numeric(dt$batch)
 
-### OLD ###
+## run combat
+cbat <- ComBat(dat = DAT, batch = BATCH, mod = MOD)
 
-# D_PT_gender
-chisq.test(x = dt$batch, y = dt$D_PT_gender)
-fisher.test(x = dt$batch, y = dt$D_PT_gender, simulate.p.value=TRUE)
+## transpose data
+cbat.dt <- data.table(t(cbat))
+cbat.dt$sample_id <- dt$sample_id
+rm(DAT,MOD,BATCH,cbat,clin,base.dt,all.dt)
 
-# D_PT_race
-chisq.test(x = dt$batch, y = dt$D_PT_race)
-fisher.test(x = dt$batch, y = dt$D_PT_race, simulate.p.value=TRUE)
+## run pca on combat corrected data
+pca <- prcomp(cbat.dt[,-"sample_id",with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
+pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2)
+elbow <- elbow_finder(pcvar)
+score <- cbind(cbat.dt[,"sample_id"],
+  pca$x[,elbow[selected=='Selected']$pc])
 
-# D_PT_ethnic
-chisq.test(x = dt$batch, y = dt$D_PT_ethnic)
-fisher.test(x = dt$batch, y = dt$D_PT_ethnic, simulate.p.value=TRUE)
-
-# censos
-chisq.test(x = dt$batch, y = dt$censos)
-fisher.test(x = dt$batch, y = dt$censos, simulate.p.value=TRUE)
-
-# censpfs
-chisq.test(x = dt$batch, y = dt$censpfs)
-fisher.test(x = dt$batch, y = dt$censpfs, simulate.p.value=TRUE)
-
-# censtf1
-chisq.test(x = dt$batch, y = dt$censtf1)
-fisher.test(x = dt$batch, y = dt$censtf1, simulate.p.value=TRUE)
-
-# D_PT_iss
-chisq.test(x = dt$batch, y = dt$D_PT_iss)
-fisher.test(x = dt$batch, y = dt$D_PT_iss, simulate.p.value=TRUE)
-
-# D_TRI_CF_ABNORMALITYPR6
-chisq.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR6)
-fisher.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR6, simulate.p.value=TRUE)
-
-# D_TRI_CF_ABNORMALITYPR4
-chisq.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR4)
-fisher.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR4, simulate.p.value=TRUE)
-
-# D_TRI_CF_ABNORMALITYPR3
-chisq.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR3)
-fisher.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR3, simulate.p.value=TRUE)
-
-# D_TRI_CF_ABNORMALITYPR13
-chisq.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR13)
-fisher.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR13, simulate.p.value=TRUE)
-
-# D_TRI_CF_ABNORMALITYPR8
-chisq.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR8)
-fisher.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR8, simulate.p.value=TRUE)
-
-# D_TRI_CF_ABNORMALITYPR9
-chisq.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR9)
-fisher.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR9, simulate.p.value=TRUE)
-
-# D_TRI_CF_ABNORMALITYPR11
-chisq.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR11)
-fisher.test(x = dt$batch, y = dt$D_TRI_CF_ABNORMALITYPR11, simulate.p.value=TRUE)
-
-
-
-
-ct <- as.data.frame.matrix(table(dt$batch,dt$D_PT_race))
-ctz <- setDT(ct)[rowSums(ct) > 0]
-chisq.test(ctz)
-
-
-Y <- colnames(dt[,c(5:7,9,11,13:14,19:25)])
+## test for batch sig associations with new pcs
+DATA <- merge(dt[,c(1:25)],score)
+Y <- colnames(dplyr::select(DATA,starts_with('PC')))
 X <- "batch"
-DATA <- select(dt,Y)
-output <- matrix(ncol=4, nrow=length(Y))
-row <- 1
 
-for(col in DATA){
-  ct <- as.data.frame.matrix(table(dt$batch,col))
-  ctz <- setDT(ct)[rowSums(ct) > 0]
-  cs <- chisq.test(ctz)
-  print(c(col,cs$statistic,cs$parameter,cs$p.value))
-  #row = row + 1
-}
-
-x_batch <- expand.grid(y=Y, x=X) %>%
-  ct <- as.data.frame.matrix(table(dt$Y, dt$X)) %>%
-  ctz <- setDT(ct)[rowSums(ct) > 0]
-  mutate(x <- chisq.test(ctz)$statistic) %>%
-  mutate(df <- chisq.test(ctz)$parameter) %>%
-  mutate(p <- chisq.test(ctz)$p.value)
+batch <- expand.grid(y=Y, x=X, stringsAsFactors = T) %>%
+  mutate(formula = paste(y,"~",x)) %>%
+  group_by(formula) %>%
+  mutate(F = summary(lm(formula, data=DATA))$fstatistic[1]) %>%
+  mutate(DF1 = summary(lm(formula, data=DATA))$fstatistic[2]) %>%
+  mutate(DF2 = summary(lm(formula, data=DATA))$fstatistic[3]) %>%
+  mutate(R2 = summary(lm(formula, data=DATA))$r.squared) %>%
+  ungroup()
+batch$P <- pf(batch$F,batch$DF1,batch$DF2,lower.tail=F)

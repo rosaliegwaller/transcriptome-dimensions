@@ -12,6 +12,7 @@ library(data.table)
 library(naniar)
 library(ggpubr)
 library(dplyr)
+library(tidyr)
 
 # Functions
 seq_samples <- function(counts.file){
@@ -143,3 +144,87 @@ clin$D_TRI_CF_ABNORMALITYPR9 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR9)
 clin$D_TRI_CF_ABNORMALITYPR11 <- as.factor(clin$D_TRI_CF_ABNORMALITYPR11)
 
 save(clin,file = "rdata/clin_20200405.rdata")
+
+## seperate factors to individual columns
+load(file = "rdata/clin_20200405.rdata")
+clin[,baseline:=0]
+clin[collection_reason=="Baseline"]$baseline <- 1
+clin[,confirm_progression:=0]
+clin[collection_reason=="Confirm Progression"]$confirm_progression <- 1
+clin[,post_transplant:=0]
+clin[collection_reason=="Post Transplant"]$post_transplant <- 1
+clin[,confirm_response:=0]
+clin[collection_reason=="Confirm Response"]$confirm_response <- 1
+
+clin[,female:=0]
+clin[D_PT_gender==2]$female <- 1
+
+clin[,race.1:=0]
+clin[D_PT_race==1]$race.1 <- 1
+clin[is.na(D_PT_race)]$race.1 <- -9
+clin[,race.2:=0]
+clin[D_PT_race==2]$race.2 <- 1
+clin[is.na(D_PT_race)]$race.2 <- -9
+clin[,race.4:=0]
+clin[D_PT_race==4]$race.4 <- 1
+clin[is.na(D_PT_race)]$race.4 <- -9
+clin[,race.6:=0]
+clin[D_PT_race==6]$race.6 <- 1
+clin[is.na(D_PT_race)]$race.6 <- -9
+
+clin[,ethnic.1:=0]
+clin[D_PT_ethnic==1]$ethnic.1 <- 1
+clin[is.na(D_PT_ethnic)]$ethnic.1 <- -9
+clin[,ethnic.2:=0]
+clin[D_PT_ethnic==2]$ethnic.2 <- 1
+clin[is.na(D_PT_ethnic)]$ethnic.2 <- -9
+clin[,ethnic.3:=0]
+clin[D_PT_ethnic==3]$ethnic.3 <- 1
+clin[is.na(D_PT_ethnic)]$ethnic.3 <- -9
+
+clin[,iss.1:=0]
+clin[D_PT_iss==1]$iss.1 <- 1
+clin[is.na(D_PT_iss)]$iss.1 <- -9
+clin[,iss.2:=0]
+clin[D_PT_iss==2]$iss.2 <- 1
+clin[is.na(D_PT_iss)]$iss.2 <- -9
+clin[,iss.3:=0]
+clin[D_PT_iss==3]$iss.3 <- 1
+clin[is.na(D_PT_iss)]$iss.3 <- -9
+
+clin[,t_11_14:=0]
+clin[D_TRI_CF_ABNORMALITYPR6=='Yes']$t_11_14 <- 1
+clin[is.na(D_TRI_CF_ABNORMALITYPR6)]$t_11_14 <- -9
+
+clin[,t_6_14:=0]
+clin[D_TRI_CF_ABNORMALITYPR4=='Yes']$t_6_14 <- 1
+clin[is.na(D_TRI_CF_ABNORMALITYPR4)]$t_6_14 <- -9
+
+clin[,t_4_14:=0]
+clin[D_TRI_CF_ABNORMALITYPR3=='Yes']$t_4_14 <- 1
+clin[is.na(D_TRI_CF_ABNORMALITYPR3)]$t_4_14 <- -9
+
+clin[,amp_1q:=0]
+clin[D_TRI_CF_ABNORMALITYPR13=='Yes']$amp_1q <- 1
+clin[is.na(D_TRI_CF_ABNORMALITYPR13)]$amp_1q <- -9
+
+clin[,t_14_16:=0]
+clin[D_TRI_CF_ABNORMALITYPR8=='Yes']$t_14_16 <- 1
+clin[is.na(D_TRI_CF_ABNORMALITYPR8)]$t_14_16 <- -9
+
+clin[,t_14_20:=0]
+clin[D_TRI_CF_ABNORMALITYPR9=='Yes']$t_14_20 <- 1
+clin[is.na(D_TRI_CF_ABNORMALITYPR9)]$t_14_20 <- -9
+
+clin[,del_17p:=0]
+clin[D_TRI_CF_ABNORMALITYPR11=='Yes']$del_17p <- 1
+clin[is.na(D_TRI_CF_ABNORMALITYPR11)]$del_17p <- -9
+
+clin$censos <- as.integer(clin$censos)
+clin$censpfs <- as.integer(clin$censpfs)
+clin$censtf1 <- as.integer(clin$censtf1)
+
+clin_cols <- clin[,c(1,3:4,8:13,15:18,26:47)]
+clin_cols[is.na(clin_cols)] <- -9
+
+save(clin_cols,file="rdata/clinical_data_factors_as_columns.rdata")
