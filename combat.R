@@ -30,12 +30,12 @@ find_pcs <- function(DAT) {
   dt$sample_id <- colnames(DAT) #annotate sample ids
   
   # run pca on combat data
-  pca <- prcomp(dt[,-"sample_id",with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
+  pca <- prcomp(dt[,-"sample_id",with=FALSE],center=TRUE,scale=TRUE,retx=TRUE)
   pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2)
   elbow <- elbow_finder(pcvar)
   score <- cbind(dt[,"sample_id"],pca$x[,elbow[selected=='Selected']$pc])
   
-  out <- list("score"=score,"elbow"=elbow)
+  out <- list("score"=score,"elbow"=elbow,"pca"=pca)
   return(out)
 }
 
@@ -68,21 +68,6 @@ find_covariates <- function(CLIN, Y1, Y2){
   colnames(fisher.p) <- c("variable","p-value")
 
   out <- list("con"=lmod,"cat"=fisher.p)
-  return(out)
-}
-
-batch_correction <- function(DAT, BATCH, MOD) {
-  cbat <- ComBat(dat = DAT, batch = BATCH, mod = MOD) #run combat
-  cbat.dt <- data.table(t(cbat)) #sample x gene data table
-  cbat.dt$sample_id <- colnames(DAT) #annotate sample ids
-  
-  # run pca on combat data
-  pca <- prcomp(cbat.dt[,-"sample_id",with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
-  pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2)
-  elbow <- elbow_finder(pcvar)
-  score <- cbind(cbat.dt[,"sample_id"],pca$x[,elbow[selected=='Selected']$pc])
-  
-  out <- list("score"=score,"elbow"=elbow)
   return(out)
 }
 
@@ -121,6 +106,7 @@ colnames(DAT) <- dt$sample_id
 BATCH = as.numeric(dt$batch)
 
 CLIN = dt[,c(1,3:25)]
+sapply(CLIN, function(x) sum(is.na(x))) #count missing
 
 # no batch correction
 nbat <- find_pcs(DAT)
@@ -134,25 +120,15 @@ batch_clin <- find_covariates(CLIN,
 
 # 0: no clinical data in combat covariate model
 MOD = NULL
-cbat0 <- batch_correction(DAT,BATCH,MOD)
-lmod0 <- find_association(CLIN,cbat0$score)
+cbat0 <- ComBat(dat = DAT, batch = BATCH, mod = MOD) #run combat
+pcs0 <- find_pcs(cbat0)
+lmod0 <- find_association(CLIN,pcs0$score)
 
 # 1: some clinical data
-MOD <- data.matrix(CLIN[,c("D_PT_age","D_PT_gender","ttcos","ttcpfs","ttctf1")])
-cbat1 <- batch_correction(DAT,BATCH,MOD)
-lmod1 <- find_association(CLIN,cbat1$score)
+MOD <- data.matrix(CLIN[,c("D_PT_age","D_PT_gender","ttcos","censos","ttcpfs","censpfs","ttctf1","censtf1")])
+cbat <- ComBat(dat = DAT, batch = BATCH, mod = MOD) #run combat
+pcs_cbat <- find_pcs(cbat)
 
-# 2: all clinical data
-MOD <- data.matrix(CLIN[,-c("sample_id","batch")])
-MOD[is.na(MOD)] <- -9
-cbat2 <- batch_correction(DAT,BATCH,MOD)
-lmod2 <- find_association(CLIN,cbat2$score)
-
-# merge PC association models together
-pc_lm <- full_join(
-  full_join(lmod[,c("formula","F","P")],lmod0[,c("formula","F","P")],by="formula"),
-  full_join(lmod1[,c("formula","F","P")],lmod2[,c("formula","F","P")],by="formula"),
-  by="formula")
-colnames(pc_lm) <- c("formula","nbat.F","nbat.P","nmod.F","nmod.P","smod.F","smod.P","amod.F","amod.P")
-pc_lm <- dplyr::select(pc_lm,"formula",ends_with("F"),ends_with("P"))
-View(pc_lm %>% select("formula",ends_with("P")))
+# and save
+dt <- merge(CLIN,pcs_cbat$score,by="sample_id")
+save(dt,pcs_cbat,file = "rdata/combat_pcs_20200411.rdata")

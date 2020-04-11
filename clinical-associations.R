@@ -1,140 +1,131 @@
 #!/usr/bin/env Rscript
 
-# Libraries
+## Libraries ------------------------------
 library(dplyr)
 library(data.table)
-library(aplpack)
 library(survival)
 library(survminer)
+library(jtools)
 library(MASS)
 
-# Functions
+## Functions ------------------------------
+run_lm <- function(Y,dt){
+  fom <- as.formula(paste(
+    paste(Y," ~ ",sep = ""),
+    paste(colnames(dplyr::select(dt,starts_with("PC"))),collapse = "+")
+  ))
+  mod <- lm(
+    formula = fom,
+    data = dt,
+    na.action = na.omit
+  )
+  stp <- stepAIC(mod, direction = "both", trace = FALSE)
+  sum <- summ(stp,confint = TRUE, digits = 5)
+  out <- list("formula"=fom,"lm"=mod,"stp"=stp,"sum"=sum)
+  return(out)
+}
 
-# Data
+run_glm <- function(Y,dt){
+  fom <- as.formula(paste(
+    paste(Y," ~ ",sep = ""),
+    paste(colnames(dplyr::select(dt,starts_with("PC"))),collapse = "+")
+  ))
+  mod <- glm(
+    formula = fom,
+    data = dt,
+    family = "binomial",
+    na.action = na.omit
+  )
+  stp <- stepAIC(mod, direction = "both", trace = FALSE)
+  sum <- summ(stp,confint = TRUE, digits = 5)
+  out <- list("formula"=fom,"glm"=mod,"stp"=stp,"sum"=sum)
+  return(out)
+}
+
+
+## Data ------------------------------
 setwd("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/")
-load(file='rdata/batch_pca_20200405.RData')
-load(file = "rdata/clin_20200405.rdata")
+load(file = "rdata/combat_pcs_20200411.rdata") #pcs and clinical data in dt
 
-# Setup
-## merge clinical data and baseline sample pcs
-dt <- merge(clin,pc.scores.combat,by="sample_id")
-rm(all.combat,all.pc.scores.combat,base.combat,clin,elbow.combat,pc.scores.combat,pca.combat,pcvar.combat)
+## SURVIVAL ------------------------------
+# overall survival
+dt$censos <- as.integer(dt$censos)
+os <- analyse_multivariate(data = dt,
+                           time_status = vars(ttcos,censos),
+                           covariates = colnames(dplyr::select(dt,starts_with("PC")))[1:10]
+                           )
+forest_plot(os)
+summary(os$coxph)
 
-## create per-standard deviation pcs
-dt$PC1_sd <- dt$PC1/sd(dt$PC1)
-dt$PC2_sd <- dt$PC2/sd(dt$PC2)
-dt$PC3_sd <- dt$PC3/sd(dt$PC3)
-dt$PC4_sd <- dt$PC4/sd(dt$PC4)
-dt$PC5_sd <- dt$PC5/sd(dt$PC5)
-dt$PC6_sd <- dt$PC6/sd(dt$PC6)
-dt$PC7_sd <- dt$PC7/sd(dt$PC7)
-dt$PC8_sd <- dt$PC8/sd(dt$PC8)
-dt$PC9_sd <- dt$PC9/sd(dt$PC9)
-dt$PC10_sd <- dt$PC10/sd(dt$PC10)
-dt$PC11_sd <- dt$PC11/sd(dt$PC11)
-dt$PC12_sd <- dt$PC12/sd(dt$PC12)
-dt$PC13_sd <- dt$PC13/sd(dt$PC13)
-dt$PC14_sd <- dt$PC14/sd(dt$PC14)
-dt$PC15_sd <- dt$PC15/sd(dt$PC15)
-dt$PC16_sd <- dt$PC16/sd(dt$PC16)
-dt$PC17_sd <- dt$PC17/sd(dt$PC17)
-dt$PC18_sd <- dt$PC18/sd(dt$PC18)
-dt$PC19_sd <- dt$PC19/sd(dt$PC19)
-dt$PC20_sd <- dt$PC20/sd(dt$PC20)
-dt$PC21_sd <- dt$PC21/sd(dt$PC21)
-dt$PC22_sd <- dt$PC22/sd(dt$PC22)
-dt$PC23_sd <- dt$PC23/sd(dt$PC23)
-dt$PC24_sd <- dt$PC24/sd(dt$PC24)
-dt$PC25_sd <- dt$PC25/sd(dt$PC25)
-dt$PC26_sd <- dt$PC26/sd(dt$PC26)
-dt$PC27_sd <- dt$PC27/sd(dt$PC27)
-dt$PC28_sd <- dt$PC28/sd(dt$PC28)
-dt$PC29_sd <- dt$PC29/sd(dt$PC29)
-dt$PC30_sd <- dt$PC30/sd(dt$PC30)
-dt$PC31_sd <- dt$PC31/sd(dt$PC31)
-dt$PC32_sd <- dt$PC32/sd(dt$PC32)
-dt$PC33_sd <- dt$PC33/sd(dt$PC33)
-dt$PC34_sd <- dt$PC34/sd(dt$PC34)
-dt$PC35_sd <- dt$PC35/sd(dt$PC35)
-dt$PC36_sd <- dt$PC36/sd(dt$PC36)
-dt$PC37_sd <- dt$PC37/sd(dt$PC37)
+# progression free survival
+dt$censpfs <- as.integer(dt$censpfs)
+pfs <- analyse_multivariate(data = dt,
+                           time_status = vars(ttcpfs,censpfs),
+                           covariates = colnames(dplyr::select(dt,starts_with("PC")))[1:10]
+                           )
+forest_plot(pfs,orderer = ~order(HR))
+summary(pfs$coxph)
 
-# Progression free survival
-pfs.surv<-Surv(dt$ttcpfs, dt$censpfs) # object
+# time to treatment failure on line 1
+dt$censtf1 <- as.integer(dt$censtf1)
+tf1 <- analyse_multivariate(data = dt,
+                            time_status = vars(ttctf1,censtf1),
+                            covariates = colnames(dplyr::select(dt,starts_with("PC")))[1:10]
+                            )
+forest_plot(tf1,orderer = ~order(HR))
+summary(tf1$coxph)
 
-# step-wise cox
-stepvars<-c(colnames(dplyr::select(dt,ends_with('_sd'))),'ttcpfs','censpfs')
-dt_reduced<-na.omit(dt[,stepvars])
-pfs.step.cox<-stepAIC(coxph(pfs.surv~.,data=dt_reduced,id=dt$sample_id),
-  direction='both',trace=0,k=log(sum(dt_reduced$censpfs)))
-summary(pfs.step.cox)
+# D_PT_iss
+iss <- run_glm('D_PT_iss',dt)
+
+## ABNORMALITIES ------------------------------
+# IDEA: could create smart high, intermediate, and standard variables here
+# "D_TRI_CF_ABNORMALITYPR6",	#t(11;14) abnormality present standard risk
+t11_14 <- run_glm('D_TRI_CF_ABNORMALITYPR6',dt)
+
+# "D_TRI_CF_ABNORMALITYPR4",	#t(6;14) abnormality present standard risk
+t6_14 <- run_glm('D_TRI_CF_ABNORMALITYPR4',dt)
+
+# "D_TRI_CF_ABNORMALITYPR3",	#t(4;14) abnormality present intermediate risk
+t4_14 <- run_glm('D_TRI_CF_ABNORMALITYPR3',dt)
+
+# "D_TRI_CF_ABNORMALITYPR13",	#1q amplification abnormality present intermediate risk
+amp1q <- run_glm('D_TRI_CF_ABNORMALITYPR13',dt)
+
+# "D_TRI_CF_ABNORMALITYPR8",	#t(14;16) abnormality present high risk
+t14_16 <- run_glm('D_TRI_CF_ABNORMALITYPR8',dt)
+
+# "D_TRI_CF_ABNORMALITYPR9",	#t(14;20) abnormality present high risk
+t14_20 <- run_glm('D_TRI_CF_ABNORMALITYPR9',dt)
+
+# "D_TRI_CF_ABNORMALITYPR11"	#del 17p abnormality present high risk
+del17p <- run_glm('D_TRI_CF_ABNORMALITYPR11',dt)
 
 
-# Translocations
-Y <- colnames(dplyr::select(dt,ends_with('_sd')))
-X <- colnames(dplyr::select(dt,contains('ABNORMALITY')))
-DATA <- dt
+## LAB ------------------------------
+#NOTE: not sure the usefulness of these variables...
+# D_LAB_serum_m_protein
+mpr <- run_lm('D_LAB_serum_m_protein',dt)
 
-mod <- expand.grid(y=Y, x=X, stringsAsFactors = T) %>%
-  mutate(formula = paste(y,"~",x)) %>%
-  group_by(formula) %>%
-  mutate(F = summary(lm(formula, data=DATA))$fstatistic[1]) %>%
-  mutate(DF1 = summary(lm(formula, data=DATA))$fstatistic[2]) %>%
-  mutate(DF2 = summary(lm(formula, data=DATA))$fstatistic[3]) %>%
-  mutate(R2 = summary(lm(formula, data=DATA))$r.squared) %>%
-  mutate(BETA_SD = summary(lm(formula,data=DATA))$coefficients[2,1]) %>%
-  ungroup()
-mod$P <- pf(mod$F,mod$DF1,mod$DF2,lower.tail=F)
-setDT(mod)
+# D_LAB_serum_kappa
+kap <- run_lm('D_LAB_serum_kappa',dt)
 
-tsl.mod <- mod[,bon_sig:=as.factor('No')]
-p <- 0.05/length(Y)
-tsl.mod[P<p]$bon_sig <- as.factor('Yes')
-setorder(tsl.mod,P)
-rm(DATA,X,Y,mod,p)
+# D_LAB_serum_lambda
+lam <- run_lm('D_LAB_serum_lambda',dt)
 
-# Patient demographics
-Y <- colnames(dplyr::select(dt,ends_with('_sd')))
-X <- colnames(dplyr::select(dt,starts_with('D_PT_')))
-DATA <- dt
+# D_LAB_serum_beta2_microglobulin
+b2mg <- run_lm('D_LAB_serum_beta2_microglobulin',dt)
 
-mod <- expand.grid(y=Y, x=X, stringsAsFactors = T) %>%
-  mutate(formula = paste(y,"~",x)) %>%
-  group_by(formula) %>%
-  mutate(F = summary(lm(formula, data=DATA))$fstatistic[1]) %>%
-  mutate(DF1 = summary(lm(formula, data=DATA))$fstatistic[2]) %>%
-  mutate(DF2 = summary(lm(formula, data=DATA))$fstatistic[3]) %>%
-  mutate(R2 = summary(lm(formula, data=DATA))$r.squared) %>%
-  mutate(BETA_SD = summary(lm(formula,data=DATA))$coefficients[2,1]) %>%
-  ungroup()
-mod$P <- pf(mod$F,mod$DF1,mod$DF2,lower.tail=F)
-setDT(mod)
 
-dpt.mod <- mod[,bon_sig:=as.factor('No')]
-p <- 0.05/length(Y)
-dpt.mod[P<p]$bon_sig <- as.factor('Yes')
-setorder(dpt.mod,P)
-rm(DATA,X,Y,mod,p)
+## DEMOGRAPHICS ------------------------------
+#D_PT_age
+age <- run_lm('D_PT_age',dt)
 
-# Lab values
-Y <- colnames(dplyr::select(dt,ends_with('_sd')))
-X <- colnames(dplyr::select(dt,starts_with('D_LAB_')))
-DATA <- dt
+#D_PT_gender
+gender <- run_glm('D_PT_gender',dt)
 
-mod <- expand.grid(y=Y, x=X, stringsAsFactors = T) %>%
-  mutate(formula = paste(y,"~",x)) %>%
-  group_by(formula) %>%
-  mutate(F = summary(lm(formula, data=DATA))$fstatistic[1]) %>%
-  mutate(DF1 = summary(lm(formula, data=DATA))$fstatistic[2]) %>%
-  mutate(DF2 = summary(lm(formula, data=DATA))$fstatistic[3]) %>%
-  mutate(R2 = summary(lm(formula, data=DATA))$r.squared) %>%
-  mutate(BETA_SD = summary(lm(formula,data=DATA))$coefficients[2,1]) %>%
-  ungroup()
-mod$P <- pf(mod$F,mod$DF1,mod$DF2,lower.tail=F)
-setDT(mod)
+#D_PT_race
+race <- run_glm('D_PT_race',dt)
 
-lab.mod <- mod[,bon_sig:=as.factor('No')]
-p <- 0.05/length(Y)
-lab.mod[P<p]$bon_sig <- as.factor('Yes')
-setorder(lab.mod,P)
-rm(DATA,X,Y,mod,p)
+#D_PT_ethnic
+ethnic <- run_glm('D_PT_ethnic',dt)
