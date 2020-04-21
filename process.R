@@ -4,8 +4,9 @@
 library(rtracklayer)
 library(dplyr)
 library(data.table)
+library(sva)
 
-# Functions
+# Functions ----
 get_data <- function(gtf.path,counts.path){
   gtf <- readGFF(filepath=gtf.path) #read in GTF
   gtf$length <- gtf$end - gtf$start + 1 #compute length of each feature
@@ -29,11 +30,11 @@ get_data <- function(gtf.path,counts.path){
 
 quality_control <- function(counts.gtf,baseline.samples){
   # select protein coding exons on autosomal chromosomes and baseline samples
-  tmp <- counts.gtf[seqid %in% c(1:22) & gene_biotype=='protein_coding'] %>% select("gene_name",contains("MMRF"))
+  tmp <- counts.gtf[seqid %in% c(1:22) & gene_biotype=='protein_coding'] %>% dplyr::select("gene_name",contains("MMRF"))
   # aggregate trasncript counts to gene_name counts
   gene <- data.table(aggregate(. ~ gene_name,data=tmp,FUN=sum))
   # find proportion of genes with <100 counts in baseline samples only
-  base <- gene %>% select("gene_name",all_of(baseline.samples))
+  base <- gene %>% dplyr::select("gene_name",all_of(baseline.samples))
   base$prop_base_lt100 <- rowSums(base[,-1] < 100) / length(baseline.samples)
 
   keep.genes <- base[prop_base_lt100 < 0.05]$gene_name
@@ -45,8 +46,10 @@ quality_control <- function(counts.gtf,baseline.samples){
   samples<-data.table(t((rbind(total_reads,total_reads_keep_genes,prop_gene_lt100))))
   colnames(samples)<-c("total_reads","total_reads_keep_genes","prop_gene_lt100")
   samples$sample_id <- colnames(total_reads)
+  
+  remove.samples <- samples[prop_gene_lt100>0.1]$sample_id
 
-  out <- list("keep.genes"=keep.genes,"samples"=samples)
+  out <- list("keep.genes"=keep.genes,"samples"=samples,"remove.samples"=remove.samples)
   return(out)
 }
 
@@ -88,43 +91,71 @@ elbow_finder<-function(data) {
   elbow.dt
 }
 
+find_pcs <- function(cbat.dt) {
+  # run pca on combat data
+  pca <- prcomp(cbat.dt[,-"sample_id",with=FALSE],center=TRUE,scale=TRUE,retx=TRUE)
+  pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2)
+  elbow <- elbow_finder(pcvar)
+  score <- cbind(cbat.dt[,"sample_id"],pca$x[,elbow[selected=='Selected']$pc])
+  
+  out <- list("score"=score,"elbow"=elbow,"pca"=pca)
+  return(out)
+}
+
 # Step 0: Get transcript-based counts and GTF data
 setwd("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/")
 #counts.gtf <- get_data("Homo_sapiens.GRCh37.74.gtf.gz","MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
 #save(counts.gtf,file="rdata/counts_gtf_20200402.RData")
 load("rdata/counts_gtf_20200402.RData")
 
-# Step 1: Quality control
+# Step 1: Quality control ---------------
 ## Get list of baseline samples
 load("rdata/setup-clinical-data-20200402.rdata")
 baseline <- clin.dt[collection_reason=="Baseline"]$sample_id
 rm(clin.dt,key)
 ## Select baseline samples and remove low count genes and samples
 qc <- quality_control(counts.gtf,baseline)
-qc.counts <- counts.gtf[gene_name %in% qc$keep.genes] %>% select(-seqid,-gene_id,-gene_biotype)
+qc.counts <- counts.gtf[gene_name %in% qc$keep.genes] %>% dplyr::select(-seqid,-gene_id,-gene_biotype,-qc$remove.samples)
 qc.melt <- data.table::melt(qc.counts,
   id.vars=c("gene_name","name_n_transcripts","transcript_id","length"),
   variable.name="sample_id",
   value.name="count")
+rm(qc.counts)
 
-# Step 2: Normalize and truncate
+# Step 2: Normalize and truncate ---------------
 norm <- process_transcripts(qc.melt)
+rm(qc.melt)
 ## Convert to wide format of normalized values
-all.dt<-dcast(norm$melt,sample_id+size_factor~gene_name,value.var='adjlogcpkmed')
+all.dt <- dcast(norm$melt,sample_id+size_factor~gene_name,value.var='adjlogcpkmed')
 ## Annotate sample qc data
-all.qc.dt<-data.table(inner_join(qc$samples,all.dt,by='sample_id'))
+#all.qc.dt <- data.table(inner_join(qc$samples,all.dt,by='sample_id'))
 
-# Step 3: PCA on selected genes and samples
+# Step 3: Batch correction ---------------
+load(file = "rdata/clin_20200405.rdata") #load clinical data
+dt <- merge(clin,all.dt,by="sample_id")
+rm(clin)
+
+DAT = t(dt[,-c(1:26)])
+colnames(DAT) <- dt$sample_id
+BATCH = as.numeric(dt$batch)
+
+CLIN = dt[,c(1:25)]
+sapply(CLIN, function(x) sum(is.na(x))) #count missing
+MOD <- data.matrix(CLIN[,c("D_PT_age","D_PT_gender","ttcos","censos","ttcpfs","censpfs","ttctf1","censtf1")])
+cbat <- ComBat(dat = DAT, batch = BATCH, mod = MOD) #run combat
+
+## convert combat output to data table
+cbat.dt <- data.table(t(cbat)) #sample x gene data table
+cbat.dt$sample_id <- colnames(cbat) #annotate sample ids
+rm(dt,DAT,BATCH,MOD,cbat)
+
+# Step 4: PCA on selected genes and samples - batch corrected ---------------
 ## select baseline samples with >100 reads in 90% of selected genes
-base.dt <- all.qc.dt[sample_id %in% baseline & prop_gene_lt100 < 0.1][,-c(1:3,5)]
-pca <- prcomp(base.dt[,-1,with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
-pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2)
-elbow.dt <- elbow_finder(pcvar)
-pc.scores <- cbind(base.dt[,1],pca$x[,elbow.dt[selected=='Selected']$pc])
+pc <- find_pcs(cbat.dt[sample_id %in% baseline])
 
 ## apply to all samples
-all.pc.scores<-cbind(all.qc.dt[,c(1:5)],scale(data.matrix(all.qc.dt[,-c(1:5)]),
-  center=colMeans(base.dt[,-1]),scale=FALSE)%*%pca$rotation[,1:31])
+#all.pc.scores<-cbind(all.qc.dt[,c(1:5)],scale(data.matrix(all.qc.dt[,-c(1:5)]),
+ # center=colMeans(base.dt[,-1]),scale=FALSE)%*%pca$rotation[,1:31])
 
 # now save these
-save(pca,elbow.dt,pc.scores,all.qc.dt,all.pc.scores,file='rdata/process_20200402.RData')
+save(pc,CLIN,cbat.dt,all.dt,file='rdata/process_20200413.RData')
