@@ -103,7 +103,7 @@ find_pcs <- function(cbat.dt) {
 }
 
 # Step 0: Get transcript-based counts and GTF data
-setwd("/Users/rosal/OneDrive - University of Utah/2020/career/analyze/data/transcriptome-dimensions/")
+setwd("/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/")
 #counts.gtf <- get_data("Homo_sapiens.GRCh37.74.gtf.gz","MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz")
 #save(counts.gtf,file="rdata/counts_gtf_20200402.RData")
 load("rdata/counts_gtf_20200402.RData")
@@ -157,5 +157,58 @@ pc <- find_pcs(cbat.dt[sample_id %in% baseline])
 #all.pc.scores<-cbind(all.qc.dt[,c(1:5)],scale(data.matrix(all.qc.dt[,-c(1:5)]),
  # center=colMeans(base.dt[,-1]),scale=FALSE)%*%pca$rotation[,1:31])
 
+# standardize pc scores ----
+dt <- pc$score
+dt$PC1_sd <- dt$PC1/sd(dt$PC1)
+dt$PC2_sd <- dt$PC2/sd(dt$PC2)
+dt$PC3_sd <- dt$PC3/sd(dt$PC3)
+dt$PC4_sd <- dt$PC4/sd(dt$PC4)
+dt$PC5_sd <- dt$PC5/sd(dt$PC5)
+dt$PC6_sd <- dt$PC6/sd(dt$PC6)
+dt$PC7_sd <- dt$PC7/sd(dt$PC7)
+dt$PC8_sd <- dt$PC8/sd(dt$PC8)
+dt$PC9_sd <- dt$PC9/sd(dt$PC9)
+dt$PC10_sd <- dt$PC10/sd(dt$PC10)
+dt$PC11_sd <- dt$PC11/sd(dt$PC11)
+dt$PC12_sd <- dt$PC12/sd(dt$PC12)
+dt$PC13_sd <- dt$PC13/sd(dt$PC13)
+dt$PC14_sd <- dt$PC14/sd(dt$PC14)
+dt$PC15_sd <- dt$PC15/sd(dt$PC15)
+dt$PC16_sd <- dt$PC16/sd(dt$PC16)
+dt$PC17_sd <- dt$PC17/sd(dt$PC17)
+dt$PC18_sd <- dt$PC18/sd(dt$PC18)
+dt$PC19_sd <- dt$PC19/sd(dt$PC19)
+dt$PC20_sd <- dt$PC20/sd(dt$PC20)
+dt$PC21_sd <- dt$PC21/sd(dt$PC21)
+dt$PC22_sd <- dt$PC22/sd(dt$PC22)
+dt$PC23_sd <- dt$PC23/sd(dt$PC23)
+dt$PC24_sd <- dt$PC24/sd(dt$PC24)
+dt$PC25_sd <- dt$PC25/sd(dt$PC25)
+dt$PC26_sd <- dt$PC26/sd(dt$PC26)
+dt$PC27_sd <- dt$PC27/sd(dt$PC27)
+dt$PC28_sd <- dt$PC28/sd(dt$PC28)
+dt$PC29_sd <- dt$PC29/sd(dt$PC29)
+dt$PC30_sd <- dt$PC30/sd(dt$PC30)
+dt$PC31_sd <- dt$PC31/sd(dt$PC31)
+dt$PC32_sd <- dt$PC32/sd(dt$PC32)
+dt$PC33_sd <- dt$PC33/sd(dt$PC33)
+dt$PC34_sd <- dt$PC34/sd(dt$PC34)
+dt$PC35_sd <- dt$PC35/sd(dt$PC35)
+dt$PC36_sd <- dt$PC36/sd(dt$PC36)
+dt$PC37_sd <- dt$PC37/sd(dt$PC37)
+dt$PC38_sd <- dt$PC38/sd(dt$PC38)
+dt$PC39_sd <- dt$PC39/sd(dt$PC39)
+dt$PC40_sd <- dt$PC40/sd(dt$PC40)
+dt$PC41_sd <- dt$PC41/sd(dt$PC41)
+dt$PC42_sd <- dt$PC42/sd(dt$PC42)
+dt$PC43_sd <- dt$PC43/sd(dt$PC43)
+dt$PC44_sd <- dt$PC44/sd(dt$PC44)
+dt$PC45_sd <- dt$PC45/sd(dt$PC45)
+
+score.sd.dt <- dt %>% dplyr::select("sample_id",ends_with("_sd"))
+
+# merge with clin dt
+clin.pc.dt <- merge(CLIN,score.sd.dt,by="sample_id")
+
 # now save these
-save(pc,CLIN,cbat.dt,all.dt,file='rdata/process_20200413.RData')
+save(clin.pc.dt,pc,cbat.dt,all.dt,file='rdata/process_20200422.RData')
