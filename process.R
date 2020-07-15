@@ -93,7 +93,7 @@ elbow_finder<-function(data) {
 
 find_pcs <- function(cbat.dt) {
   # run pca on combat data
-  pca <- prcomp(cbat.dt[,-"sample_id",with=FALSE],center=TRUE,scale=TRUE,retx=TRUE)
+  pca <- prcomp(cbat.dt[,-"sample_id",with=FALSE],center=TRUE,scale=FALSE,retx=TRUE)
   pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2)
   elbow <- elbow_finder(pcvar)
   score <- cbind(cbat.dt[,"sample_id"],pca$x[,elbow[selected=='Selected']$pc])
@@ -108,14 +108,24 @@ setwd("/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptom
 #save(counts.gtf,file="rdata/counts_gtf_20200402.RData")
 load("rdata/counts_gtf_20200402.RData")
 
+## Select samples
+load(file = "rdata/clin_20200405.rdata") #load clinical data
+bm.clin <- clin[grep("_BM",clin$sample_id),]
+bm.clin$patient_id <- gsub("_5_BM","",gsub("_4_BM","",gsub("_3_BM","",gsub("_2_BM","",gsub("_1_BM","",gsub("MMRF_","",bm.clin$sample_id))))))
+base.samples <- bm.clin[collection_reason=="Baseline"][,c('sample_id','patient_id','collection_reason')]
+prog.samples <- bm.clin[patient_id%in%base.samples$patient_id & collection_reason=="Confirm Progression"][,c('sample_id','patient_id','collection_reason')]
+tmp <- rbind(base.samples,prog.samples)
+samples <- droplevels(merge(tmp,clin)) #baseline and progression samples with clinical data
+rm(tmp,base.samples,bm.clin,clin,prog.samples)
+baseline <- samples[collection_reason=="Baseline"]$sample_id #list of baseline samples
+
+express <- counts.gtf %>% select(1:7,all_of(samples$sample_id)) #expression estimates for samples and transcript info
+rm(counts.gtf)
+
 # Step 1: Quality control ---------------
-## Get list of baseline samples
-load("rdata/setup-clinical-data-20200402.rdata")
-baseline <- clin.dt[collection_reason=="Baseline"]$sample_id
-rm(clin.dt,key)
 ## Select baseline samples and remove low count genes and samples
-qc <- quality_control(counts.gtf,baseline)
-qc.counts <- counts.gtf[gene_name %in% qc$keep.genes] %>% dplyr::select(-seqid,-gene_id,-gene_biotype,-qc$remove.samples)
+qc <- quality_control(express,baseline)
+qc.counts <- express[gene_name %in% qc$keep.genes] %>% dplyr::select(-seqid,-gene_id,-gene_biotype,-qc$remove.samples)
 qc.melt <- data.table::melt(qc.counts,
   id.vars=c("gene_name","name_n_transcripts","transcript_id","length"),
   variable.name="sample_id",
@@ -125,21 +135,18 @@ rm(qc.counts)
 # Step 2: Normalize and truncate ---------------
 norm <- process_transcripts(qc.melt)
 rm(qc.melt)
+
 ## Convert to wide format of normalized values
 all.dt <- dcast(norm$melt,sample_id+size_factor~gene_name,value.var='adjlogcpkmed')
-## Annotate sample qc data
-#all.qc.dt <- data.table(inner_join(qc$samples,all.dt,by='sample_id'))
+norm.dt <- merge(samples,all.dt)
+rm(all.dt)
 
 # Step 3: Batch correction ---------------
-load(file = "rdata/clin_20200405.rdata") #load clinical data
-dt <- merge(clin,all.dt,by="sample_id")
-rm(clin)
+DAT = t(norm.dt[,-c(1:27)])
+colnames(DAT) <- norm.dt$sample_id
+BATCH = as.numeric(norm.dt$batch)
 
-DAT = t(dt[,-c(1:26)])
-colnames(DAT) <- dt$sample_id
-BATCH = as.numeric(dt$batch)
-
-CLIN = dt[,c(1:25)]
+CLIN = norm.dt[,c(1:27)]
 sapply(CLIN, function(x) sum(is.na(x))) #count missing
 MOD <- data.matrix(CLIN[,c("D_PT_age","D_PT_gender","ttcos","censos","ttcpfs","censpfs","ttctf1","censtf1")])
 cbat <- ComBat(dat = DAT, batch = BATCH, mod = MOD) #run combat
@@ -147,15 +154,12 @@ cbat <- ComBat(dat = DAT, batch = BATCH, mod = MOD) #run combat
 ## convert combat output to data table
 cbat.dt <- data.table(t(cbat)) #sample x gene data table
 cbat.dt$sample_id <- colnames(cbat) #annotate sample ids
-rm(dt,DAT,BATCH,MOD,cbat)
+rm(DAT,BATCH,MOD,cbat,CLIN)
 
 # Step 4: PCA on selected genes and samples - batch corrected ---------------
 ## select baseline samples with >100 reads in 90% of selected genes
 pc <- find_pcs(cbat.dt[sample_id %in% baseline])
-
-## apply to all samples
-#all.pc.scores<-cbind(all.qc.dt[,c(1:5)],scale(data.matrix(all.qc.dt[,-c(1:5)]),
- # center=colMeans(base.dt[,-1]),scale=FALSE)%*%pca$rotation[,1:31])
+#View(pc$elbow)
 
 # standardize pc scores ----
 dt <- pc$score
@@ -199,16 +203,13 @@ dt$PC37_sd <- dt$PC37/sd(dt$PC37)
 dt$PC38_sd <- dt$PC38/sd(dt$PC38)
 dt$PC39_sd <- dt$PC39/sd(dt$PC39)
 dt$PC40_sd <- dt$PC40/sd(dt$PC40)
-dt$PC41_sd <- dt$PC41/sd(dt$PC41)
-dt$PC42_sd <- dt$PC42/sd(dt$PC42)
-dt$PC43_sd <- dt$PC43/sd(dt$PC43)
-dt$PC44_sd <- dt$PC44/sd(dt$PC44)
-dt$PC45_sd <- dt$PC45/sd(dt$PC45)
+#dt$PC41_sd <- dt$PC41/sd(dt$PC41)
+#dt$PC42_sd <- dt$PC42/sd(dt$PC42)
+#dt$PC43_sd <- dt$PC43/sd(dt$PC43)
+#dt$PC44_sd <- dt$PC44/sd(dt$PC44)
+#dt$PC45_sd <- dt$PC45/sd(dt$PC45)
 
-score.sd.dt <- dt %>% dplyr::select("sample_id",ends_with("_sd"))
-
-# merge with clin dt
-clin.pc.dt <- merge(CLIN,score.sd.dt,by="sample_id")
+score_sd <- dt %>% dplyr::select("sample_id",ends_with("_sd"))
 
 # now save these
-save(clin.pc.dt,pc,cbat.dt,all.dt,file='rdata/process_20200422.RData')
+save(samples,score_sd,pc,cbat.dt,file='rdata/process_20200428.RData')
