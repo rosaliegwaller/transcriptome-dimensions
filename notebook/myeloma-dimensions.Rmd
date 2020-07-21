@@ -1,0 +1,147 @@
+---
+title: "R Notebook"
+author: "Rosalie Griffin Waller"
+date: "20-Jul-2020"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+params:
+  data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz"
+  anno: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/Homo_sapiens.GRCh37.74.gtf.gz"
+  bad_genes: list.csv
+  clin: data.csv
+---
+
+Code used to generate results reported in "TRANSCRIPTOME DIMENSIONS: AGNOSTIC EXPRESSION VARIABLES TO EMPOWER GENOMIC EPIDEMIOLOGY STUDIES" by Waller et al. 
+
+### 1. Generate transcript dimensions from multiple myeloma tumors
+
+#### 1.1 Setup
+##### Required Data
+Download publicly available myeloma data and save in working directory or change parameter path in setup block to the file location
+
+1. **MMRF CoMMpass study gene expression estimates.** Download transcript-based expression estimates processed by Salmon (version 0.7.2) from the CoMMpass Study (release IA14) MMRF web portal (https://research.themmrf.org/). Download file: MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz.
+
+2. **Gene Transfer Format (GTF) file.** Use the same GTF to process as the CoMMpass Study used to generate expression estimates. Download here: ftp://ftp.ensembl.org/pub/release-74/gtf/homo_sapiens/Homo_sapiens.GRCh37.74.gtf.gz.
+
+##### Install and load required R packages
+```{r load_packages, message=F}
+library(rtracklayer)
+library(dplyr)
+library(data.table)
+library(sva)
+```
+
+#### 1.2 Load data (*Warning: SLOW due to large files*)
+**Load GTF using the rtracklayer package and compuate gene length and transcript counts**
+```{r}
+# Read in GTF
+gtf <- readGFF(filepath=params$anno)
+# Compute length of each GTF feature
+gtf$length <- gtf$end - gtf$start + 1
+# Select exon features only
+tmp <- subset(gtf,type=='exon',)
+# Find the total gene length by summing the exons
+sum_exons<-aggregate(length ~ seqid + gene_name + gene_id + gene_biotype + transcript_id,
+                     data=tmp, FUN=sum)
+# Count the number of transcripts for each gene name
+n_name <- sum_exons %>% count(gene_name)
+# Rename column
+colnames(n_name)[2] <- "name_n_transcripts"
+# Create table from gene length and transcript number
+gtf.dt <- data.table(inner_join(n_name,sum_exons,by='gene_name'))
+# Clean-up variable space
+rm(gtf,tmp,sum_exons,n_name)
+```
+**Load CoMMpass gene expression data and merge with gene annotations**
+```{r}
+counts <- read.csv(file = params$data,header = T,sep = "\t",stringsAsFactors = F) # Read in counts
+setDT(counts) # Set to data table
+colnames(counts)[1]<-"transcript_id" # Rename column
+# Merge counts with GTF data
+counts.gtf <- inner_join(gtf.dt,counts,by="transcript_id")
+setDT(counts.gtf)
+# Clean-up variable space
+rm(counts,gtf.dt)
+```
+
+#### 1.3 Quality control
+**Select CoMMpass baseline samples**
+```{r}
+
+```
+
+#### 1.4 Normalize and truncate
+```{r}
+
+```
+
+#### 1.5 Correct for sequencing batch
+```{r}
+
+```
+
+#### 1.6 Generate dimensions (run PCA)
+```{r}
+
+```
+
+#### 1.7 Select k dimenions
+```{r}
+
+```
+
+#### 1.8 Check for that batch correction worked (no associations with batch)
+```{r}
+
+```
+
+#### 1.9 Save dimension variables and linear equations
+```{r}
+
+```
+
+### 2. Visualize dimension profiles
+Code used to generate Figure 3 of Waller et all publication. The dimension variables provide a profile that represents each patient’s treatment naïve CD138+ transcriptome.
+```{r}
+
+```
+
+### 3. Myeloma dimensions and established expression-based risk scores
+```{r}
+
+```
+
+### 4. Myeloma dimensions and clinical risk
+```{r}
+
+```
+
+### 5. Myeloma dimensions and disease course
+```{r}
+
+```
+
+### 6. Myeloma dimensions and demographic risk groups
+```{r}
+
+```
+
+### 7. Myeloma dimensions to track tumor changes over time
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
