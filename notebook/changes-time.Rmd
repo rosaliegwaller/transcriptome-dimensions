@@ -1,0 +1,196 @@
+---
+title: "Myeloma dimensions for tracking changes over time"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+  html_notebook: default
+params:
+  score: /Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/score.csv
+  gene_loadings: /Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/pca_gene_loadings.csv
+  data: /Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata
+---
+
+Code to investigate associations between patient demographics (age, gender, self-reported race and ethnicity) and transcriptome dimensions using analysis of variance.
+
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(MASS)
+library(survivalAnalysis)
+library(sva)
+```
+
+Load data
+```{r}
+load(file = params$data) # load processed data
+gene.load = read.csv(file = params$gene_loadings) %>% data.table()# dimension gene loadings
+pca.score = read.csv(file = params$score) %>% data.table() # dimension values
+```
+
+### 1. Derive dimensions in longitudinal samples
+
+Find gene level expression from aggregated transcripts
+```{r}
+eps = exp_time[gene_name %in% gene.load$GENE_NAME] %>% dplyr::select("gene_name",contains("MMRF"))  # Select genes in dimensions
+gene = data.table(aggregate(. ~ gene_name, data = eps, FUN = sum)) # Aggregate transcript counts to gene_name counts
+```
+
+1.2. FIND SAMPLES WITH < 90% COVERAGE ACROSS "GOOD" GENES 
+```{r}
+remove.samples = gene[,-"gene_name"][,lapply(.SD,function(x)sum(x<100)/length(gene.load$GENE_NAME))] %>% # For each sample, find proportion of genes with <100 reads
+  select_if(. > 0.1) %>% colnames() # List samples with > 10% of genes with < 100 counts
+print(paste0(length(remove.samples)," sample(s) had <100 reads in > 10% of high-quality genes with and was removed. Sample(s) removed: ",remove.samples))
+```
+
+1.3. SUBSET TO DIMENSION GENES & REMOVE "BAD" SAMPLES
+```{r}
+qc.counts = exp_time[gene_name %in% gene.load$GENE_NAME] %>% # Select keep genes
+  dplyr::select(-seqid,-gene_id,-gene_biotype,-all_of(remove.samples)) # Remove extra gene annotation and poor coverage samples
+qc.melt <- data.table::melt(qc.counts, # transform format
+  id.vars=c("gene_name","name_n_transcripts","transcript_id","length"),
+  variable.name="SEQ_ID",
+  value.name="count")
+rm(qc.counts,eps,gene,remove.samples) # cleanup variables
+```
+
+1.4. NORMALIZE AND ADJUST BY SIZE FACTOR
+```{r}
+qc.melt[,total_raw_counts:=sum(count),by=c('SEQ_ID','gene_name')] # Find total counts per sample per gene
+qc.melt[,kb_length:=length/1000] # Find length of gene in kilo-bases
+final.dt = qc.melt[,list(cpk=sum((count+1/name_n_transcripts)/kb_length)), # Find counts per gene length
+                   by=c('SEQ_ID','gene_name','total_raw_counts')] # For each sample and gene pair
+final.dt[,size_factor:=median(cpk),by='SEQ_ID'] # Find size factor = median counts/gene length
+final.dt[,cpkmed:=cpk/size_factor] # Normalize by size factor
+final.dt[,logcpkmed:=log2(cpkmed)] # Log2 transform
+```
+
+1.5. TRUNCATE VALUES +/- 5 SD FROM MEAN NORMALIZED GENE COUNT 
+```{r}
+final.dt[,mean:=mean(logcpkmed),by='gene_name'] # Find mean of normalized gene counts per gene
+final.dt[,sd:=sd(logcpkmed),by='gene_name'] # Find standard deviation of normalized counts per gene
+final.dt[,adjlogcpkmed:=logcpkmed] # New variable to adjust
+final.dt[(logcpkmed-mean)/sd>=5,adjlogcpkmed:=mean+5*sd] # Truncate values > 5 SD
+final.dt[(logcpkmed-mean)/sd<= -5,adjlogcpkmed:=mean-5*sd] # Truncate values < 5 SD
+```
+
+1.6. CONVERT TO SAMPLE X GENE MATRIX FORMAT
+```{r}
+norm <- list("melt"=final.dt)
+norm.dt <- dcast(norm$melt, SEQ_ID ~ gene_name, value.var='adjlogcpkmed') # Sample x gene
+rm(final.dt,norm) # cleanup variables
+```
+
+1.7. ANNOTATE BATCH & COVARIATES FROM CLINICAL DATA
+```{r}
+vr = c("SEQ_ID","batch","D_PT_age","D_PT_gender","ttcos","censos","ttcpfs","censpfs","ttctf1","censtf1")
+cin_vr = clinical %>% dplyr::select(all_of(vr))
+dt = merge(cin_vr,norm.dt,by="SEQ_ID")
+```
+
+1.8. RUN COMBAT TO ADJUST EXPRESSION DATA
+```{r}
+# SETUP VARIABLES
+DAT = dt %>% dplyr::select(-all_of(vr)) %>% t() # Expression only and gene x sample format
+colnames(DAT) = dt$SEQ_ID # Annotate samples to DAT
+BATCH = as.numeric(dt$batch)
+MOD = dt %>% dplyr::select(all_of(vr[3:10])) %>% data.matrix() # Co-variate model
+
+# RUN COMBAT
+cbat = ComBat(dat = DAT, batch = BATCH, mod = MOD)
+cbat.dt = data.table(t(cbat)) # Sample x gene data table
+cbat.dt$SEQ_ID = colnames(cbat) # Annotate sample ids
+
+rm(vr,cin_vr,dt,DAT,BATCH,MOD,cbat) # Cleanup variables
+```
+
+1.9. DERIVE DIMENSIONS
+```{r}
+dim_time = cbind(cbat.dt[,"SEQ_ID"],scale(data.matrix(cbat.dt[,-"SEQ_ID"]),center=gene.load$CENTER_MEAN,scale = FALSE) %*% data.matrix(gene.load[,-c("GENE_NAME","CENTER_MEAN")]))
+# Note, dimension values in baseline samples are slightly different as batch correction included a different sample set
+```
+1.10. STANDARDIZE TO DIMENSIONS
+```{r}
+pca.sd = apply(pca.score[,-"SEQ_ID"],2,sd) # find standard deviation of original MM dimensions
+tme.sd = cbind(dim_time[,"SEQ_ID"],data.matrix(dim_time[,-"SEQ_ID"]) %*% diag(1/pca.sd)) # divide by SD
+colnames(tme.sd) = c("SEQ_ID",paste(colnames(dim_time[,-"SEQ_ID"]),"_SD",sep = ""))
+```
+
+### 2. Merge with clinical data and select samples to plot over time
+
+2.1. Cytogenetics
+```{r}
+dt = merge(clinical[,c("SEQ_ID","PUBLIC_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_ABNORMALITYPR8","D_TRI_CF_ABNORMALITYPR13","D_TRI_CF_ABNORMALITYPR3","D_TRI_CF_ABNORMALITYPR6")],
+           tme.sd,by="SEQ_ID")
+
+# find examples where cytogenetics changes over time
+# list baseline samples with "No"
+nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR11=="No"]$PUBLIC_ID
+id1 = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR11=="Yes"]$PUBLIC_ID
+
+nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR8=="No"]$PUBLIC_ID
+id2 = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR8=="Yes"]$PUBLIC_ID
+
+dt[PUBLIC_ID%in%c(id1,id2)]
+
+# PLOT DIMENSIONS FOR EXTREEM SAMPLES
+melt.pc = melt(tme.sd,id.vars = "SEQ_ID")
+
+# Select samples
+p1.dt = merge(
+  clinical[PUBLIC_ID%in%c(id1),c("SEQ_ID","PUBLIC_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_17PABNORMALCE")],
+  melt.pc,by="SEQ_ID"
+  )
+p1.dt
+p1.dt[,sig:=as.factor('N')]
+p1.dt[variable%in%c("PC3_SD","PC6_SD","PC39_SD")]$sig <- 'Y'
+p1.dt$variable = as.factor(p1.dt$variable)
+
+ids = unique(p1.dt$SEQ_ID)
+dat = p1.dt[,c("SEQ_ID","variable","value","sig")]
+dat
+
+b = ids[c(1,3)]
+for (i in seq_along(b)){
+  p = ggplot(data=dat[dat$SEQ_ID==b[i],],
+             aes(x=variable, y=value, fill=sig)) +
+    geom_bar(stat="identity") +
+    ylim(-3,3) +
+    annotate("text",x=30,y=3,label=b[i],size=3) +
+    scale_fill_manual(values = c('#999999', '#E69F00')) +
+    scale_x_discrete(name="dimension") +
+    theme_classic() +
+    theme(legend.position="none") +
+    theme(#axis.title=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+    
+  ggsave(filename = paste("plots/d17p_",b[i],".pdf",sep=""),plot = p,width=3.75,height=1.75)
+  print(p)
+}
+
+f = ids[c(2,4)]
+for (i in seq_along(f)){
+  p = ggplot(data=dat[dat$SEQ_ID==f[i],],
+             aes(x=variable, y=value, fill=sig)) +
+    geom_bar(stat="identity") +
+    ylim(-3,3) +
+    annotate("text",x=30,y=3,label=f[i],size=3) +
+    scale_fill_manual(values = c('#999999', '#56B4E9')) +
+    scale_x_discrete(name="dimension") +
+    theme_classic() +
+    theme(legend.position="none") +
+    theme(#axis.title=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+    
+  ggsave(filename = paste("plots/d17p_",f[i],".pdf",sep=""),plot = p,width=3.75,height=1.75)
+  print(p)
+}
+
+```
+
+

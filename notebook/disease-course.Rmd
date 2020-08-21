@@ -1,0 +1,65 @@
+---
+title: "Myeloma dimensions and disease course"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+params:
+    data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
+---
+
+Code to assess associations between dimensions and overall survival (OS), progression-free survival (PFS), and time to first-line treatment failure (TFTF).
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(MASS)
+library(survivalAnalysis)
+```
+
+Load transcriptome dimensions (PC1-PC39)
+```{r}
+load(file = params$data) # load processed data
+```
+
+### 1. Overall Surival (OS)
+```{r}
+DAT = merge(clinical[,c("SEQ_ID","ttcos","censos")],score_sd) # Select data
+DAT$censos = as.integer(DAT$censos) # Set variable type
+os <- analyse_multivariate(data = DAT,
+                           time_status = vars(ttcos,censos),
+                           covariates = colnames(dplyr::select(DAT,ends_with("_SD"))))
+summary(os$coxph)
+summary(os$coxph)$logtest
+nsig = data.table(summary(os$coxph)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
+print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+```
+
+### 2. Progression-free suvival (PFS)
+```{r}
+DAT = merge(clinical[,c("SEQ_ID","ttcpfs","censpfs")],score_sd) # Select data
+DAT$censpfs = as.integer(DAT$censpfs) # Set variable type
+pfs <- analyse_multivariate(data = DAT,
+                           time_status = vars(ttcpfs,censpfs),
+                           covariates = colnames(dplyr::select(DAT,ends_with("_SD"))))
+summary(pfs$coxph)
+summary(pfs$coxph)$logtest
+nsig = data.table(summary(pfs$coxph)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
+print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+```
+
+### 3. Time to first-line treatment failure (TFTF)
+```{r}
+DAT = merge(clinical[,c("SEQ_ID","ttctf1","censtf1")],score_sd) # Select data
+DAT$censtf1 = as.integer(DAT$censtf1) # Set variable type
+tf1 <- analyse_multivariate(data = DAT,
+                           time_status = vars(ttctf1,censtf1),
+                           covariates = colnames(dplyr::select(DAT,ends_with("_SD"))))
+summary(tf1$coxph)
+summary(tf1$coxph)$logtest
+nsig = data.table(summary(tf1$coxph)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
+print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+```
+

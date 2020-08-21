@@ -1,0 +1,322 @@
+---
+title: "Myeloma dimensions and established expression-based risk scores"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+params:
+    data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
+---
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
+library(dplyr)
+library(data.table)
+library(ggplot2)
+```
+
+Load transcriptome dimensions (PC1-PC)
+```{r}
+load(file = params$data) # load processed data
+setwd("C:/Users/rosal/OneDrive - University of Utah/2020/disseminate/manuscripts/first-author/myeloma-tumor-rna-dimensions/supplement/Rmd_Notebooks_2020-08-20")
+```
+
+### 1. University of Arkansas UAMS-70 gene panel to classify patients as low or high risk for relapse
+DOI: 10.1182/blood-2006-07-038430
+
+1.1. **COMPUTE SCORE IN COMMPASS DATA**
+
+Genes not found in data - 
+Down-regulated: "PNPLA4","KIAA1754","MCLC","AD-020","PARG1","RFP2","FLJ20489";
+Up-regulated: "FABP5","PDHA1","TRIP13","SELI","SLCI19A1","ASPM","STK6","FLJ13052","LAS1L","BIRC5","CKAP1","MGC57827","DKFZp779O175","PAPD1","EIF2C2","MGC4308","DSG2","C6orf173","MGC15606","KIF14","DKFZP586L0724","WEE1","ROBO1","MPHOSPH1"
+```{r}
+DAT = exp_cbat # working from ComBat adjusted expression estimates in baseline samples
+
+# LIST OF UP-REGULATED GENES IN UAMS-70 GENE SCORE
+up = c("FABP5","PDHA1","TRIP13","AIM2","SELI","SLCI19A1","LARS2","OPN3","ASPM","CCT2","UBE2I","STK6","FLJ13052",
+        "LAS1L","BIRC5","RFC4","CKS1B","CKAP1","MGC57827","DKFZp779O175","PFN1","ILF3","IFI16","TBRG4","PAPD1",
+        "EIF2C2","MGC4308","ENO1","DSG2","C6orf173","EXOSC4","TAGLN2","RUVBL1","ALDOA","CPSF3","MGC15606","LGALS1",
+        "RAD18","SNX5","PSMD4","RAN","KIF14","CBX3","TMPO","DKFZP586L0724","WEE1","ROBO1","TCOF1","YWHAZ",
+        "MPHOSPH1")
+print(paste0("UAMS up regulated genes: ",length(intersect(up,colnames(DAT)))," of ",length(up)," genes in dataset"))
+anno_up = DAT %>% dplyr::select(intersect(up,colnames(DAT))) # select up regulated genes in data
+
+# LIST OF DOWN-REGULATED GENES IN UAMS-70 GENE SCORE
+down = c("GNG10","PNPLA4","KIAA1754","AHCYL1","MCLC","EVI5","AD-020","PARG1","CTBS","UBE2R2","FUCA1","RFP2","FLJ20489","LTBP1","TRIM33")
+print(paste0("UAMS down regulated genes: ",length(intersect(down,colnames(DAT)))," of ",length(down)," genes in dataset"))
+anno_dw = DAT %>% dplyr::select(intersect(down,colnames(DAT))) # select up regulated genes in data
+
+# COMPUTE GEOMETRIC MEANS
+x = DAT[,SEQ_ID] %>% data.table
+colnames(x) = "SEQ_ID"
+x$up = anno_up %>% rowMeans()
+x$dw = anno_dw %>% rowMeans()
+
+# COMPUTE PROPORTION OF MEAN UP/DOWN AND PLOT
+x$score = x$up - x$dw # Note: expression already in log2 scale
+hist(x$score,breaks = 200,main = "Risk Score",xlab = "log2(mean up reg) - log2(mean down reg)")
+
+rm(DAT,anno_up,up,down,anno_dw) # Cleanup variables
+```
+
+1.2. **LINEAR REGRESSION WITH DIMENSIONS**
+```{r}
+dt.70 = merge(x,score_sd,by="SEQ_ID") # Merge PCs with computed UAMS risk score
+lm.70 = lm(data = dt.70[,-c("SEQ_ID","up","dw")], formula = score ~ .) # run linear regression with UAMS risk score as dependent variable
+summary(lm.70)
+
+nsig = data.table(summary(lm.70)$coeff[-1,"Pr(>|t|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
+print(paste0(nsig," of the ",ncol(dt.70[,-c("SEQ_ID","up","dw")])-1," dimensions were significat at p < 0.05 in the combined model"))
+
+ajr2 = round(summary(lm.70)$adj.r.squared,digits = 2) # Print adjusted R^2
+df1 = round(summary(lm.70)$fstatistic[2])
+df2 = round(summary(lm.70)$fstatistic[3])
+f = round(summary(lm.70)$fstatistic[1],digits = 1)
+p = formatC(pf(f,df1,df2,lower.tail = F), format = "E", digits = 1) # Compute p-value from f-statistic
+print(paste0("adjusted R^2=",ajr2,", F(",df1,",",df2,")=",f,", p=",p))
+```
+
+1.3. **PLOT**
+
+Actual v predicted values
+```{r}
+dt = dt.70[,-c("up","dw")]
+fit = lm.70
+actual_preds <- data.table(cbind(dt[,"SEQ_ID"],actual=fit$model$score,predicted=fit$fitted.values))
+cor(actual_preds[,-"SEQ_ID"])
+mean(abs((actual_preds$predicted - actual_preds$actual))/actual_preds$actual) # mean absolute percentage error
+
+# find predicted based on significant dimensions only
+fit.coeff = summary(fit)$coeff[-1,] %>% data.table
+fit.coeff$PC = colnames(dt[,-c("SEQ_ID","score")])
+fit.sig = fit.coeff[fit.coeff$`Pr(>|t|)` < 0.05]
+dt.sig = dt %>% dplyr::select(all_of(fit.sig$PC))
+dt[,combined:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
+
+pdt = dt[,c("SEQ_ID","score","combined")]
+
+head(pdt[order(score,combined),])
+tail(pdt[order(score,combined),])
+```
+Plot fitted values x actual values
+```{r}
+p1 = ggplot(pdt,aes(y = combined, x = score)) +
+  geom_point(color = "#0033CC60") +
+  geom_point(data=pdt[SEQ_ID=="MMRF_1897_1_BM",],aes(y = combined, x = score),
+             shape = 21, color = "black", fill = "#0033CC", size = 2, stroke = 2) +
+  theme_classic()+
+  xlab("UAMS-70 Score") + ylab("Predicted Score") +
+  theme(legend.position="none",
+        axis.title=element_text(size=8))
+p1
+ggsave(filename = "plots/UAMS-70_dot.pdf",plot = p1,width=3.5,height=3.5)
+```
+Save list of significant dimensions
+```{r}
+sig.70 = fit.sig$PC
+```
+
+Plot dimension profile for extreme samples
+```{r}
+dt.melt = melt(dt,id.vars = c("SEQ_ID","score","combined"))
+dt.melt[,sig:=as.factor('N')]
+dt.melt[variable%in%sig.70]$sig = 'Y'
+dt.melt$variable = as.factor(dt.melt$variable)
+
+p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_1897_1_BM",], #MMRF_2722_1_BM MMRF_1897_1_BM MMRF_2106_1_BM
+             aes(x=variable, y=value, fill=sig)) + 
+  geom_bar(stat="identity") +
+  ylim(-3,3) +
+  xlab("Dimension") +
+  ylab("MMRF-1897") +
+  scale_fill_manual(values = c('#77777760','#0033CC')) +
+  theme_classic() +
+  theme(legend.position="none") +
+  theme(axis.text=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title=element_text(size=8))
+p1
+ggsave(filename = "plots/UAMS-70_MMRF-1897.png",plot = p1,width=3.5,height=2.5)
+```
+
+### 2. Br J Haematol. 2020 May 15. Development of a RNA sequencing-based prognostic gene signature in multiple myeloma
+DOI: 10.1111/bjh.16744
+
+Developed at the Shahid Bahonar University of Kerman, Kerman, Iran. I will refer to this prognostic score as SBUK-17
+
+"A predictor score was calculated for each patient as follows: risk score = sum{i,n}(exp*βi), where n is the number of genes in the signature, expi is the expression of gene i and βi is the estimated regression coefficient of gene i."
+
+Genes and regression coefficients from Table III: CCT2 (0.768), PRKDC (0.652), NONO (0.642), UBE2A (0.5), CKS1B (0.293)
+
+"Patients were dichotomized into a high‐risk and a low‐risk category based on the 75th percentile of the risk scores[...] The 75th percentile cut‐off was based on the proportion of patients in the training set who had a survival time of more than two years (307 out of 412 patients, i.e. ≈ 75%)."
+
+2.1. **COMPUTE SCORE IN COMMPASS DATA**
+```{r}
+DAT = exp_cbat # working from ComBat adjusted expression estimates in baseline samples
+#genes_5 = c("CCT2","PRKDC","NONO","UBE2A","CKS1B") # list of genes
+#print(paste0("Soltaninezhad 5 genes: ",length(intersect(genes_5,colnames(DAT)))," of ",length(genes_5)," genes in dataset"))
+
+genes_17 = c("ADSS","BIRC5","CACYBP","CCT2","CCT3","CKS1B","CTPS1","ENO1","GAPDH","KIAA0101","MSH6","NONO","PRKDC","RAN","SF3B4","TFB2M","UBE2A")
+print(paste0("17 genes: ",length(intersect(genes_17,colnames(DAT)))," of ",length(genes_17)," genes in dataset"))
+coeff_17 = c(0.67,0.39,0.56,1.15,0.61,0.59,0.59,0.84,0.49,0.30,0.91,1.03,1.04,0.65,1.01,0.83,0.66)
+bjh17 = data.table(genes=genes_17,coeff=coeff_17)
+
+anno_17 = DAT %>% dplyr::select(intersect(genes_17,colnames(DAT))) # select genes in data
+
+DAT$score = data.matrix(anno_17) %*%
+  diag(bjh17[genes%in%intersect(genes_17,colnames(DAT))]$coeff) %>%
+  data.table() %>% rowSums()
+
+# Check algorithm
+#coe = bjh17[genes%in%intersect(genes_17,colnames(DAT))][,coeff]
+#tmp = DAT[SEQ_ID=="MMRF_1024_1_BM"] %>% select(intersect(genes_17,colnames(DAT)))
+#sum(tmp*coe) == DAT[SEQ_ID=="MMRF_1024_1_BM"]$score
+#tmp = DAT[50,] %>% select(intersect(genes_17,colnames(DAT)))
+#sum(tmp*coe) == DAT[50,]$score
+```
+
+2.2. **LINEAR REGRESSION WITH DIMENSIONS**
+```{r}
+dt.17 = merge(DAT[,c("SEQ_ID","score")],score_sd)
+lm.17 = lm(data = dt.17[,-"SEQ_ID"], formula = score ~ .) # run linear regression with risk score as dependent variable
+summary(lm.17)
+
+nsig = data.table(summary(lm.17)$coeff[-1,"Pr(>|t|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
+print(paste0(nsig," of the ",ncol(dt.17[,-c("SEQ_ID","score")])," dimensions were significat at p < 0.05 in the combined model"))
+
+ajr2 = round(summary(lm.17)$adj.r.squared,digits = 2) # Print adjusted R^2
+df1 = round(summary(lm.17)$fstatistic[2])
+df2 = round(summary(lm.17)$fstatistic[3])
+f = round(summary(lm.17)$fstatistic[1],digits = 1)
+p = formatC(pf(f,df1,df2,lower.tail = F), format = "E", digits = 1) # Compute p-value from f-statistic
+print(paste0("adjusted R^2=",ajr2,", F(",df1,",",df2,")=",f,", p=",p))
+```
+
+2.3. PLOT
+
+Actual v predicted values
+```{r}
+dt = dt.17
+fit = lm.17
+actual_preds <- data.table(cbind(dt[,"SEQ_ID"],actual=fit$model$score,predicted=fit$fitted.values))
+cor(actual_preds[,-"SEQ_ID"])
+mean(abs((actual_preds$predicted - actual_preds$actual))/actual_preds$actual) # mean absolute percentage error
+
+# find predicted based on significant dimensions only
+fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
+fit.coeff$PC = colnames(dt[,-c("SEQ_ID","score")])
+fit.sig = fit.coeff[fit.coeff$`Pr(>|t|)` < 0.05]
+dt.sig = dt %>% dplyr::select(all_of(fit.sig$PC))
+dt[,combined:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
+#dt[,sig:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate))]
+#dt[,all:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+#tmp = merge(actual_preds,dt[,c("SEQ_ID","score","combined","all","sig")],by="SEQ_ID")
+
+pdt = dt[,c("SEQ_ID","score","combined")]
+pdt[order(score,combined),][score>10&score<13&combined>7&combined<9]
+```
+Plot fitted values x actual values
+```{r}
+p1 = ggplot(pdt,aes(y = combined, x = score)) +
+  geom_point(color = "#FF000060") +
+  geom_point(data=pdt[SEQ_ID=="MMRF_2778_1_BM",],aes(y = combined, x = score),
+             shape = 21, color = "black", fill = "#FF0000", size = 2, stroke = 2) +
+  theme_classic()+
+  xlab("SBUK-17 Score") + ylab("Predicted Score") +
+  theme(legend.position="none",
+        axis.title=element_text(size=8))
+p1
+ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=3.5,height=3.5)
+```
+Save list of significant dimensions
+```{r}
+sig.17 = fit.sig$PC
+```
+
+Plot dimension profile for extreme samples
+```{r}
+dt.melt = melt(dt,id.vars = c("SEQ_ID","score","combined"))
+dt.melt[,sig:=as.factor('N')]
+dt.melt[variable%in%sig.17]$sig = 'Y'
+dt.melt$variable = as.factor(dt.melt$variable)
+
+p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_2778_1_BM",], #MMRF_2722_1_BM MMRF_1897_1_BM MMRF_2106_1_BM
+             aes(x=variable, y=value, fill=sig)) + 
+  geom_bar(stat="identity") +
+  ylim(-3,3) +
+  xlab("Dimension") +
+  ylab("MMRF-2778") +
+  scale_fill_manual(values = c('#77777760','#FF0000')) +
+  theme_classic() +
+  theme(legend.position="none") +
+  theme(axis.text=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title=element_text(size=8))
+p1
+ggsave(filename = "plots/SBUK-17_MMRF-2778.png",plot = p1,width=3.5,height=2.5)
+```
+
+pdt[,smp:=as.factor('A')]
+pdt[SEQ_ID==s1]$smp = 'U'
+pdt[SEQ_ID==s2]$smp = 'L'
+```
+Plot fitted values x actual values
+```{r}
+p1 = ggplot(pdt,aes(y = combined, x = score, shape = smp, color = smp)) +
+  geom_point() +
+  scale_color_manual(values = c('#FF000060','#FF0000','#FF0000')) +
+  theme_classic()+
+  xlab("SBUK-17 Score") + ylab("Predicted Score") +
+  theme(legend.position="none",
+        axis.title=element_text(size=8))
+p1
+ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=2.5,height=2.5)
+```
+
+
+Save list of significant dimensions
+```{r}
+sig.17 = fit.sig$PC
+
+# List dimensions significant in both
+sig.both = intersect(sig.17,sig.70)
+```
+
+Plot dimension profile for extreme samples
+```{r}
+# use same extreme samples
+dt.melt = melt(dt,id.vars = c("SEQ_ID","score","combined"))
+dt.melt[,sig:=as.factor('N')]
+dt.melt[variable%in%sig.17]$sig = 'Y'
+dt.melt$variable = as.factor(dt.melt$variable)
+
+p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_2106_1_BM",], #MMRF_2722_1_BM 
+             aes(x=variable, y=value, fill=sig)) + 
+  geom_bar(stat="identity") +
+  ylim(-3,3) +
+  xlab("Dimension") +
+  ylab("MMRF-2106") +
+  scale_fill_manual(values = c('#77777760','#FF0000')) +
+  theme_classic() +
+  theme(legend.position="none") +
+  theme(axis.text=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title=element_text(size=8))
+p1
+ggsave(filename = "plots/SBUK-17_MMRF-2106.png",plot = p1,width=2.5,height=1.25)
+
+p2 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_2455_1_BM",], #MMRF_1325_1_BM
+             aes(x=variable, y=value, fill=sig)) + 
+  geom_bar(stat="identity") +
+  ylim(-3,3) +
+  xlab("Dimension") +
+  ylab("MMRF-2455") +
+  scale_fill_manual(values = c('#77777760','#FF0000')) +
+  theme_classic() +
+  theme(legend.position="none") +
+  theme(axis.text=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title=element_text(size=8))
+p2
+ggsave(filename = "plots/SBUK-17_MMRF-2455.png",plot = p2,width=2.5,height=1.25)
+```

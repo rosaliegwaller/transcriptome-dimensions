@@ -1,147 +1,383 @@
 ---
-title: "R Notebook"
+title: "Transcriptome dimensions in multiple myeloma"
 author: "Rosalie Griffin Waller"
-date: "20-Jul-2020"
+date: "03-Aug-2020"
 output:
   html_document:
     theme: united
     highlight: tango
 params:
-  data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz"
-  anno: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/Homo_sapiens.GRCh37.74.gtf.gz"
-  bad_genes: list.csv
-  clin: data.csv
+    data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/mmrf/MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz"
+    gtf: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/mmrf/Homo_sapiens.GRCh37.74.gtf.gz"
+    pvis: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/mmrf/CoMMpass_IA14_FlatFiles/MMRF_CoMMpass_IA14_PER_PATIENT_VISIT.csv"
+    ppat: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/mmrf/CoMMpass_IA14_FlatFiles/MMRF_CoMMpass_IA14_PER_PATIENT.csv"
+    seq_qc: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/mmrf/MMRF_CoMMpass_IA14_Seq_QC_Summary.csv"
+    surv: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/mmrf/CoMMpass_IA14_FlatFiles/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL.csv"
+    dq_genes: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/Union_Discordant_genes_TCGA_GTEx_Arora_TS2B.csv"
+    score: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/score.csv"
+    gene_loadings: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/pca_gene_loadings.csv"
+    out: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
 ---
+Code used to generate transcriptome dimension framework reported in "TANSCRIPTOME DIMENSIONS: AGNOSTIC EXPRESSION VARIABLES TO EMPOWER GENOMIC EPIDEMIOLOGY STUDIES" by Waller et al. 
 
-Code used to generate results reported in "TRANSCRIPTOME DIMENSIONS: AGNOSTIC EXPRESSION VARIABLES TO EMPOWER GENOMIC EPIDEMIOLOGY STUDIES" by Waller et al. 
+Application of the QUOEx framework to the MMRF CoMMpass study.
 
-### 1. Generate transcript dimensions from multiple myeloma tumors
+This code provides the set of dimension variables for use in various models with disparate outcomes.
 
-#### 1.1 Setup
+See additional Rmd reports for code corresponding to:
+a) Myeloma dimensions and established expression-based risk scores, 
+b) Myeloma dimensions and clinical risk, 
+c) Myeloma dimensions and disease course, 
+d) Myeloma dimensions and demographic risk groups, and
+e) Myeloma dimensions for tracking changes over time.
+
+### 1. Setup - load required data
 ##### Required Data
-Download publicly available myeloma data and save in working directory or change parameter path in setup block to the file location
+Download publicly available Myeloma data and save in working directory or change parameter path in setup block to the file location
 
 1. **MMRF CoMMpass study gene expression estimates.** Download transcript-based expression estimates processed by Salmon (version 0.7.2) from the CoMMpass Study (release IA14) MMRF web portal (https://research.themmrf.org/). Download file: MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz.
 
 2. **Gene Transfer Format (GTF) file.** Use the same GTF to process as the CoMMpass Study used to generate expression estimates. Download here: ftp://ftp.ensembl.org/pub/release-74/gtf/homo_sapiens/Homo_sapiens.GRCh37.74.gtf.gz.
 
-##### Install and load required R packages
-```{r load_packages, message=F}
+3. **MMRF CoMMpass study clinical annotation files.** Download CoMMpass IA14 clinical flat files from the MMRF web portal (https://research.themmrf.org/). Required files:
+ + MMRF_CoMMpass_IA14_PER_PATIENT_VISIT.csv
+ + MMRF_CoMMpass_IA14_PER_PATIENT.csv
+ + MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL.csv
+
+4. **MMRF CoMMpass study sequence quality control file.** Download CoMMpass sequence quality control file from the MMRF web portal (https://research.themmrf.org/): MMRF_CoMMpass_IA14_Seq_QC_Summary.csv
+
+5. **List of problematic genes in RNAseq pipelines.** Removed protein coding genes that are discordantly quantified at the 4 fold or higher level (Arora et al, Sci Rep, 2020, https://doi.org/10.1038/s41598-020-59516-z). List of genes is included with this Rmd report on github. The list is from Arora et al Supplemental Table 2b.
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
 library(rtracklayer)
 library(dplyr)
 library(data.table)
 library(sva)
+library(ggplot2)
+library(wesanderson)
 ```
 
-#### 1.2 Load data (*Warning: SLOW due to large files*)
-**Load GTF using the rtracklayer package and compuate gene length and transcript counts**
-```{r}
-# Read in GTF
-gtf <- readGFF(filepath=params$anno)
-# Compute length of each GTF feature
-gtf$length <- gtf$end - gtf$start + 1
-# Select exon features only
-tmp <- subset(gtf,type=='exon',)
-# Find the total gene length by summing the exons
-sum_exons<-aggregate(length ~ seqid + gene_name + gene_id + gene_biotype + transcript_id,
-                     data=tmp, FUN=sum)
-# Count the number of transcripts for each gene name
-n_name <- sum_exons %>% count(gene_name)
-# Rename column
-colnames(n_name)[2] <- "name_n_transcripts"
-# Create table from gene length and transcript number
-gtf.dt <- data.table(inner_join(n_name,sum_exons,by='gene_name'))
-# Clean-up variable space
-rm(gtf,tmp,sum_exons,n_name)
+```{r functions, include=F}
+elbow_finder<-function(data) {
+  elbow.dt<-data[order(-value)][,idx:=.I-1]
+  elbow.dt[,selected:=as.factor('Not used')]
+
+  slope<-(min(elbow.dt$value)-max(elbow.dt$value))/(nrow(elbow.dt)-1)
+  perpslope<-(-1/slope)
+  intercept<-max(elbow.dt$value)
+  elbow.dt[,perpcept:=value - perpslope*idx]
+
+  elbow.dt[,y:=(perpcept*slope - intercept*perpslope)/(slope-perpslope)]
+  elbow.dt[,x:=(intercept-perpcept)/(perpslope - slope)]
+  elbow.dt[,dist:=sqrt((value-y)^2 + (idx-x)^2)]
+
+  maxidx<-which.max(elbow.dt$dist)
+  elbow.dt[idx<maxidx]$selected<-as.factor('Selected')
+  elbow.dt[,propvar:=cumsum(value)/sum(value)]
+  elbow.dt
+}
 ```
-**Load CoMMpass gene expression data and merge with gene annotations**
+
+1.1. LOAD GTF WITH RTRACKLAYER PACKAGE & COMPUTE GENE LENGTH AND NUMBER OF TRANSCRIPTS
 ```{r}
-counts <- read.csv(file = params$data,header = T,sep = "\t",stringsAsFactors = F) # Read in counts
-setDT(counts) # Set to data table
+gtf <- readGFF(filepath=params$gtf) # Read in GTF
+gtf$length <- gtf$end - gtf$start + 1 # Compute length of each GTF feature
+tmp <- subset(gtf,type=='exon',) # Select exon features only
+sum_exons<-aggregate(length ~ seqid + gene_name + gene_id + gene_biotype + transcript_id, data=tmp, FUN=sum) # Find the total gene length by summing the exons
+n_name <- sum_exons %>% count(gene_name) # Count the number of transcripts for each gene name
+colnames(n_name)[2] <- "name_n_transcripts" # Rename column
+gtf.dt <- data.table(inner_join(n_name,sum_exons,by='gene_name')) # Create table from gene length and transcript number
+rm(gtf,tmp,sum_exons,n_name) # Clean-up variable space
+```
+
+1.2. LOAD COMMPASS GENE EXPRESSION ESTIMATES & MERGE WITH GTF ANNOTATIONS
+```{r}
+counts <- data.table(read.csv(file = params$data,header = T,sep = "\t",stringsAsFactors = F)) # Read in counts and set to data table format
 colnames(counts)[1]<-"transcript_id" # Rename column
-# Merge counts with GTF data
-counts.gtf <- inner_join(gtf.dt,counts,by="transcript_id")
-setDT(counts.gtf)
-# Clean-up variable space
-rm(counts,gtf.dt)
+counts.gtf <- data.table(inner_join(gtf.dt,counts,by="transcript_id")) # Merge counts with GTF data
+rm(counts,gtf.dt) # Clean variable space
+seq_ids = counts.gtf %>% select(starts_with("MMRF") & ends_with("BM")) %>% colnames() # Get list of bone marrow sample ids
+seq_nms = unique(gsub("_([1-9])_(BM|PB)","",seq_ids)) # Get list of individuals
+
+print(paste0(length(unique(counts.gtf$gene_name))," genes and ",length(unique(counts.gtf$transcript_id))," transcripts in CoMMpass expression dataset"))
 ```
 
-#### 1.3 Quality control
-**Select CoMMpass baseline samples**
+1.3. LOAD COMMPASS CLINICAL & SEQ QC ANNOTATIONS
+
+A. Per-visit
 ```{r}
-
+vis = data.table(read.csv(file = params$pvis,stringsAsFactors = F) 
+                 )[PUBLIC_ID%in%seq_nms, # Select samples with RNAseq
+                   c("PUBLIC_ID", # Individual ID
+                     "SPECTRUM_SEQ", # Spectrum Sample ID and Sequence
+                     "VJ_INTERVAL", # Record Interval
+                     "AT_TREATMENTRESP", # Treatment Response
+                     "D_TRI_CF_WASCYTOGENICS", # Was Cytogenics / FISH performed?
+                     "D_TRI_CF_ABNORMALITYPR9", # t(14;20) abnormality present
+                     "D_TRI_CF_T1420ABNORMAL", # t(14;20) (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR12", # 1p deletion abnormality present
+                     "D_TRI_CF_1PDELETIONABN", # 1p deletion (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR13", # 1q amplification abnormality present
+                     "D_TRI_CF_1PAMPLIFICATI2", # 1q amplification (Abnormal cells%)
+                     "D_TRI_CF_ABNORMALITYPR", # del 13 abnormality present
+                     "D_TRI_CF_DEL13ABNORMAL", # del 13 (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR10", # del 13q abnormality present
+                     "D_TRI_CF_13QABNORMALCE", # -13q (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR2", # del 17 abnormality present
+                     "D_TRI_CF_DEL17ABNORMAL", # del 17 (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR11", # del 17p abnormality present
+                     "D_TRI_CF_17PABNORMALCE", # -17p (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR3", # t(4;14) abnormality present
+                     "D_TRI_CF_T414ABNORMALC", # t(4;14) (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR4", # t(6;14) abnormality present
+                     "D_TRI_CF_T614ABNORMALC", # t(6;14) (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR5", # t(8;14) abnormality present
+                     "D_TRI_CF_T814ABNORMALC", # t(8;14) (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR6", # t(11;14) abnormality present
+                     "D_TRI_CF_T1114ABNORMAL", # t(11:14) (Abnormal Cells %)
+                     "D_TRI_CF_ABNORMALITYPR8", # t(14;16) abnormality present
+                     "D_TRI_CF_T1416ABNORMAL" # t(14;16) (Abnormal Cells %)
+                     )]
+vis$SEQ_ID = paste(vis$SPECTRUM_SEQ,"_BM",sep = "") # Create sequence ids that match the counts data
+vis = vis[SEQ_ID%in%seq_ids] # Subset to samples with sequencing data
 ```
-
-#### 1.4 Normalize and truncate
+B. Sequencing quality control
 ```{r}
-
+bat = data.table(read.csv(file = params$seq_qc))[MMRF_Release_Status=="RNA-Yes",c(1:5)] # Read in QC data and select RNAseq samples 
+colnames(bat) = c("PUBLIC_ID","SPECTRUM_SEQ","COLLECTION_REASON","SEQ_ID","batch") # Rename columns
+bat$SEQ_ID <- gsub("_CD138pos_T([1-9]{1,2})_TSMRU_([L|K0-9]{6})","",bat$SEQ_ID) # Make sequence ids uniform
 ```
-
-#### 1.5 Correct for sequencing batch
+C. Per-patient
 ```{r}
-
+pat = data.table(read.csv(file = params$ppat,stringsAsFactors = F) # Read in per-patient clinical data
+                 )[PUBLIC_ID%in%seq_nms, # Select samples with RNAseq
+                   c("PUBLIC_ID", # Select variables of interest
+                     "D_PT_age",
+                     "D_PT_gender",
+                     "D_PT_race",
+                     "D_PT_ethnic",
+                     "D_PT_iss")]
 ```
-
-#### 1.6 Generate dimensions (run PCA)
+D. Survival
 ```{r}
-
+sur = data.table(read.csv(file = params$surv)
+                 )[public_id%in%seq_nms, # Select samples with RNAseq
+                   c("public_id", # Select variables of interest
+                     "ttcos", #Time to OS event (censored)
+                     "censos", #Censor flag: overall survival
+                     "ttcpfs", #Time to PFS event (censored)
+                     "censpfs", #Censor flag: progression-free survival
+                     "ttctf1", #Line 1 time to treatment failure (censored)
+                     "censtf1" #Line 1 censor flag: time to treatment failure
+                     )]
+colnames(sur)[1] = "PUBLIC_ID"
 ```
-
-#### 1.7 Select k dimenions
+Merge clinical annotations
 ```{r}
-
+vis_bat = merge(bat,vis) # MERGE PER-VISIT & SEQ QC
+pat_sur = merge(pat,sur) # MERGE PER-PATIENT & SURIVAL
+cin = merge(vis_bat,pat_sur) # NOTE: per-patient annotations are duplicated where multiple samples were sequenced
+rm(bat,pat,pat_sur,sur,vis,vis_bat) # cleanup variables
 ```
 
-#### 1.8 Check for that batch correction worked (no associations with batch)
+1.4. SUBSET EXPRESSION DATA TO BASELINE SAMPLES
 ```{r}
-
+baseline = cin[VJ_INTERVAL=="Baseline",]$SEQ_ID # List of baseline samples
+base = counts.gtf %>% dplyr::select("gene_name","name_n_transcripts","seqid","gene_id","gene_biotype","transcript_id","length","gene_name",all_of(baseline))
+print(paste0("CoMMpass RNAseq: ",length(cin$SEQ_ID)," samples in ",length(unique(cin$PUBLIC_ID))," patients. ",length(baseline)," individuals with a baseline sample selected to derive MM dimensions"))
 ```
 
-#### 1.9 Save dimension variables and linear equations
+### 2. Quality control expression estimates
+2.1. FILTER TO AUTOSOME & PROTEIN CODING GENES
 ```{r}
-
+eps = base[seqid %in% c(1:22) & # Filter to autosomal chromosomes
+             gene_biotype == 'protein_coding'] %>% # Filter to protein coding genes
+  dplyr::select("gene_name",contains("MMRF")) # Select columns: gene_name and all samples
 ```
+2.2. FIND GENES WITH LOW COUNTS IN BASELINE SAMPLES
 
-### 2. Visualize dimension profiles
-Code used to generate Figure 3 of Waller et all publication. The dimension variables provide a profile that represents each patient’s treatment naïve CD138+ transcriptome.
+Find gene level expression from aggregated transcripts
 ```{r}
-
+gene = data.table(aggregate(. ~ gene_name, data = eps, FUN = sum)) # Aggregate transcript counts to gene_name counts
 ```
-
-### 3. Myeloma dimensions and established expression-based risk scores
+Find genes with >= 95% coverage (>=100 reads) 
 ```{r}
-
+keep.genes = cbind(gene[,"gene_name"],rowSums(gene[,-"gene_name"] < 100)/length(baseline))[V2 < 0.05]$gene_name # Find genes with < 5% of samples with < 100 count
+print(paste0("Keep ",length(keep.genes)," genes where < 5% of samples have < 100 count"))
 ```
-
-### 4. Myeloma dimensions and clinical risk
+2.3. REMOVE DQ GENES FROM: https://doi.org/10.1038/s41598-020-59516-z
 ```{r}
+# Compare with discordantly quantified genes in  GTEx or TCGA from https://doi.org/10.1038/s41598-020-59516-z
+dq.genes = read.csv(file = params$dq_genes) %>% data.table()
+#nrow(dq.genes[Union_DQ_genes%in%keep.genes])
+#nrow(dq.genes[Union_DQ_genes%in%gene$gene_name])
+print(paste0("Remove ",nrow(dq.genes[Union_DQ_genes%in%keep.genes])," genes of ", nrow(dq.genes[Union_DQ_genes%in%gene$gene_name])," genes on discordantly quanitifed list"))
 
+good.gene = gene[gene_name%in%keep.genes & !gene_name%in%dq.genes$Union_DQ_genes]$gene_name # Remove genes discordantly quantified
+print(paste0(length(good.gene)," high-quality genes selected for analyses"))
 ```
 
-### 5. Myeloma dimensions and disease course
+2.4. FIND SAMPLES WITH < 90% COVERAGE ACROSS "GOOD" GENES 
 ```{r}
-
+remove.samples = gene[gene_name %in% good.gene,-"gene_name" # Subset to "good" genes
+                      ][,lapply(.SD,function(x)sum(x<100)/length(good.gene))] %>% # For each sample, find proportion of genes with <100 reads
+  select_if(. > 0.1) %>% colnames() # List samples with > 10% of genes with < 100 counts
+print(paste0(length(remove.samples)," sample(s) had <100 reads in > 10% of high-quality genes with and was removed. Sample(s) removed: ",remove.samples))
 ```
 
-### 6. Myeloma dimensions and demographic risk groups
+2.5. SUBSET TO "GOOD" GENES & REMOVE "BAD" SAMPLES
 ```{r}
-
+qc.counts = base[gene_name %in% good.gene] %>% # Select keep genes
+  dplyr::select(-seqid,-gene_id,-gene_biotype,-all_of(remove.samples)) # Remove extra gene annotation and poor coverage samples
+qc.melt <- data.table::melt(qc.counts, # transform format
+  id.vars=c("gene_name","name_n_transcripts","transcript_id","length"),
+  variable.name="SEQ_ID",
+  value.name="count")
+rm(qc.counts,eps,gene,keep.genes,remove.samples) # cleanup variables
 ```
 
-### 7. Myeloma dimensions to track tumor changes over time
+### 3. Normalize and truncate
+3.1. NORMALIZE AND ADJUST BY SIZE FACTOR
 ```{r}
-
+qc.melt[,total_raw_counts:=sum(count),by=c('SEQ_ID','gene_name')] # Find total counts per sample per gene
+qc.melt[,kb_length:=length/1000] # Find length of gene in kilo-bases
+final.dt = qc.melt[,list(cpk=sum((count+1/name_n_transcripts)/kb_length)), # Find counts per gene length
+                   by=c('SEQ_ID','gene_name','total_raw_counts')] # For each sample and gene pair
+final.dt[,size_factor:=median(cpk),by='SEQ_ID'] # Find size factor = median counts/gene length
+final.dt[,cpkmed:=cpk/size_factor] # Normalize by size factor
+final.dt[,logcpkmed:=log2(cpkmed)] # Log2 transform
+```
+3.2. TRUNCATE VALUES +/- 5 SD FROM MEAN NORMALIZED GENE COUNT 
+```{r}
+final.dt[,mean:=mean(logcpkmed),by='gene_name'] # Find mean of normalized gene counts per gene
+final.dt[,sd:=sd(logcpkmed),by='gene_name'] # Find standard deviation of normalized counts per gene
+final.dt[,adjlogcpkmed:=logcpkmed] # New variable to adjust
+final.dt[(logcpkmed-mean)/sd>=5,adjlogcpkmed:=mean+5*sd] # Truncate values > 5 SD
+final.dt[(logcpkmed-mean)/sd<= -5,adjlogcpkmed:=mean-5*sd] # Truncate values < 5 SD
+```
+3.3. CONVERT TO SAMPLE X GENE MATRIX FORMAT
+```{r}
+norm <- list("melt"=final.dt)
+norm.dt <- dcast(norm$melt, SEQ_ID ~ gene_name, value.var='adjlogcpkmed') # Sample x gene
+rm(final.dt,norm) # cleanup variables
 ```
 
+### 4. Correct for sequencing batch
+4.1. ANNOTATE BATCH & COVARIATES FROM CLINICAL DATA
+```{r}
+vr = c("SEQ_ID","batch","D_PT_age","D_PT_gender","ttcos","censos","ttcpfs","censpfs","ttctf1","censtf1")
+cin_vr = cin %>% select(all_of(vr))
+dt = merge(cin_vr,norm.dt,by="SEQ_ID")
+```
+4.2. RUN COMBAT TO ADJUST EXPRESSION DATA
+```{r}
+# SETUP VARIABLES
+DAT = dt %>% select(-all_of(vr)) %>% t() # Expression only and gene x sample format
+colnames(DAT) = dt$SEQ_ID # Annotate samples to DAT
+BATCH = as.numeric(dt$batch)
+MOD = dt %>% select(all_of(vr[3:10])) %>% data.matrix() # Co-variate model
 
+# RUN COMBAT
+cbat = ComBat(dat = DAT, batch = BATCH, mod = MOD)
+cbat.dt = data.table(t(cbat)) # Sample x gene data table
+cbat.dt$SEQ_ID = colnames(cbat) # Annotate sample ids
 
+rm(vr,cin_vr,dt,DAT,BATCH,MOD,cbat) # Cleanup variables
+```
 
+### 5. Generate dimensions (run PCA)
+5.1. RUN PCA ON COMBAT DATA TO IDENTIFY DIMENSIONS
+```{r}
+pca = prcomp(cbat.dt[,-"SEQ_ID"],center=TRUE,scale=FALSE,retx=TRUE) # Run PCA on combat data
+print(paste0("Myeloma dimensions identified from ",nrow(cbat.dt)," baseline samples in ",length(good.gene)," genes"))
+```
 
+5.2. FIND K DIMENSIONS AND PLOT
+```{r}
+pcvar <- data.table(pc=colnames(pca$x),value=pca$sdev^2) # Compute variance explained by each PC
+elbow <- elbow_finder(pcvar) # Function in setup, find point of diminishing returns
+print(paste0("First ",max(elbow[selected=='Selected']$idx) + 1,
+             " dimensions selected, describing ",
+             round(max(elbow[selected=='Selected']$propvar),digits = 3)*100,"% of the total variance"))
+ggplot(data = elbow,aes(y = value/sum(value)*100,x = idx+1,color = selected)) +
+  geom_point(size=2) +
+  theme_classic() +
+  scale_color_manual(values = c('#999999','#E69F00')) +
+  labs(title="Variance explained by each dimension",
+       x="dimension", y = "% variance")
+```
 
+5.3 TEST FOR ASSOCATION WITH BATCH
+```{r}
+pca.score = cbind(cbat.dt$SEQ_ID,pca$x[,elbow[selected=='Selected']$pc]) %>% data.table() # PC value for each baseline sample
+colnames(pca.score)[1] = "SEQ_ID" # Annotate sample names
+DAT = merge(cin[,c("SEQ_ID","batch")],pca.score,by="SEQ_ID")
+DAT$batch = as.factor(DAT$batch)
+pcs = elbow[selected=='Selected']$pc
+p = 1
+for (i in seq_along(pcs)){
+  formula = paste(pcs[i],"~","batch")
+  mod = lm(formula,data = DAT)
+  p = c(p,pf(summary(mod)$fstatistic[1],summary(mod)$fstatistic[2],summary(mod)$fstatistic[3],lower.tail = F))
+}
 
+print(paste("F-statistic of PC ~ batch associations, min p =",round(min(p),digits = 3)))
+```
 
+### 6. Save dimension data
+6.1. SAVE PC VALUES, GENE LOADINGS, AND CENTER ADJUSTMENT VALUES
+```{r}
+pca.score = cbind(cbat.dt$SEQ_ID,pca$x[,elbow[selected=='Selected']$pc]) %>% data.table() # PC value for each baseline sample
+colnames(pca.score)[1] = "SEQ_ID" # Annotate sample names
+write.csv(pca.score,file = params$score,row.names = F)
 
+pca.genes = cbind(
+  rownames(pca$rotation), # Gene names
+  colMeans(cbat.dt[,-"SEQ_ID"]), # Value to center on for each gene
+  pca$rotation[,elbow[selected=='Selected']$pc] %>% data.table() # Save gene loading
+)
+colnames(pca.genes)[1:2] = c("GENE_NAME","CENTER_MEAN")
+write.csv(pca.genes,file = params$gene_loadings,row.names = F)
+```
 
+6.2. STANDARDIZE PC SCORES
+```{r}
+dt = pca.score %>% select(starts_with("PC")) %>% data.table()
+SD = apply(dt,2,sd)
+dt_sd = data.matrix(dt) %*% diag(1/SD)
+sd.score = cbind(pca.score[,SEQ_ID],data.table(dt_sd))
+colnames(sd.score) = c("SEQ_ID",paste(colnames(pca.score %>% select(starts_with("PC"))),"_SD",sep = ""))
 
+#unique(round(sd.score$PC1_SD,digits = 8) == round(as.numeric(dt$PC1)/sd(as.numeric(dt$PC1)),digits = 8)) # check work
+#unique(round(sd.score$PC22_SD,digits = 8) == round(as.numeric(dt$PC22)/sd(as.numeric(dt$PC22)),digits = 8)) # check work
+```
 
+6.3. SAVE AS RDATA FOR ADDITIONAL ANALYSES
+```{r}
+exp_cbat = cbat.dt # save normalized and batch corrected expression estimates 
+score_sd = sd.score # save standardized dimension socres in baseline samples
+clinical = cin # save clinical data
 
+# get list of samples with baseline and follow up RNAseq
+followup = clinical %>% 
+  subset(PUBLIC_ID%in%clinical[SEQ_ID%in%score_sd$SEQ_ID]$PUBLIC_ID & # Baseline sample passed QC
+           COLLECTION_REASON%like%"Confirm" & # And has follow-up RNAseq
+           SEQ_ID%in%colnames(counts.gtf) # And has sequence data available
+         )
+time_ids = c(clinical[PUBLIC_ID%in%followup$PUBLIC_ID & # Has followup sample
+                          COLLECTION_REASON=="Baseline" & # Is baseline sample
+                          SEQ_ID%in%score_sd$SEQ_ID # Has clean seq data
+                        ]$SEQ_ID, # get seq id
+               followup$SEQ_ID
+             )
+exp_time = counts.gtf %>% select("gene_name","name_n_transcripts",
+                                 "seqid","gene_id","gene_biotype",
+                                 "transcript_id","length",
+                                 all_of(time_ids)) # save expression estimates in longitudinal samples
+
+save(exp_cbat,score_sd,clinical,exp_time,file = params$out)
+
+# remove all other variables
+rm(base,cbat.dt,cin,counts.gtf,dq.genes,dt,dt_sd,elbow,followup,norm.dt,pca,pca.genes,pca.score,pcvar,qc.melt,sd.score,baseline,good.gene,SD,seq_ids,seq_nms)
+```

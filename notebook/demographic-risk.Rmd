@@ -1,0 +1,73 @@
+---
+title: "Myeloma dimensions and demographic risk groups"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+params:
+    data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
+---
+
+Code to investigate associations between patient demographics (age, gender, self-reported race and ethnicity) and transcriptome dimensions using analysis of variance.
+
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(MASS)
+library(survivalAnalysis)
+```
+
+Load transcriptome dimensions (PC1-PC39)
+```{r}
+load(file = params$data) # load processed data
+```
+
+### 1. Age
+```{r}
+DAT = merge(clinical[,c("SEQ_ID","D_PT_age")],score_sd) # Select data
+
+lm.age = lm(data = DAT[,-"SEQ_ID"],formula = D_PT_age ~ .)
+summary(lm.age)
+
+nsig = data.table(summary(lm.age)$coeff[-1,"Pr(>|t|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
+print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+```
+
+### 2. Gender
+```{r}
+DAT = merge(clinical[,c("SEQ_ID","D_PT_gender")],score_sd) # Select data
+DAT$D_PT_gender = as.factor(DAT$D_PT_gender)
+
+glm.gender = glm(data = DAT[,-"SEQ_ID"],formula = D_PT_gender ~ .,family = "binomial")
+summary(glm.gender)
+
+nsig = data.table(summary(glm.gender)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
+print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+```
+
+### 3. Self-reported race
+```{r}
+DAT = merge(clinical[clinical$D_PT_race%in%c(1,2),c("SEQ_ID","D_PT_race")],score_sd) # Select data
+DAT$D_PT_race = as.factor(DAT$D_PT_race)
+
+glm.race = glm(data = DAT[,-"SEQ_ID"],formula = D_PT_race ~ .,family = "binomial")
+summary(glm.race)
+
+nsig = data.table(summary(glm.race)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
+print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+```
+
+### 4. Self-reported ethnicity
+```{r}
+DAT = merge(clinical[clinical$D_PT_ethnic%in%c(1,2),c("SEQ_ID","D_PT_ethnic")],score_sd) # Select data
+DAT$D_PT_ethnic = as.factor(DAT$D_PT_ethnic)
+
+glm.ethnic = glm(data = DAT[,-"SEQ_ID"],formula = D_PT_ethnic ~ .,family = "binomial")
+summary(glm.ethnic)
+
+nsig = data.table(summary(glm.ethnic)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
+print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+```

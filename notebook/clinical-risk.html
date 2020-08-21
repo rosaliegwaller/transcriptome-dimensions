@@ -9,10 +9,9 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Rosalie Griffin Waller" />
 
 
-<title>R Notebook</title>
+<title>Myeloma dimensions and clinical risk</title>
 
 <script>/*! jQuery v1.11.3 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 !function(a,b){"object"==typeof module&&"object"==typeof module.exports?module.exports=a.document?b(a,!0):function(a){if(!a.document)throw new Error("jQuery requires a window with a document");return b(a)}:b(a)}("undefined"!=typeof window?window:this,function(a,b){var c=[],d=c.slice,e=c.concat,f=c.push,g=c.indexOf,h={},i=h.toString,j=h.hasOwnProperty,k={},l="1.11.3",m=function(a,b){return new m.fn.init(a,b)},n=/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,o=/^-ms-/,p=/-([\da-z])/gi,q=function(a,b){return b.toUpperCase()};m.fn=m.prototype={jquery:l,constructor:m,selector:"",length:0,toArray:function(){return d.call(this)},get:function(a){return null!=a?0>a?this[a+this.length]:this[a]:d.call(this)},pushStack:function(a){var b=m.merge(this.constructor(),a);return b.prevObject=this,b.context=this.context,b},each:function(a,b){return m.each(this,a,b)},map:function(a){return this.pushStack(m.map(this,function(b,c){return a.call(b,c,b)}))},slice:function(){return this.pushStack(d.apply(this,arguments))},first:function(){return this.eq(0)},last:function(){return this.eq(-1)},eq:function(a){var b=this.length,c=+a+(0>a?b:0);return this.pushStack(c>=0&&b>c?[this[c]]:[])},end:function(){return this.prevObject||this.constructor(null)},push:f,sort:c.sort,splice:c.splice},m.extend=m.fn.extend=function(){var a,b,c,d,e,f,g=arguments[0]||{},h=1,i=arguments.length,j=!1;for("boolean"==typeof g&&(j=g,g=arguments[h]||{},h++),"object"==typeof g||m.isFunction(g)||(g={}),h===i&&(g=this,h--);i>h;h++)if(null!=(e=arguments[h]))for(d in e)a=g[d],c=e[d],g!==c&&(j&&c&&(m.isPlainObject(c)||(b=m.isArray(c)))?(b?(b=!1,f=a&&m.isArray(a)?a:[]):f=a&&m.isPlainObject(a)?a:{},g[d]=m.extend(j,f,c)):void 0!==c&&(g[d]=c));return g},m.extend({expando:"jQuery"+(l+Math.random()).replace(/\D/g,""),isReady:!0,error:function(a){throw new Error(a)},noop:function(){},isFunction:function(a){return"function"===m.type(a)},isArray:Array.isArray||function(a){return"array"===m.type(a)},isWindow:function(a){return null!=a&&a==a.window},isNumeric:function(a){return!m.isArray(a)&&a-parseFloat(a)+1>=0},isEmptyObject:function(a){var b;for(b in a)return!1;return!0},isPlainObject:function(a){var b;if(!a||"object"!==m.type(a)||a.nodeType||m.isWindow(a))return!1;try{if(a.constructor&&!j.call(a,"constructor")&&!j.call(a.constructor.prototype,"isPrototypeOf"))return!1}catch(c){return!1}if(k.ownLast)for(b in a)return j.call(a,b);for(b in a);return void 0===b||j.call(a,b)},type:function(a){return null==a?a+"":"object"==typeof a||"function"==typeof a?h[i.call(a)]||"object":typeof a},globalEval:function(b){b&&m.trim(b)&&(a.execScript||function(b){a.eval.call(a,b)})(b)},camelCase:function(a){return a.replace(o,"ms-").replace(p,q)},nodeName:function(a,b){return a.nodeName&&a.nodeName.toLowerCase()===b.toLowerCase()},each:function(a,b,c){var d,e=0,f=a.length,g=r(a);if(c){if(g){for(;f>e;e++)if(d=b.apply(a[e],c),d===!1)break}else for(e in a)if(d=b.apply(a[e],c),d===!1)break}else if(g){for(;f>e;e++)if(d=b.call(a[e],e,a[e]),d===!1)break}else for(e in a)if(d=b.call(a[e],e,a[e]),d===!1)break;return a},trim:function(a){return null==a?"":(a+"").replace(n,"")},makeArray:function(a,b){var c=b||[];return null!=a&&(r(Object(a))?m.merge(c,"string"==typeof a?[a]:a):f.call(c,a)),c},inArray:function(a,b,c){var d;if(b){if(g)return g.call(b,a,c);for(d=b.length,c=c?0>c?Math.max(0,d+c):c:0;d>c;c++)if(c in b&&b[c]===a)return c}return-1},merge:function(a,b){var c=+b.length,d=0,e=a.length;while(c>d)a[e++]=b[d++];if(c!==c)while(void 0!==b[d])a[e++]=b[d++];return a.length=e,a},grep:function(a,b,c){for(var d,e=[],f=0,g=a.length,h=!c;g>f;f++)d=!b(a[f],f),d!==h&&e.push(a[f]);return e},map:function(a,b,c){var d,f=0,g=a.length,h=r(a),i=[];if(h)for(;g>f;f++)d=b(a[f],f,c),null!=d&&i.push(d);else for(f in a)d=b(a[f],f,c),null!=d&&i.push(d);return e.apply([],i)},guid:1,proxy:function(a,b){var c,e,f;return"string"==typeof b&&(f=a[b],b=a,a=f),m.isFunction(a)?(c=d.call(arguments,2),e=function(){return a.apply(b||this,c.concat(d.call(arguments)))},e.guid=a.guid=a.guid||m.guid++,e):void 0},now:function(){return+new Date},support:k}),m.each("Boolean Number String Function Array Date RegExp Object Error".split(" "),function(a,b){h["[object "+b+"]"]=b.toLowerCase()});function r(a){var b="length"in a&&a.length,c=m.type(a);return"function"===c||m.isWindow(a)?!1:1===a.nodeType&&b?!0:"array"===c||0===b||"number"==typeof b&&b>0&&b-1 in a}var s=function(a){var b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u="sizzle"+1*new Date,v=a.document,w=0,x=0,y=ha(),z=ha(),A=ha(),B=function(a,b){return a===b&&(l=!0),0},C=1<<31,D={}.hasOwnProperty,E=[],F=E.pop,G=E.push,H=E.push,I=E.slice,J=function(a,b){for(var c=0,d=a.length;d>c;c++)if(a[c]===b)return c;return-1},K="checked|selected|async|autofocus|autoplay|controls|defer|disabled|hidden|ismap|loop|multiple|open|readonly|required|scoped",L="[\\x20\\t\\r\\n\\f]",M="(?:\\\\.|[\\w-]|[^\\x00-\\xa0])+",N=M.replace("w","w#"),O="\\["+L+"*("+M+")(?:"+L+"*([*^$|!~]?=)"+L+"*(?:'((?:\\\\.|[^\\\\'])*)'|\"((?:\\\\.|[^\\\\\"])*)\"|("+N+"))|)"+L+"*\\]",P=":("+M+")(?:\\((('((?:\\\\.|[^\\\\'])*)'|\"((?:\\\\.|[^\\\\\"])*)\")|((?:\\\\.|[^\\\\()[\\]]|"+O+")*)|.*)\\)|)",Q=new RegExp(L+"+","g"),R=new RegExp("^"+L+"+|((?:^|[^\\\\])(?:\\\\.)*)"+L+"+$","g"),S=new RegExp("^"+L+"*,"+L+"*"),T=new RegExp("^"+L+"*([>+~]|"+L+")"+L+"*"),U=new RegExp("="+L+"*([^\\]'\"]*?)"+L+"*\\]","g"),V=new RegExp(P),W=new RegExp("^"+N+"$"),X={ID:new RegExp("^#("+M+")"),CLASS:new RegExp("^\\.("+M+")"),TAG:new RegExp("^("+M.replace("w","w*")+")"),ATTR:new RegExp("^"+O),PSEUDO:new RegExp("^"+P),CHILD:new RegExp("^:(only|first|last|nth|nth-last)-(child|of-type)(?:\\("+L+"*(even|odd|(([+-]|)(\\d*)n|)"+L+"*(?:([+-]|)"+L+"*(\\d+)|))"+L+"*\\)|)","i"),bool:new RegExp("^(?:"+K+")$","i"),needsContext:new RegExp("^"+L+"*[>+~]|:(even|odd|eq|gt|lt|nth|first|last)(?:\\("+L+"*((?:-\\d)?\\d*)"+L+"*\\)|)(?=[^-]|$)","i")},Y=/^(?:input|select|textarea|button)$/i,Z=/^h\d$/i,$=/^[^{]+\{\s*\[native \w/,_=/^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/,aa=/[+~]/,ba=/'|\\/g,ca=new RegExp("\\\\([\\da-f]{1,6}"+L+"?|("+L+")|.)","ig"),da=function(a,b,c){var d="0x"+b-65536;return d!==d||c?b:0>d?String.fromCharCode(d+65536):String.fromCharCode(d>>10|55296,1023&d|56320)},ea=function(){m()};try{H.apply(E=I.call(v.childNodes),v.childNodes),E[v.childNodes.length].nodeType}catch(fa){H={apply:E.length?function(a,b){G.apply(a,I.call(b))}:function(a,b){var c=a.length,d=0;while(a[c++]=b[d++]);a.length=c-1}}}function ga(a,b,d,e){var f,h,j,k,l,o,r,s,w,x;if((b?b.ownerDocument||b:v)!==n&&m(b),b=b||n,d=d||[],k=b.nodeType,"string"!=typeof a||!a||1!==k&&9!==k&&11!==k)return d;if(!e&&p){if(11!==k&&(f=_.exec(a)))if(j=f[1]){if(9===k){if(h=b.getElementById(j),!h||!h.parentNode)return d;if(h.id===j)return d.push(h),d}else if(b.ownerDocument&&(h=b.ownerDocument.getElementById(j))&&t(b,h)&&h.id===j)return d.push(h),d}else{if(f[2])return H.apply(d,b.getElementsByTagName(a)),d;if((j=f[3])&&c.getElementsByClassName)return H.apply(d,b.getElementsByClassName(j)),d}if(c.qsa&&(!q||!q.test(a))){if(s=r=u,w=b,x=1!==k&&a,1===k&&"object"!==b.nodeName.toLowerCase()){o=g(a),(r=b.getAttribute("id"))?s=r.replace(ba,"\\$&"):b.setAttribute("id",s),s="[id='"+s+"'] ",l=o.length;while(l--)o[l]=s+ra(o[l]);w=aa.test(a)&&pa(b.parentNode)||b,x=o.join(",")}if(x)try{return H.apply(d,w.querySelectorAll(x)),d}catch(y){}finally{r||b.removeAttribute("id")}}}return i(a.replace(R,"$1"),b,d,e)}function ha(){var a=[];function b(c,e){return a.push(c+" ")>d.cacheLength&&delete b[a.shift()],b[c+" "]=e}return b}function ia(a){return a[u]=!0,a}function ja(a){var b=n.createElement("div");try{return!!a(b)}catch(c){return!1}finally{b.parentNode&&b.parentNode.removeChild(b),b=null}}function ka(a,b){var c=a.split("|"),e=a.length;while(e--)d.attrHandle[c[e]]=b}function la(a,b){var c=b&&a,d=c&&1===a.nodeType&&1===b.nodeType&&(~b.sourceIndex||C)-(~a.sourceIndex||C);if(d)return d;if(c)while(c=c.nextSibling)if(c===b)return-1;return a?1:-1}function ma(a){return function(b){var c=b.nodeName.toLowerCase();return"input"===c&&b.type===a}}function na(a){return function(b){var c=b.nodeName.toLowerCase();return("input"===c||"button"===c)&&b.type===a}}function oa(a){return ia(function(b){return b=+b,ia(function(c,d){var e,f=a([],c.length,b),g=f.length;while(g--)c[e=f[g]]&&(c[e]=!(d[e]=c[e]))})})}function pa(a){return a&&"undefined"!=typeof a.getElementsByTagName&&a}c=ga.support={},f=ga.isXML=function(a){var b=a&&(a.ownerDocument||a).documentElement;return b?"HTML"!==b.nodeName:!1},m=ga.setDocument=function(a){var b,e,g=a?a.ownerDocument||a:v;return g!==n&&9===g.nodeType&&g.documentElement?(n=g,o=g.documentElement,e=g.defaultView,e&&e!==e.top&&(e.addEventListener?e.addEventListener("unload",ea,!1):e.attachEvent&&e.attachEvent("onunload",ea)),p=!f(g),c.attributes=ja(function(a){return a.className="i",!a.getAttribute("className")}),c.getElementsByTagName=ja(function(a){return a.appendChild(g.createComment("")),!a.getElementsByTagName("*").length}),c.getElementsByClassName=$.test(g.getElementsByClassName),c.getById=ja(function(a){return o.appendChild(a).id=u,!g.getElementsByName||!g.getElementsByName(u).length}),c.getById?(d.find.ID=function(a,b){if("undefined"!=typeof b.getElementById&&p){var c=b.getElementById(a);return c&&c.parentNode?[c]:[]}},d.filter.ID=function(a){var b=a.replace(ca,da);return function(a){return a.getAttribute("id")===b}}):(delete d.find.ID,d.filter.ID=function(a){var b=a.replace(ca,da);return function(a){var c="undefined"!=typeof a.getAttributeNode&&a.getAttributeNode("id");return c&&c.value===b}}),d.find.TAG=c.getElementsByTagName?function(a,b){return"undefined"!=typeof b.getElementsByTagName?b.getElementsByTagName(a):c.qsa?b.querySelectorAll(a):void 0}:function(a,b){var c,d=[],e=0,f=b.getElementsByTagName(a);if("*"===a){while(c=f[e++])1===c.nodeType&&d.push(c);return d}return f},d.find.CLASS=c.getElementsByClassName&&function(a,b){return p?b.getElementsByClassName(a):void 0},r=[],q=[],(c.qsa=$.test(g.querySelectorAll))&&(ja(function(a){o.appendChild(a).innerHTML="<a id='"+u+"'></a><select id='"+u+"-\f]' msallowcapture=''><option selected=''></option></select>",a.querySelectorAll("[msallowcapture^='']").length&&q.push("[*^$]="+L+"*(?:''|\"\")"),a.querySelectorAll("[selected]").length||q.push("\\["+L+"*(?:value|"+K+")"),a.querySelectorAll("[id~="+u+"-]").length||q.push("~="),a.querySelectorAll(":checked").length||q.push(":checked"),a.querySelectorAll("a#"+u+"+*").length||q.push(".#.+[+~]")}),ja(function(a){var b=g.createElement("input");b.setAttribute("type","hidden"),a.appendChild(b).setAttribute("name","D"),a.querySelectorAll("[name=d]").length&&q.push("name"+L+"*[*^$|!~]?="),a.querySelectorAll(":enabled").length||q.push(":enabled",":disabled"),a.querySelectorAll("*,:x"),q.push(",.*:")})),(c.matchesSelector=$.test(s=o.matches||o.webkitMatchesSelector||o.mozMatchesSelector||o.oMatchesSelector||o.msMatchesSelector))&&ja(function(a){c.disconnectedMatch=s.call(a,"div"),s.call(a,"[s!='']:x"),r.push("!=",P)}),q=q.length&&new RegExp(q.join("|")),r=r.length&&new RegExp(r.join("|")),b=$.test(o.compareDocumentPosition),t=b||$.test(o.contains)?function(a,b){var c=9===a.nodeType?a.documentElement:a,d=b&&b.parentNode;return a===d||!(!d||1!==d.nodeType||!(c.contains?c.contains(d):a.compareDocumentPosition&&16&a.compareDocumentPosition(d)))}:function(a,b){if(b)while(b=b.parentNode)if(b===a)return!0;return!1},B=b?function(a,b){if(a===b)return l=!0,0;var d=!a.compareDocumentPosition-!b.compareDocumentPosition;return d?d:(d=(a.ownerDocument||a)===(b.ownerDocument||b)?a.compareDocumentPosition(b):1,1&d||!c.sortDetached&&b.compareDocumentPosition(a)===d?a===g||a.ownerDocument===v&&t(v,a)?-1:b===g||b.ownerDocument===v&&t(v,b)?1:k?J(k,a)-J(k,b):0:4&d?-1:1)}:function(a,b){if(a===b)return l=!0,0;var c,d=0,e=a.parentNode,f=b.parentNode,h=[a],i=[b];if(!e||!f)return a===g?-1:b===g?1:e?-1:f?1:k?J(k,a)-J(k,b):0;if(e===f)return la(a,b);c=a;while(c=c.parentNode)h.unshift(c);c=b;while(c=c.parentNode)i.unshift(c);while(h[d]===i[d])d++;return d?la(h[d],i[d]):h[d]===v?-1:i[d]===v?1:0},g):n},ga.matches=function(a,b){return ga(a,null,null,b)},ga.matchesSelector=function(a,b){if((a.ownerDocument||a)!==n&&m(a),b=b.replace(U,"='$1']"),!(!c.matchesSelector||!p||r&&r.test(b)||q&&q.test(b)))try{var d=s.call(a,b);if(d||c.disconnectedMatch||a.document&&11!==a.document.nodeType)return d}catch(e){}return ga(b,n,null,[a]).length>0},ga.contains=function(a,b){return(a.ownerDocument||a)!==n&&m(a),t(a,b)},ga.attr=function(a,b){(a.ownerDocument||a)!==n&&m(a);var e=d.attrHandle[b.toLowerCase()],f=e&&D.call(d.attrHandle,b.toLowerCase())?e(a,b,!p):void 0;return void 0!==f?f:c.attributes||!p?a.getAttribute(b):(f=a.getAttributeNode(b))&&f.specified?f.value:null},ga.error=function(a){throw new Error("Syntax error, unrecognized expression: "+a)},ga.uniqueSort=function(a){var b,d=[],e=0,f=0;if(l=!c.detectDuplicates,k=!c.sortStable&&a.slice(0),a.sort(B),l){while(b=a[f++])b===a[f]&&(e=d.push(f));while(e--)a.splice(d[e],1)}return k=null,a},e=ga.getText=function(a){var b,c="",d=0,f=a.nodeType;if(f){if(1===f||9===f||11===f){if("string"==typeof a.textContent)return a.textContent;for(a=a.firstChild;a;a=a.nextSibling)c+=e(a)}else if(3===f||4===f)return a.nodeValue}else while(b=a[d++])c+=e(b);return c},d=ga.selectors={cacheLength:50,createPseudo:ia,match:X,attrHandle:{},find:{},relative:{">":{dir:"parentNode",first:!0}," ":{dir:"parentNode"},"+":{dir:"previousSibling",first:!0},"~":{dir:"previousSibling"}},preFilter:{ATTR:function(a){return a[1]=a[1].replace(ca,da),a[3]=(a[3]||a[4]||a[5]||"").replace(ca,da),"~="===a[2]&&(a[3]=" "+a[3]+" "),a.slice(0,4)},CHILD:function(a){return a[1]=a[1].toLowerCase(),"nth"===a[1].slice(0,3)?(a[3]||ga.error(a[0]),a[4]=+(a[4]?a[5]+(a[6]||1):2*("even"===a[3]||"odd"===a[3])),a[5]=+(a[7]+a[8]||"odd"===a[3])):a[3]&&ga.error(a[0]),a},PSEUDO:function(a){var b,c=!a[6]&&a[2];return X.CHILD.test(a[0])?null:(a[3]?a[2]=a[4]||a[5]||"":c&&V.test(c)&&(b=g(c,!0))&&(b=c.indexOf(")",c.length-b)-c.length)&&(a[0]=a[0].slice(0,b),a[2]=c.slice(0,b)),a.slice(0,3))}},filter:{TAG:function(a){var b=a.replace(ca,da).toLowerCase();return"*"===a?function(){return!0}:function(a){return a.nodeName&&a.nodeName.toLowerCase()===b}},CLASS:function(a){var b=y[a+" "];return b||(b=new RegExp("(^|"+L+")"+a+"("+L+"|$)"))&&y(a,function(a){return b.test("string"==typeof a.className&&a.className||"undefined"!=typeof a.getAttribute&&a.getAttribute("class")||"")})},ATTR:function(a,b,c){return function(d){var e=ga.attr(d,a);return null==e?"!="===b:b?(e+="","="===b?e===c:"!="===b?e!==c:"^="===b?c&&0===e.indexOf(c):"*="===b?c&&e.indexOf(c)>-1:"$="===b?c&&e.slice(-c.length)===c:"~="===b?(" "+e.replace(Q," ")+" ").indexOf(c)>-1:"|="===b?e===c||e.slice(0,c.length+1)===c+"-":!1):!0}},CHILD:function(a,b,c,d,e){var f="nth"!==a.slice(0,3),g="last"!==a.slice(-4),h="of-type"===b;return 1===d&&0===e?function(a){return!!a.parentNode}:function(b,c,i){var j,k,l,m,n,o,p=f!==g?"nextSibling":"previousSibling",q=b.parentNode,r=h&&b.nodeName.toLowerCase(),s=!i&&!h;if(q){if(f){while(p){l=b;while(l=l[p])if(h?l.nodeName.toLowerCase()===r:1===l.nodeType)return!1;o=p="only"===a&&!o&&"nextSibling"}return!0}if(o=[g?q.firstChild:q.lastChild],g&&s){k=q[u]||(q[u]={}),j=k[a]||[],n=j[0]===w&&j[1],m=j[0]===w&&j[2],l=n&&q.childNodes[n];while(l=++n&&l&&l[p]||(m=n=0)||o.pop())if(1===l.nodeType&&++m&&l===b){k[a]=[w,n,m];break}}else if(s&&(j=(b[u]||(b[u]={}))[a])&&j[0]===w)m=j[1];else while(l=++n&&l&&l[p]||(m=n=0)||o.pop())if((h?l.nodeName.toLowerCase()===r:1===l.nodeType)&&++m&&(s&&((l[u]||(l[u]={}))[a]=[w,m]),l===b))break;return m-=e,m===d||m%d===0&&m/d>=0}}},PSEUDO:function(a,b){var c,e=d.pseudos[a]||d.setFilters[a.toLowerCase()]||ga.error("unsupported pseudo: "+a);return e[u]?e(b):e.length>1?(c=[a,a,"",b],d.setFilters.hasOwnProperty(a.toLowerCase())?ia(function(a,c){var d,f=e(a,b),g=f.length;while(g--)d=J(a,f[g]),a[d]=!(c[d]=f[g])}):function(a){return e(a,0,c)}):e}},pseudos:{not:ia(function(a){var b=[],c=[],d=h(a.replace(R,"$1"));return d[u]?ia(function(a,b,c,e){var f,g=d(a,null,e,[]),h=a.length;while(h--)(f=g[h])&&(a[h]=!(b[h]=f))}):function(a,e,f){return b[0]=a,d(b,null,f,c),b[0]=null,!c.pop()}}),has:ia(function(a){return function(b){return ga(a,b).length>0}}),contains:ia(function(a){return a=a.replace(ca,da),function(b){return(b.textContent||b.innerText||e(b)).indexOf(a)>-1}}),lang:ia(function(a){return W.test(a||"")||ga.error("unsupported lang: "+a),a=a.replace(ca,da).toLowerCase(),function(b){var c;do if(c=p?b.lang:b.getAttribute("xml:lang")||b.getAttribute("lang"))return c=c.toLowerCase(),c===a||0===c.indexOf(a+"-");while((b=b.parentNode)&&1===b.nodeType);return!1}}),target:function(b){var c=a.location&&a.location.hash;return c&&c.slice(1)===b.id},root:function(a){return a===o},focus:function(a){return a===n.activeElement&&(!n.hasFocus||n.hasFocus())&&!!(a.type||a.href||~a.tabIndex)},enabled:function(a){return a.disabled===!1},disabled:function(a){return a.disabled===!0},checked:function(a){var b=a.nodeName.toLowerCase();return"input"===b&&!!a.checked||"option"===b&&!!a.selected},selected:function(a){return a.parentNode&&a.parentNode.selectedIndex,a.selected===!0},empty:function(a){for(a=a.firstChild;a;a=a.nextSibling)if(a.nodeType<6)return!1;return!0},parent:function(a){return!d.pseudos.empty(a)},header:function(a){return Z.test(a.nodeName)},input:function(a){return Y.test(a.nodeName)},button:function(a){var b=a.nodeName.toLowerCase();return"input"===b&&"button"===a.type||"button"===b},text:function(a){var b;return"input"===a.nodeName.toLowerCase()&&"text"===a.type&&(null==(b=a.getAttribute("type"))||"text"===b.toLowerCase())},first:oa(function(){return[0]}),last:oa(function(a,b){return[b-1]}),eq:oa(function(a,b,c){return[0>c?c+b:c]}),even:oa(function(a,b){for(var c=0;b>c;c+=2)a.push(c);return a}),odd:oa(function(a,b){for(var c=1;b>c;c+=2)a.push(c);return a}),lt:oa(function(a,b,c){for(var d=0>c?c+b:c;--d>=0;)a.push(d);return a}),gt:oa(function(a,b,c){for(var d=0>c?c+b:c;++d<b;)a.push(d);return a})}},d.pseudos.nth=d.pseudos.eq;for(b in{radio:!0,checkbox:!0,file:!0,password:!0,image:!0})d.pseudos[b]=ma(b);for(b in{submit:!0,reset:!0})d.pseudos[b]=na(b);function qa(){}qa.prototype=d.filters=d.pseudos,d.setFilters=new qa,g=ga.tokenize=function(a,b){var c,e,f,g,h,i,j,k=z[a+" "];if(k)return b?0:k.slice(0);h=a,i=[],j=d.preFilter;while(h){(!c||(e=S.exec(h)))&&(e&&(h=h.slice(e[0].length)||h),i.push(f=[])),c=!1,(e=T.exec(h))&&(c=e.shift(),f.push({value:c,type:e[0].replace(R," ")}),h=h.slice(c.length));for(g in d.filter)!(e=X[g].exec(h))||j[g]&&!(e=j[g](e))||(c=e.shift(),f.push({value:c,type:g,matches:e}),h=h.slice(c.length));if(!c)break}return b?h.length:h?ga.error(a):z(a,i).slice(0)};function ra(a){for(var b=0,c=a.length,d="";c>b;b++)d+=a[b].value;return d}function sa(a,b,c){var d=b.dir,e=c&&"parentNode"===d,f=x++;return b.first?function(b,c,f){while(b=b[d])if(1===b.nodeType||e)return a(b,c,f)}:function(b,c,g){var h,i,j=[w,f];if(g){while(b=b[d])if((1===b.nodeType||e)&&a(b,c,g))return!0}else while(b=b[d])if(1===b.nodeType||e){if(i=b[u]||(b[u]={}),(h=i[d])&&h[0]===w&&h[1]===f)return j[2]=h[2];if(i[d]=j,j[2]=a(b,c,g))return!0}}}function ta(a){return a.length>1?function(b,c,d){var e=a.length;while(e--)if(!a[e](b,c,d))return!1;return!0}:a[0]}function ua(a,b,c){for(var d=0,e=b.length;e>d;d++)ga(a,b[d],c);return c}function va(a,b,c,d,e){for(var f,g=[],h=0,i=a.length,j=null!=b;i>h;h++)(f=a[h])&&(!c||c(f,d,e))&&(g.push(f),j&&b.push(h));return g}function wa(a,b,c,d,e,f){return d&&!d[u]&&(d=wa(d)),e&&!e[u]&&(e=wa(e,f)),ia(function(f,g,h,i){var j,k,l,m=[],n=[],o=g.length,p=f||ua(b||"*",h.nodeType?[h]:h,[]),q=!a||!f&&b?p:va(p,m,a,h,i),r=c?e||(f?a:o||d)?[]:g:q;if(c&&c(q,r,h,i),d){j=va(r,n),d(j,[],h,i),k=j.length;while(k--)(l=j[k])&&(r[n[k]]=!(q[n[k]]=l))}if(f){if(e||a){if(e){j=[],k=r.length;while(k--)(l=r[k])&&j.push(q[k]=l);e(null,r=[],j,i)}k=r.length;while(k--)(l=r[k])&&(j=e?J(f,l):m[k])>-1&&(f[j]=!(g[j]=l))}}else r=va(r===g?r.splice(o,r.length):r),e?e(null,g,r,i):H.apply(g,r)})}function xa(a){for(var b,c,e,f=a.length,g=d.relative[a[0].type],h=g||d.relative[" "],i=g?1:0,k=sa(function(a){return a===b},h,!0),l=sa(function(a){return J(b,a)>-1},h,!0),m=[function(a,c,d){var e=!g&&(d||c!==j)||((b=c).nodeType?k(a,c,d):l(a,c,d));return b=null,e}];f>i;i++)if(c=d.relative[a[i].type])m=[sa(ta(m),c)];else{if(c=d.filter[a[i].type].apply(null,a[i].matches),c[u]){for(e=++i;f>e;e++)if(d.relative[a[e].type])break;return wa(i>1&&ta(m),i>1&&ra(a.slice(0,i-1).concat({value:" "===a[i-2].type?"*":""})).replace(R,"$1"),c,e>i&&xa(a.slice(i,e)),f>e&&xa(a=a.slice(e)),f>e&&ra(a))}m.push(c)}return ta(m)}function ya(a,b){var c=b.length>0,e=a.length>0,f=function(f,g,h,i,k){var l,m,o,p=0,q="0",r=f&&[],s=[],t=j,u=f||e&&d.find.TAG("*",k),v=w+=null==t?1:Math.random()||.1,x=u.length;for(k&&(j=g!==n&&g);q!==x&&null!=(l=u[q]);q++){if(e&&l){m=0;while(o=a[m++])if(o(l,g,h)){i.push(l);break}k&&(w=v)}c&&((l=!o&&l)&&p--,f&&r.push(l))}if(p+=q,c&&q!==p){m=0;while(o=b[m++])o(r,s,g,h);if(f){if(p>0)while(q--)r[q]||s[q]||(s[q]=F.call(i));s=va(s)}H.apply(i,s),k&&!f&&s.length>0&&p+b.length>1&&ga.uniqueSort(i)}return k&&(w=v,j=t),r};return c?ia(f):f}return h=ga.compile=function(a,b){var c,d=[],e=[],f=A[a+" "];if(!f){b||(b=g(a)),c=b.length;while(c--)f=xa(b[c]),f[u]?d.push(f):e.push(f);f=A(a,ya(e,d)),f.selector=a}return f},i=ga.select=function(a,b,e,f){var i,j,k,l,m,n="function"==typeof a&&a,o=!f&&g(a=n.selector||a);if(e=e||[],1===o.length){if(j=o[0]=o[0].slice(0),j.length>2&&"ID"===(k=j[0]).type&&c.getById&&9===b.nodeType&&p&&d.relative[j[1].type]){if(b=(d.find.ID(k.matches[0].replace(ca,da),b)||[])[0],!b)return e;n&&(b=b.parentNode),a=a.slice(j.shift().value.length)}i=X.needsContext.test(a)?0:j.length;while(i--){if(k=j[i],d.relative[l=k.type])break;if((m=d.find[l])&&(f=m(k.matches[0].replace(ca,da),aa.test(j[0].type)&&pa(b.parentNode)||b))){if(j.splice(i,1),a=f.length&&ra(j),!a)return H.apply(e,f),e;break}}}return(n||h(a,o))(f,b,!p,e,aa.test(a)&&pa(b.parentNode)||b),e},c.sortStable=u.split("").sort(B).join("")===u,c.detectDuplicates=!!l,m(),c.sortDetached=ja(function(a){return 1&a.compareDocumentPosition(n.createElement("div"))}),ja(function(a){return a.innerHTML="<a href='#'></a>","#"===a.firstChild.getAttribute("href")})||ka("type|href|height|width",function(a,b,c){return c?void 0:a.getAttribute(b,"type"===b.toLowerCase()?1:2)}),c.attributes&&ja(function(a){return a.innerHTML="<input/>",a.firstChild.setAttribute("value",""),""===a.firstChild.getAttribute("value")})||ka("value",function(a,b,c){return c||"input"!==a.nodeName.toLowerCase()?void 0:a.defaultValue}),ja(function(a){return null==a.getAttribute("disabled")})||ka(K,function(a,b,c){var d;return c?void 0:a[b]===!0?b.toLowerCase():(d=a.getAttributeNode(b))&&d.specified?d.value:null}),ga}(a);m.find=s,m.expr=s.selectors,m.expr[":"]=m.expr.pseudos,m.unique=s.uniqueSort,m.text=s.getText,m.isXMLDoc=s.isXML,m.contains=s.contains;var t=m.expr.match.needsContext,u=/^<(\w+)\s*\/?>(?:<\/\1>|)$/,v=/^.[^:#\[\.,]*$/;function w(a,b,c){if(m.isFunction(b))return m.grep(a,function(a,d){return!!b.call(a,d,a)!==c});if(b.nodeType)return m.grep(a,function(a){return a===b!==c});if("string"==typeof b){if(v.test(b))return m.filter(b,a,c);b=m.filter(b,a)}return m.grep(a,function(a){return m.inArray(a,b)>=0!==c})}m.filter=function(a,b,c){var d=b[0];return c&&(a=":not("+a+")"),1===b.length&&1===d.nodeType?m.find.matchesSelector(d,a)?[d]:[]:m.find.matches(a,m.grep(b,function(a){return 1===a.nodeType}))},m.fn.extend({find:function(a){var b,c=[],d=this,e=d.length;if("string"!=typeof a)return this.pushStack(m(a).filter(function(){for(b=0;e>b;b++)if(m.contains(d[b],this))return!0}));for(b=0;e>b;b++)m.find(a,d[b],c);return c=this.pushStack(e>1?m.unique(c):c),c.selector=this.selector?this.selector+" "+a:a,c},filter:function(a){return this.pushStack(w(this,a||[],!1))},not:function(a){return this.pushStack(w(this,a||[],!0))},is:function(a){return!!w(this,"string"==typeof a&&t.test(a)?m(a):a||[],!1).length}});var x,y=a.document,z=/^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,A=m.fn.init=function(a,b){var c,d;if(!a)return this;if("string"==typeof a){if(c="<"===a.charAt(0)&&">"===a.charAt(a.length-1)&&a.length>=3?[null,a,null]:z.exec(a),!c||!c[1]&&b)return!b||b.jquery?(b||x).find(a):this.constructor(b).find(a);if(c[1]){if(b=b instanceof m?b[0]:b,m.merge(this,m.parseHTML(c[1],b&&b.nodeType?b.ownerDocument||b:y,!0)),u.test(c[1])&&m.isPlainObject(b))for(c in b)m.isFunction(this[c])?this[c](b[c]):this.attr(c,b[c]);return this}if(d=y.getElementById(c[2]),d&&d.parentNode){if(d.id!==c[2])return x.find(a);this.length=1,this[0]=d}return this.context=y,this.selector=a,this}return a.nodeType?(this.context=this[0]=a,this.length=1,this):m.isFunction(a)?"undefined"!=typeof x.ready?x.ready(a):a(m):(void 0!==a.selector&&(this.selector=a.selector,this.context=a.context),m.makeArray(a,this))};A.prototype=m.fn,x=m(y);var B=/^(?:parents|prev(?:Until|All))/,C={children:!0,contents:!0,next:!0,prev:!0};m.extend({dir:function(a,b,c){var d=[],e=a[b];while(e&&9!==e.nodeType&&(void 0===c||1!==e.nodeType||!m(e).is(c)))1===e.nodeType&&d.push(e),e=e[b];return d},sibling:function(a,b){for(var c=[];a;a=a.nextSibling)1===a.nodeType&&a!==b&&c.push(a);return c}}),m.fn.extend({has:function(a){var b,c=m(a,this),d=c.length;return this.filter(function(){for(b=0;d>b;b++)if(m.contains(this,c[b]))return!0})},closest:function(a,b){for(var c,d=0,e=this.length,f=[],g=t.test(a)||"string"!=typeof a?m(a,b||this.context):0;e>d;d++)for(c=this[d];c&&c!==b;c=c.parentNode)if(c.nodeType<11&&(g?g.index(c)>-1:1===c.nodeType&&m.find.matchesSelector(c,a))){f.push(c);break}return this.pushStack(f.length>1?m.unique(f):f)},index:function(a){return a?"string"==typeof a?m.inArray(this[0],m(a)):m.inArray(a.jquery?a[0]:a,this):this[0]&&this[0].parentNode?this.first().prevAll().length:-1},add:function(a,b){return this.pushStack(m.unique(m.merge(this.get(),m(a,b))))},addBack:function(a){return this.add(null==a?this.prevObject:this.prevObject.filter(a))}});function D(a,b){do a=a[b];while(a&&1!==a.nodeType);return a}m.each({parent:function(a){var b=a.parentNode;return b&&11!==b.nodeType?b:null},parents:function(a){return m.dir(a,"parentNode")},parentsUntil:function(a,b,c){return m.dir(a,"parentNode",c)},next:function(a){return D(a,"nextSibling")},prev:function(a){return D(a,"previousSibling")},nextAll:function(a){return m.dir(a,"nextSibling")},prevAll:function(a){return m.dir(a,"previousSibling")},nextUntil:function(a,b,c){return m.dir(a,"nextSibling",c)},prevUntil:function(a,b,c){return m.dir(a,"previousSibling",c)},siblings:function(a){return m.sibling((a.parentNode||{}).firstChild,a)},children:function(a){return m.sibling(a.firstChild)},contents:function(a){return m.nodeName(a,"iframe")?a.contentDocument||a.contentWindow.document:m.merge([],a.childNodes)}},function(a,b){m.fn[a]=function(c,d){var e=m.map(this,b,c);return"Until"!==a.slice(-5)&&(d=c),d&&"string"==typeof d&&(e=m.filter(d,e)),this.length>1&&(C[a]||(e=m.unique(e)),B.test(a)&&(e=e.reverse())),this.pushStack(e)}});var E=/\S+/g,F={};function G(a){var b=F[a]={};return m.each(a.match(E)||[],function(a,c){b[c]=!0}),b}m.Callbacks=function(a){a="string"==typeof a?F[a]||G(a):m.extend({},a);var b,c,d,e,f,g,h=[],i=!a.once&&[],j=function(l){for(c=a.memory&&l,d=!0,f=g||0,g=0,e=h.length,b=!0;h&&e>f;f++)if(h[f].apply(l[0],l[1])===!1&&a.stopOnFalse){c=!1;break}b=!1,h&&(i?i.length&&j(i.shift()):c?h=[]:k.disable())},k={add:function(){if(h){var d=h.length;!function f(b){m.each(b,function(b,c){var d=m.type(c);"function"===d?a.unique&&k.has(c)||h.push(c):c&&c.length&&"string"!==d&&f(c)})}(arguments),b?e=h.length:c&&(g=d,j(c))}return this},remove:function(){return h&&m.each(arguments,function(a,c){var d;while((d=m.inArray(c,h,d))>-1)h.splice(d,1),b&&(e>=d&&e--,f>=d&&f--)}),this},has:function(a){return a?m.inArray(a,h)>-1:!(!h||!h.length)},empty:function(){return h=[],e=0,this},disable:function(){return h=i=c=void 0,this},disabled:function(){return!h},lock:function(){return i=void 0,c||k.disable(),this},locked:function(){return!i},fireWith:function(a,c){return!h||d&&!i||(c=c||[],c=[a,c.slice?c.slice():c],b?i.push(c):j(c)),this},fire:function(){return k.fireWith(this,arguments),this},fired:function(){return!!d}};return k},m.extend({Deferred:function(a){var b=[["resolve","done",m.Callbacks("once memory"),"resolved"],["reject","fail",m.Callbacks("once memory"),"rejected"],["notify","progress",m.Callbacks("memory")]],c="pending",d={state:function(){return c},always:function(){return e.done(arguments).fail(arguments),this},then:function(){var a=arguments;return m.Deferred(function(c){m.each(b,function(b,f){var g=m.isFunction(a[b])&&a[b];e[f[1]](function(){var a=g&&g.apply(this,arguments);a&&m.isFunction(a.promise)?a.promise().done(c.resolve).fail(c.reject).progress(c.notify):c[f[0]+"With"](this===d?c.promise():this,g?[a]:arguments)})}),a=null}).promise()},promise:function(a){return null!=a?m.extend(a,d):d}},e={};return d.pipe=d.then,m.each(b,function(a,f){var g=f[2],h=f[3];d[f[1]]=g.add,h&&g.add(function(){c=h},b[1^a][2].disable,b[2][2].lock),e[f[0]]=function(){return e[f[0]+"With"](this===e?d:this,arguments),this},e[f[0]+"With"]=g.fireWith}),d.promise(e),a&&a.call(e,e),e},when:function(a){var b=0,c=d.call(arguments),e=c.length,f=1!==e||a&&m.isFunction(a.promise)?e:0,g=1===f?a:m.Deferred(),h=function(a,b,c){return function(e){b[a]=this,c[a]=arguments.length>1?d.call(arguments):e,c===i?g.notifyWith(b,c):--f||g.resolveWith(b,c)}},i,j,k;if(e>1)for(i=new Array(e),j=new Array(e),k=new Array(e);e>b;b++)c[b]&&m.isFunction(c[b].promise)?c[b].promise().done(h(b,k,c)).fail(g.reject).progress(h(b,j,i)):--f;return f||g.resolveWith(k,c),g.promise()}});var H;m.fn.ready=function(a){return m.ready.promise().done(a),this},m.extend({isReady:!1,readyWait:1,holdReady:function(a){a?m.readyWait++:m.ready(!0)},ready:function(a){if(a===!0?!--m.readyWait:!m.isReady){if(!y.body)return setTimeout(m.ready);m.isReady=!0,a!==!0&&--m.readyWait>0||(H.resolveWith(y,[m]),m.fn.triggerHandler&&(m(y).triggerHandler("ready"),m(y).off("ready")))}}});function I(){y.addEventListener?(y.removeEventListener("DOMContentLoaded",J,!1),a.removeEventListener("load",J,!1)):(y.detachEvent("onreadystatechange",J),a.detachEvent("onload",J))}function J(){(y.addEventListener||"load"===event.type||"complete"===y.readyState)&&(I(),m.ready())}m.ready.promise=function(b){if(!H)if(H=m.Deferred(),"complete"===y.readyState)setTimeout(m.ready);else if(y.addEventListener)y.addEventListener("DOMContentLoaded",J,!1),a.addEventListener("load",J,!1);else{y.attachEvent("onreadystatechange",J),a.attachEvent("onload",J);var c=!1;try{c=null==a.frameElement&&y.documentElement}catch(d){}c&&c.doScroll&&!function e(){if(!m.isReady){try{c.doScroll("left")}catch(a){return setTimeout(e,50)}I(),m.ready()}}()}return H.promise(b)};var K="undefined",L;for(L in m(k))break;k.ownLast="0"!==L,k.inlineBlockNeedsLayout=!1,m(function(){var a,b,c,d;c=y.getElementsByTagName("body")[0],c&&c.style&&(b=y.createElement("div"),d=y.createElement("div"),d.style.cssText="position:absolute;border:0;width:0;height:0;top:0;left:-9999px",c.appendChild(d).appendChild(b),typeof b.style.zoom!==K&&(b.style.cssText="display:inline;margin:0;border:0;padding:1px;width:1px;zoom:1",k.inlineBlockNeedsLayout=a=3===b.offsetWidth,a&&(c.style.zoom=1)),c.removeChild(d))}),function(){var a=y.createElement("div");if(null==k.deleteExpando){k.deleteExpando=!0;try{delete a.test}catch(b){k.deleteExpando=!1}}a=null}(),m.acceptData=function(a){var b=m.noData[(a.nodeName+" ").toLowerCase()],c=+a.nodeType||1;return 1!==c&&9!==c?!1:!b||b!==!0&&a.getAttribute("classid")===b};var M=/^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,N=/([A-Z])/g;function O(a,b,c){if(void 0===c&&1===a.nodeType){var d="data-"+b.replace(N,"-$1").toLowerCase();if(c=a.getAttribute(d),"string"==typeof c){try{c="true"===c?!0:"false"===c?!1:"null"===c?null:+c+""===c?+c:M.test(c)?m.parseJSON(c):c}catch(e){}m.data(a,b,c)}else c=void 0}return c}function P(a){var b;for(b in a)if(("data"!==b||!m.isEmptyObject(a[b]))&&"toJSON"!==b)return!1;
@@ -426,142 +425,501 @@ summary {
 
 
 
-<h1 class="title toc-ignore">R Notebook</h1>
-<h4 class="author">Rosalie Griffin Waller</h4>
-<h4 class="date">20-Jul-2020</h4>
+<h1 class="title toc-ignore">Myeloma dimensions and clinical risk</h1>
 
 </div>
 
 
-<p>Code used to generate results reported in “TRANSCRIPTOME DIMENSIONS: AGNOSTIC EXPRESSION VARIABLES TO EMPOWER GENOMIC EPIDEMIOLOGY STUDIES” by Waller et al. </p>
-<div id="step-1.-generate-transcript-dimensions-from-multiple-myeloma-tumors" class="section level3">
-<h3>Step 1. Generate transcript dimensions from multiple myeloma tumors</h3>
-<div id="setup" class="section level4">
-<h4>1.1 Setup</h4>
-<div id="required-data" class="section level5">
-<h5>Required Data</h5>
-<p>Download publicly available myeloma data and save in working directory or change parameter path in setup block to the file location</p>
-<ol style="list-style-type: decimal">
-<li><p><strong>MMRF CoMMpass study gene expression estimates.</strong> Download transcript-based expression estimates processed by Salmon (version 0.7.2) from the CoMMpass Study (release IA14) MMRF web portal (<a href="https://research.themmrf.org/" class="uri">https://research.themmrf.org/</a>). Download file: MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz.</p></li>
-<li><p><strong>Gene Transfer Format (GTF) file.</strong> Use the same GTF to process as the CoMMpass Study used to generate expression estimates. Download here: <a href="ftp://ftp.ensembl.org/pub/release-74/gtf/homo_sapiens/Homo_sapiens.GRCh37.74.gtf.gz" class="uri">ftp://ftp.ensembl.org/pub/release-74/gtf/homo_sapiens/Homo_sapiens.GRCh37.74.gtf.gz</a>.</p></li>
-</ol>
+<p>Load transcriptome dimensions (PC1-PC)</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">load</span>(<span class="dt">file =</span> params<span class="op">$</span>data) <span class="co"># load processed data</span></span></code></pre></div>
+<div id="cytogenetics" class="section level3">
+<h3>1. Cytogenetics</h3>
+<p>Large somatic chromosomal DNA aberrations detected by cytogenetics are used to define prognostic risk groups in myeloma. Clinical risk categories defined by mSMART7 include: high risk, del(17p) and t(14;16); intermediate risk, amp(1q) and t(4;14); and standard risk, t(11;14).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">#DAT = merge(clinical[,c(&quot;SEQ_ID&quot;,&quot;D_TRI_CF_ABNORMALITYPR11&quot;,&quot;D_TRI_CF_ABNORMALITYPR8&quot;,&quot;D_TRI_CF_ABNORMALITYPR13&quot;,&quot;D_TRI_CF_ABNORMALITYPR3&quot;,&quot;D_TRI_CF_ABNORMALITYPR6&quot;)],score_sd)</span></span></code></pre></div>
+<p>1.1. del(17p): D_TRI_CF_ABNORMALITYPR11 &amp; D_TRI_CF_17PABNORMALCE (abundance)</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>DAT =<span class="st"> </span><span class="kw">merge</span>(clinical[clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR11<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span><span class="st"> </span>clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR11<span class="op">!=</span><span class="st">&quot;&quot;</span>,</span>
+<span id="cb3-2"><a href="#cb3-2"></a>                     <span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_TRI_CF_ABNORMALITYPR11&quot;</span>)],score_sd)</span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR11<span class="op">==</span><span class="st">&quot;Yes&quot;</span>]),<span class="st">&quot;(+),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR11<span class="op">==</span><span class="st">&quot;No&quot;</span>]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;Baseline samples with data: 436 (total), 52 (+), 384 (-)&quot;</code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR11 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR11)</span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>], <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR11 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = D_TRI_CF_ABNORMALITYPR11 ~ ., family = &quot;binomial&quot;, 
+##     data = DAT[, -&quot;SEQ_ID&quot;])
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.5460  -0.5434  -0.3682  -0.2166   3.2274  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -2.33931    0.19885 -11.765   &lt;2e-16 ***
+## PC1_SD      -0.14872    0.16816  -0.884   0.3765    
+## PC2_SD       0.05974    0.15799   0.378   0.7053    
+## PC3_SD       0.37944    0.18161   2.089   0.0367 *  
+## PC4_SD      -0.06789    0.16062  -0.423   0.6726    
+## PC5_SD      -0.31276    0.16150  -1.937   0.0528 .  
+## PC6_SD      -0.36238    0.16624  -2.180   0.0293 *  
+## PC7_SD       0.31209    0.17164   1.818   0.0690 .  
+## PC8_SD       0.09814    0.16563   0.593   0.5535    
+## PC9_SD       0.02164    0.16421   0.132   0.8951    
+## PC10_SD      0.08407    0.16914   0.497   0.6192    
+## PC11_SD      0.28001    0.16681   1.679   0.0932 .  
+## PC12_SD     -0.08424    0.16878  -0.499   0.6177    
+## PC13_SD     -0.22907    0.16579  -1.382   0.1671    
+## PC14_SD     -0.08211    0.16564  -0.496   0.6201    
+## PC15_SD      0.17542    0.16406   1.069   0.2849    
+## PC16_SD     -0.08960    0.15796  -0.567   0.5706    
+## PC17_SD     -0.04821    0.16229  -0.297   0.7664    
+## PC18_SD      0.29209    0.17394   1.679   0.0931 .  
+## PC19_SD      0.17987    0.15566   1.156   0.2479    
+## PC20_SD     -0.04769    0.17202  -0.277   0.7816    
+## PC21_SD     -0.07767    0.15997  -0.486   0.6273    
+## PC22_SD     -0.18464    0.15887  -1.162   0.2452    
+## PC23_SD     -0.04358    0.15095  -0.289   0.7728    
+## PC24_SD      0.10254    0.15678   0.654   0.5131    
+## PC25_SD     -0.06833    0.15963  -0.428   0.6686    
+## PC26_SD     -0.04335    0.16423  -0.264   0.7918    
+## PC27_SD     -0.11872    0.16213  -0.732   0.4640    
+## PC28_SD     -0.13992    0.16361  -0.855   0.3924    
+## PC29_SD     -0.28691    0.15851  -1.810   0.0703 .  
+## PC30_SD     -0.17156    0.15881  -1.080   0.2800    
+## PC31_SD      0.07626    0.16050   0.475   0.6347    
+## PC32_SD     -0.15844    0.15977  -0.992   0.3213    
+## PC33_SD      0.13535    0.15422   0.878   0.3801    
+## PC34_SD      0.21123    0.17583   1.201   0.2296    
+## PC35_SD      0.11168    0.17134   0.652   0.5145    
+## PC36_SD      0.09137    0.15100   0.605   0.5451    
+## PC37_SD      0.12802    0.16963   0.755   0.4504    
+## PC38_SD      0.23489    0.15565   1.509   0.1313    
+## PC39_SD      0.33491    0.15942   2.101   0.0357 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 318.68  on 435  degrees of freedom
+## Residual deviance: 275.47  on 396  degrees of freedom
+## AIC: 355.47
+## 
+## Number of Fisher Scoring iterations: 6</code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>() <span class="co"># Count sig dimensions in model</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of the &quot;</span>,<span class="kw">ncol</span>(score_sd)<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot; dimensions were significat at p &lt; 0.05 in the combined model&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;3 of the 39 dimensions were significat at p &lt; 0.05 in the combined model&quot;</code></pre>
+<p>PLOT</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>dt =<span class="st"> </span>DAT</span>
+<span id="cb9-2"><a href="#cb9-2"></a>fit =<span class="st"> </span>MOD</span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co"># find predicted based on significant dimensions only</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>fit.coeff =<span class="st"> </span><span class="kw">summary</span>(fit)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,] <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">data.table</span>()</span>
+<span id="cb9-6"><a href="#cb9-6"></a>fit.coeff<span class="op">$</span>PC =<span class="st"> </span><span class="kw">colnames</span>(dt[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_TRI_CF_ABNORMALITYPR11&quot;</span>)])</span>
+<span id="cb9-7"><a href="#cb9-7"></a>fit.sig =<span class="st"> </span>fit.coeff[fit.coeff<span class="op">$</span><span class="st">`</span><span class="dt">Pr(&gt;|z|)</span><span class="st">`</span> <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.05</span>]</span>
+<span id="cb9-8"><a href="#cb9-8"></a>dt.sig =<span class="st"> </span>dt <span class="op">%&gt;%</span><span class="st"> </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="kw">all_of</span>(fit.sig<span class="op">$</span>PC))</span>
+<span id="cb9-9"><a href="#cb9-9"></a>dt[,combined<span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="kw">rowSums</span>(<span class="kw">data.matrix</span>(dt.sig) <span class="op">%*%</span><span class="st"> </span><span class="kw">diag</span>(fit.sig<span class="op">$</span>Estimate)) <span class="op">+</span><span class="st"> </span><span class="kw">summary</span>(fit)<span class="op">$</span>coeff[<span class="dv">1</span>,<span class="dv">1</span>]]</span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="co">#dt[,sig:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate))]</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="co">#dt[,all:= rowSums(data.matrix(dt %&gt;% dplyr::select(contains(&quot;PC&quot;))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="co">#tmp = merge(actual_preds,dt[,c(&quot;SEQ_ID&quot;,&quot;score&quot;,&quot;combined&quot;,&quot;all&quot;,&quot;sig&quot;)],by=&quot;SEQ_ID&quot;)</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a></span>
+<span id="cb9-14"><a href="#cb9-14"></a>pdt =<span class="st"> </span>dt[,<span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_TRI_CF_ABNORMALITYPR11&quot;</span>,<span class="st">&quot;combined&quot;</span>)]</span>
+<span id="cb9-15"><a href="#cb9-15"></a></span>
+<span id="cb9-16"><a href="#cb9-16"></a><span class="co"># find samples to highlight</span></span>
+<span id="cb9-17"><a href="#cb9-17"></a>ids =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;MMRF_1624_1_BM&quot;</span>,<span class="st">&quot;MMRF_1694_1_BM&quot;</span>)</span>
+<span id="cb9-18"><a href="#cb9-18"></a>pdt[SEQ_ID<span class="op">%in%</span>ids]</span></code></pre></div>
+<pre><code>##            SEQ_ID D_TRI_CF_ABNORMALITYPR11  combined
+## 1: MMRF_1624_1_BM                       No -1.795554
+## 2: MMRF_1694_1_BM                       No -3.376687</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>p1 =<span class="st"> </span><span class="kw">ggplot</span>(pdt, <span class="kw">aes</span>(<span class="dt">x =</span> <span class="kw">factor</span>(D_TRI_CF_ABNORMALITYPR11), <span class="dt">y =</span> combined, <span class="dt">fill =</span> D_TRI_CF_ABNORMALITYPR11)) <span class="op">+</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="st">  </span><span class="kw">scale_fill_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="st">&#39;#E69F00&#39;</span>, <span class="st">&#39;#56B4E9&#39;</span>)) <span class="op">+</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="st">  </span><span class="kw">geom_violin</span>() <span class="op">+</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a><span class="st">  </span><span class="kw">theme_classic</span>() <span class="op">+</span><span class="st"> </span></span>
+<span id="cb11-5"><a href="#cb11-5"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">axis.title.x=</span><span class="kw">element_blank</span>(),</span>
+<span id="cb11-6"><a href="#cb11-6"></a>          <span class="dt">axis.text.x=</span><span class="kw">element_blank</span>(),</span>
+<span id="cb11-7"><a href="#cb11-7"></a>          <span class="dt">axis.ticks.x=</span><span class="kw">element_blank</span>()) <span class="op">+</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a><span class="st">  </span><span class="kw">annotate</span>(<span class="dt">geom =</span> <span class="st">&quot;point&quot;</span>, <span class="dt">x =</span> <span class="st">&quot;No&quot;</span>, <span class="dt">y =</span> <span class="fl">-3.376687</span>) <span class="op">+</span><span class="st"> </span><span class="co"># &quot;MMRF_1694_1_BM&quot;</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a><span class="st">  </span><span class="kw">annotate</span>(<span class="dt">geom =</span> <span class="st">&quot;point&quot;</span>, <span class="dt">x =</span> <span class="st">&quot;No&quot;</span>, <span class="dt">y =</span> <span class="fl">-1.795554</span>) <span class="co"># &quot;MMRF_1624_1_BM&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a>p1</span></code></pre></div>
+<p><img src="data:image/png;base64,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" width="672" /></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">ggsave</span>(<span class="dt">filename =</span> <span class="st">&quot;plots/d17p_violin.pdf&quot;</span>,<span class="dt">plot =</span> p1)<span class="co">#,width=3.5,height=3.5)</span></span></code></pre></div>
+<pre><code>## Saving 7 x 5 in image</code></pre>
+<p>1.2. t(14;16): D_TRI_CF_ABNORMALITYPR8 &amp; D_TRI_CF_T1416ABNORMAL (abundance)</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a>DAT =<span class="st"> </span><span class="kw">merge</span>(clinical[clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span><span class="st"> </span>clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8<span class="op">!=</span><span class="st">&quot;&quot;</span>,</span>
+<span id="cb14-2"><a href="#cb14-2"></a>                     <span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_TRI_CF_ABNORMALITYPR8&quot;</span>)],score_sd)</span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8<span class="op">==</span><span class="st">&quot;Yes&quot;</span>]),<span class="st">&quot;(+),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8<span class="op">==</span><span class="st">&quot;No&quot;</span>]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;Baseline samples with data: 554 (total), 53 (+), 501 (-)&quot;</code></pre>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8)</span>
+<span id="cb16-2"><a href="#cb16-2"></a></span>
+<span id="cb16-3"><a href="#cb16-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>], <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR8 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = D_TRI_CF_ABNORMALITYPR8 ~ ., family = &quot;binomial&quot;, 
+##     data = DAT[, -&quot;SEQ_ID&quot;])
+## 
+## Deviance Residuals: 
+##      Min        1Q    Median        3Q       Max  
+## -1.90797  -0.35808  -0.18434  -0.08671   3.11720  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -3.68550    0.34193 -10.779  &lt; 2e-16 ***
+## PC1_SD      -0.30672    0.21028  -1.459 0.144664    
+## PC2_SD      -0.55403    0.20849  -2.657 0.007877 ** 
+## PC3_SD       0.32627    0.20724   1.574 0.115408    
+## PC4_SD      -0.24505    0.18243  -1.343 0.179186    
+## PC5_SD      -0.46980    0.17898  -2.625 0.008669 ** 
+## PC6_SD       0.36046    0.20485   1.760 0.078472 .  
+## PC7_SD      -0.01306    0.19061  -0.069 0.945358    
+## PC8_SD       0.04631    0.19583   0.236 0.813053    
+## PC9_SD      -0.24567    0.20440  -1.202 0.229401    
+## PC10_SD      0.50221    0.20863   2.407 0.016076 *  
+## PC11_SD     -0.08352    0.17871  -0.467 0.640253    
+## PC12_SD      0.60753    0.19491   3.117 0.001827 ** 
+## PC13_SD     -0.41082    0.17773  -2.311 0.020806 *  
+## PC14_SD     -0.31970    0.18560  -1.723 0.084969 .  
+## PC15_SD      0.02333    0.19011   0.123 0.902330    
+## PC16_SD      0.80028    0.22187   3.607 0.000310 ***
+## PC17_SD      0.04611    0.19884   0.232 0.816632    
+## PC18_SD     -0.22539    0.17719  -1.272 0.203369    
+## PC19_SD     -0.89008    0.22412  -3.971 7.14e-05 ***
+## PC20_SD      0.25206    0.20866   1.208 0.227043    
+## PC21_SD     -0.22007    0.17950  -1.226 0.220210    
+## PC22_SD      0.02942    0.20551   0.143 0.886173    
+## PC23_SD     -0.10984    0.19196  -0.572 0.567199    
+## PC24_SD     -0.16723    0.18541  -0.902 0.367077    
+## PC25_SD     -0.72354    0.20843  -3.471 0.000518 ***
+## PC26_SD      0.30567    0.18513   1.651 0.098721 .  
+## PC27_SD     -0.12525    0.19136  -0.655 0.512773    
+## PC28_SD      0.56144    0.17975   3.123 0.001787 ** 
+## PC29_SD      0.08356    0.19796   0.422 0.672958    
+## PC30_SD     -0.17086    0.17983  -0.950 0.342045    
+## PC31_SD     -0.27408    0.18853  -1.454 0.146007    
+## PC32_SD      0.17124    0.17858   0.959 0.337619    
+## PC33_SD      0.19644    0.18058   1.088 0.276670    
+## PC34_SD     -0.12919    0.19111  -0.676 0.499049    
+## PC35_SD     -0.37854    0.19025  -1.990 0.046623 *  
+## PC36_SD     -0.07250    0.16971  -0.427 0.669217    
+## PC37_SD      0.40193    0.19317   2.081 0.037465 *  
+## PC38_SD     -0.01291    0.17264  -0.075 0.940380    
+## PC39_SD     -0.40072    0.19526  -2.052 0.040147 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 349.53  on 553  degrees of freedom
+## Residual deviance: 227.27  on 514  degrees of freedom
+## AIC: 307.27
+## 
+## Number of Fisher Scoring iterations: 7</code></pre>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>() <span class="co"># Count sig dimensions in model</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of the &quot;</span>,<span class="kw">ncol</span>(score_sd)<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot; dimensions were significat at p &lt; 0.05 in the combined model&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;12 of the 39 dimensions were significat at p &lt; 0.05 in the combined model&quot;</code></pre>
+<p>1.3. amp(1q): D_TRI_CF_ABNORMALITYPR13 &amp; D_TRI_CF_1PAMPLIFICATI2 (abundance)</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a>DAT =<span class="st"> </span><span class="kw">merge</span>(clinical[clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span><span class="st"> </span>clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13<span class="op">!=</span><span class="st">&quot;&quot;</span>,</span>
+<span id="cb20-2"><a href="#cb20-2"></a>                     <span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_TRI_CF_ABNORMALITYPR13&quot;</span>)],score_sd)</span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13<span class="op">==</span><span class="st">&quot;Yes&quot;</span>]),<span class="st">&quot;(+),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13<span class="op">==</span><span class="st">&quot;No&quot;</span>]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;Baseline samples with data: 525 (total), 202 (+), 323 (-)&quot;</code></pre>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13)</span>
+<span id="cb22-2"><a href="#cb22-2"></a></span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>], <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR13 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = D_TRI_CF_ABNORMALITYPR13 ~ ., family = &quot;binomial&quot;, 
+##     data = DAT[, -&quot;SEQ_ID&quot;])
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.4620  -0.6314  -0.3313   0.6043   3.0382  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -0.690992   0.126291  -5.471 4.46e-08 ***
+## PC1_SD      -0.007713   0.122192  -0.063 0.949672    
+## PC2_SD      -0.610630   0.126239  -4.837 1.32e-06 ***
+## PC3_SD       1.024640   0.138244   7.412 1.25e-13 ***
+## PC4_SD       0.109691   0.125437   0.874 0.381861    
+## PC5_SD      -0.802967   0.135274  -5.936 2.92e-09 ***
+## PC6_SD       0.482744   0.127773   3.778 0.000158 ***
+## PC7_SD       0.117559   0.119897   0.980 0.326841    
+## PC8_SD      -0.230686   0.122601  -1.882 0.059890 .  
+## PC9_SD      -0.244367   0.123028  -1.986 0.047004 *  
+## PC10_SD     -0.408167   0.125689  -3.247 0.001164 ** 
+## PC11_SD     -0.284010   0.123191  -2.305 0.021141 *  
+## PC12_SD      0.148954   0.121227   1.229 0.219178    
+## PC13_SD      0.144725   0.116883   1.238 0.215641    
+## PC14_SD     -0.446631   0.124381  -3.591 0.000330 ***
+## PC15_SD      0.178899   0.118319   1.512 0.130534    
+## PC16_SD      0.127909   0.120903   1.058 0.290083    
+## PC17_SD     -0.076199   0.118711  -0.642 0.520947    
+## PC18_SD     -0.193285   0.123084  -1.570 0.116334    
+## PC19_SD     -0.202939   0.125611  -1.616 0.106177    
+## PC20_SD      0.048262   0.125938   0.383 0.701557    
+## PC21_SD     -0.287935   0.117308  -2.455 0.014107 *  
+## PC22_SD     -0.163345   0.124526  -1.312 0.189610    
+## PC23_SD     -0.308160   0.119422  -2.580 0.009868 ** 
+## PC24_SD      0.393140   0.128223   3.066 0.002169 ** 
+## PC25_SD      0.288189   0.127105   2.267 0.023370 *  
+## PC26_SD     -0.105200   0.123295  -0.853 0.393528    
+## PC27_SD     -0.453369   0.124358  -3.646 0.000267 ***
+## PC28_SD      0.015377   0.116773   0.132 0.895233    
+## PC29_SD     -0.065995   0.128013  -0.516 0.606179    
+## PC30_SD     -0.065103   0.113445  -0.574 0.566053    
+## PC31_SD     -0.010491   0.115031  -0.091 0.927330    
+## PC32_SD     -0.183180   0.128897  -1.421 0.155280    
+## PC33_SD     -0.082332   0.124583  -0.661 0.508701    
+## PC34_SD      0.221452   0.124709   1.776 0.075773 .  
+## PC35_SD      0.291681   0.122200   2.387 0.016991 *  
+## PC36_SD      0.065219   0.120091   0.543 0.587076    
+## PC37_SD     -0.252369   0.127726  -1.976 0.048170 *  
+## PC38_SD      0.140748   0.117811   1.195 0.232208    
+## PC39_SD      0.038282   0.125684   0.305 0.760681    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 699.66  on 524  degrees of freedom
+## Residual deviance: 443.73  on 485  degrees of freedom
+## AIC: 523.73
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>() <span class="co"># Count sig dimensions in model</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of the &quot;</span>,<span class="kw">ncol</span>(score_sd)<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot; dimensions were significat at p &lt; 0.05 in the combined model&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;15 of the 39 dimensions were significat at p &lt; 0.05 in the combined model&quot;</code></pre>
+<p>1.4. t(4;14): D_TRI_CF_ABNORMALITYPR3 &amp; D_TRI_CF_T414ABNORMALC (abundance)</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>DAT =<span class="st"> </span><span class="kw">merge</span>(clinical[clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span><span class="st"> </span>clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3<span class="op">!=</span><span class="st">&quot;&quot;</span>,</span>
+<span id="cb26-2"><a href="#cb26-2"></a>                     <span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_TRI_CF_ABNORMALITYPR3&quot;</span>)],score_sd)</span>
+<span id="cb26-3"><a href="#cb26-3"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3<span class="op">==</span><span class="st">&quot;Yes&quot;</span>]),<span class="st">&quot;(+),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3<span class="op">==</span><span class="st">&quot;No&quot;</span>]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;Baseline samples with data: 594 (total), 108 (+), 486 (-)&quot;</code></pre>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3)</span>
+<span id="cb28-2"><a href="#cb28-2"></a></span>
+<span id="cb28-3"><a href="#cb28-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb28-4"><a href="#cb28-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>], <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR3 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb28-5"><a href="#cb28-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = D_TRI_CF_ABNORMALITYPR3 ~ ., family = &quot;binomial&quot;, 
+##     data = DAT[, -&quot;SEQ_ID&quot;])
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.4577  -0.4685  -0.3038  -0.1423   2.9473  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -2.286504   0.184652 -12.383  &lt; 2e-16 ***
+## PC1_SD       0.288035   0.145436   1.980 0.047648 *  
+## PC2_SD      -0.570193   0.153941  -3.704 0.000212 ***
+## PC3_SD       0.246057   0.144001   1.709 0.087504 .  
+## PC4_SD       0.055605   0.149027   0.373 0.709060    
+## PC5_SD       0.148729   0.137047   1.085 0.277816    
+## PC6_SD       0.235319   0.138274   1.702 0.088787 .  
+## PC7_SD       0.234987   0.146427   1.605 0.108536    
+## PC8_SD       0.532455   0.156388   3.405 0.000662 ***
+## PC9_SD      -0.789087   0.160637  -4.912    9e-07 ***
+## PC10_SD     -0.590438   0.158077  -3.735 0.000188 ***
+## PC11_SD      0.066273   0.142892   0.464 0.642794    
+## PC12_SD      0.008056   0.142266   0.057 0.954846    
+## PC13_SD     -0.410435   0.142481  -2.881 0.003969 ** 
+## PC14_SD      0.040884   0.146781   0.279 0.780602    
+## PC15_SD      0.286835   0.141114   2.033 0.042088 *  
+## PC16_SD     -0.067236   0.145373  -0.463 0.643717    
+## PC17_SD     -0.110613   0.149501  -0.740 0.459371    
+## PC18_SD      0.111623   0.156538   0.713 0.475802    
+## PC19_SD     -0.261750   0.152306  -1.719 0.085690 .  
+## PC20_SD      0.292234   0.142093   2.057 0.039721 *  
+## PC21_SD     -0.220324   0.153225  -1.438 0.150459    
+## PC22_SD     -0.025535   0.152651  -0.167 0.867150    
+## PC23_SD      0.202122   0.144174   1.402 0.160935    
+## PC24_SD     -0.010786   0.143987  -0.075 0.940289    
+## PC25_SD     -0.085848   0.151531  -0.567 0.571027    
+## PC26_SD      0.014047   0.141659   0.099 0.921013    
+## PC27_SD      0.321734   0.146496   2.196 0.028078 *  
+## PC28_SD      0.056878   0.145160   0.392 0.695181    
+## PC29_SD      0.126763   0.143918   0.881 0.378427    
+## PC30_SD     -0.237363   0.144678  -1.641 0.100875    
+## PC31_SD      0.244815   0.144839   1.690 0.090979 .  
+## PC32_SD      0.224236   0.151767   1.478 0.139541    
+## PC33_SD      0.224455   0.143789   1.561 0.118524    
+## PC34_SD      0.040400   0.146833   0.275 0.783205    
+## PC35_SD     -0.228223   0.146554  -1.557 0.119408    
+## PC36_SD     -0.195065   0.143619  -1.358 0.174398    
+## PC37_SD      0.210835   0.146764   1.437 0.150844    
+## PC38_SD     -0.383261   0.139350  -2.750 0.005953 ** 
+## PC39_SD     -0.289167   0.154489  -1.872 0.061239 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 563.28  on 593  degrees of freedom
+## Residual deviance: 355.97  on 554  degrees of freedom
+## AIC: 435.97
+## 
+## Number of Fisher Scoring iterations: 6</code></pre>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>() <span class="co"># Count sig dimensions in model</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of the &quot;</span>,<span class="kw">ncol</span>(score_sd)<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot; dimensions were significat at p &lt; 0.05 in the combined model&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;10 of the 39 dimensions were significat at p &lt; 0.05 in the combined model&quot;</code></pre>
+<p>1.5. t(11;14): D_TRI_CF_ABNORMALITYPR6 &amp; D_TRI_CF_T1114ABNORMAL (abundance)</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a>DAT =<span class="st"> </span><span class="kw">merge</span>(clinical[clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span><span class="st"> </span>clinical<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6<span class="op">!=</span><span class="st">&quot;&quot;</span>,</span>
+<span id="cb32-2"><a href="#cb32-2"></a>                     <span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_TRI_CF_ABNORMALITYPR6&quot;</span>)],score_sd)</span>
+<span id="cb32-3"><a href="#cb32-3"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6<span class="op">==</span><span class="st">&quot;Yes&quot;</span>]),<span class="st">&quot;(+),&quot;</span>,<span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6<span class="op">==</span><span class="st">&quot;No&quot;</span>]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;Baseline samples with data: 594 (total), 153 (+), 441 (-)&quot;</code></pre>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6)</span>
+<span id="cb34-2"><a href="#cb34-2"></a></span>
+<span id="cb34-3"><a href="#cb34-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb34-4"><a href="#cb34-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>], <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR6 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb34-5"><a href="#cb34-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = D_TRI_CF_ABNORMALITYPR6 ~ ., family = &quot;binomial&quot;, 
+##     data = DAT[, -&quot;SEQ_ID&quot;])
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.6025  -0.5794  -0.3609   0.4043   2.9983  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -1.629511   0.144002 -11.316  &lt; 2e-16 ***
+## PC1_SD       0.757514   0.123825   6.118  9.5e-10 ***
+## PC2_SD      -0.334711   0.121617  -2.752  0.00592 ** 
+## PC3_SD      -1.009172   0.136773  -7.378  1.6e-13 ***
+## PC4_SD       0.173529   0.129039   1.345  0.17869    
+## PC5_SD      -0.124781   0.126141  -0.989  0.32256    
+## PC6_SD      -0.335438   0.136356  -2.460  0.01389 *  
+## PC7_SD      -0.384628   0.126124  -3.050  0.00229 ** 
+## PC8_SD       0.003280   0.125356   0.026  0.97912    
+## PC9_SD       0.219560   0.139354   1.576  0.11513    
+## PC10_SD      0.293407   0.132796   2.209  0.02714 *  
+## PC11_SD      0.243246   0.134069   1.814  0.06963 .  
+## PC12_SD     -0.075078   0.122723  -0.612  0.54069    
+## PC13_SD     -0.131966   0.127691  -1.033  0.30138    
+## PC14_SD     -0.152805   0.128630  -1.188  0.23486    
+## PC15_SD     -0.009517   0.130661  -0.073  0.94193    
+## PC16_SD      0.211483   0.130026   1.626  0.10385    
+## PC17_SD     -0.050028   0.129911  -0.385  0.70017    
+## PC18_SD      0.360956   0.125101   2.885  0.00391 ** 
+## PC19_SD     -0.104462   0.125673  -0.831  0.40585    
+## PC20_SD     -0.108394   0.129358  -0.838  0.40206    
+## PC21_SD     -0.267156   0.128115  -2.085  0.03704 *  
+## PC22_SD      0.067931   0.122739   0.553  0.57995    
+## PC23_SD     -0.149114   0.127474  -1.170  0.24210    
+## PC24_SD      0.126206   0.126297   0.999  0.31766    
+## PC25_SD     -0.124085   0.121039  -1.025  0.30529    
+## PC26_SD      0.030517   0.126957   0.240  0.81004    
+## PC27_SD     -0.142821   0.121754  -1.173  0.24079    
+## PC28_SD      0.276628   0.127636   2.167  0.03021 *  
+## PC29_SD      0.142448   0.128801   1.106  0.26875    
+## PC30_SD      0.074267   0.120390   0.617  0.53731    
+## PC31_SD     -0.149381   0.121115  -1.233  0.21743    
+## PC32_SD     -0.179306   0.123783  -1.449  0.14747    
+## PC33_SD     -0.058201   0.125441  -0.464  0.64267    
+## PC34_SD     -0.079668   0.124263  -0.641  0.52144    
+## PC35_SD      0.116446   0.123757   0.941  0.34674    
+## PC36_SD      0.277852   0.125477   2.214  0.02680 *  
+## PC37_SD     -0.139475   0.135170  -1.032  0.30214    
+## PC38_SD      0.119632   0.124680   0.960  0.33730    
+## PC39_SD      0.073817   0.119798   0.616  0.53777    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 677.76  on 593  degrees of freedom
+## Residual deviance: 453.15  on 554  degrees of freedom
+## AIC: 533.15
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>() <span class="co"># Count sig dimensions in model</span></span>
+<span id="cb36-2"><a href="#cb36-2"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of the &quot;</span>,<span class="kw">ncol</span>(score_sd)<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot; dimensions were significat at p &lt; 0.05 in the combined model&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;10 of the 39 dimensions were significat at p &lt; 0.05 in the combined model&quot;</code></pre>
 </div>
-<div id="install-and-load-required-r-packages" class="section level5">
-<h5>Install and load required R packages</h5>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">#install.packages(&quot;rtracklayer&quot;)</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="co">#install.packages(&quot;dplyr&quot;)</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="co">#install.packages(&quot;data.table&quot;)</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="co">#install.packages(&quot;sva&quot;)</span></span></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">library</span>(rtracklayer)</span></code></pre></div>
-<pre><code>## Warning: package &#39;GenomeInfoDb&#39; was built under R version 3.6.3</code></pre>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">library</span>(dplyr)</span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">library</span>(data.table)</span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">library</span>(sva)</span></code></pre></div>
-</div>
-</div>
-<div id="load-data" class="section level4">
-<h4>1.2 Load data</h4>
-<div id="define-functions" class="section level5">
-<h5>Define functions</h5>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>get_data &lt;-<span class="st"> </span><span class="cf">function</span>(gtf.path,counts.path){</span>
-<span id="cb5-2"><a href="#cb5-2"></a>  gtf &lt;-<span class="st"> </span><span class="kw">readGFF</span>(<span class="dt">filepath=</span>gtf.path) <span class="co">#read in GTF</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>  gtf<span class="op">$</span>length &lt;-<span class="st"> </span>gtf<span class="op">$</span>end <span class="op">-</span><span class="st"> </span>gtf<span class="op">$</span>start <span class="op">+</span><span class="st"> </span><span class="dv">1</span> <span class="co">#compute length of each feature</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>  tmp &lt;-<span class="st"> </span><span class="kw">subset</span>(gtf,type<span class="op">==</span><span class="st">&#39;exon&#39;</span>,)</span>
-<span id="cb5-5"><a href="#cb5-5"></a>  sum_exons&lt;-<span class="kw">aggregate</span>(length <span class="op">~</span><span class="st"> </span>seqid <span class="op">+</span><span class="st"> </span>gene_name <span class="op">+</span><span class="st"> </span>gene_id <span class="op">+</span><span class="st"> </span>gene_biotype <span class="op">+</span><span class="st"> </span>transcript_id,</span>
-<span id="cb5-6"><a href="#cb5-6"></a>    <span class="dt">data=</span>tmp, <span class="dt">FUN=</span>sum)</span>
-<span id="cb5-7"><a href="#cb5-7"></a>  n_name &lt;-<span class="st"> </span>sum_exons <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">count</span>(gene_name) <span class="co">#count number transcripts/gene_name</span></span>
-<span id="cb5-8"><a href="#cb5-8"></a>  <span class="kw">colnames</span>(n_name)[<span class="dv">2</span>] &lt;-<span class="st"> &quot;name_n_transcripts&quot;</span></span>
-<span id="cb5-9"><a href="#cb5-9"></a>  gtf.dt &lt;-<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">inner_join</span>(n_name,sum_exons,<span class="dt">by=</span><span class="st">&#39;gene_name&#39;</span>))</span>
-<span id="cb5-10"><a href="#cb5-10"></a></span>
-<span id="cb5-11"><a href="#cb5-11"></a>  <span class="co"># read in rnaseq transcript counts</span></span>
-<span id="cb5-12"><a href="#cb5-12"></a>  counts &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="dt">file =</span> counts.path,<span class="dt">header =</span> T,<span class="dt">sep =</span> <span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>) <span class="co">#read in counts</span></span>
-<span id="cb5-13"><a href="#cb5-13"></a>  <span class="kw">setDT</span>(counts)</span>
-<span id="cb5-14"><a href="#cb5-14"></a>  <span class="kw">colnames</span>(counts)[<span class="dv">1</span>]&lt;-<span class="st">&quot;transcript_id&quot;</span></span>
-<span id="cb5-15"><a href="#cb5-15"></a></span>
-<span id="cb5-16"><a href="#cb5-16"></a>  <span class="co"># merge with gtf data</span></span>
-<span id="cb5-17"><a href="#cb5-17"></a>  counts.gtf &lt;-<span class="st"> </span><span class="kw">inner_join</span>(gtf.dt,counts,<span class="dt">by=</span><span class="st">&quot;transcript_id&quot;</span>)</span>
-<span id="cb5-18"><a href="#cb5-18"></a>  <span class="kw">setDT</span>(counts.gtf)</span>
-<span id="cb5-19"><a href="#cb5-19"></a>  <span class="kw">return</span>(counts.gtf)</span>
-<span id="cb5-20"><a href="#cb5-20"></a>}</span>
-<span id="cb5-21"><a href="#cb5-21"></a></span>
-<span id="cb5-22"><a href="#cb5-22"></a>quality_control &lt;-<span class="st"> </span><span class="cf">function</span>(counts.gtf,baseline.samples){</span>
-<span id="cb5-23"><a href="#cb5-23"></a>  <span class="co"># select protein coding exons on autosomal chromosomes and baseline samples</span></span>
-<span id="cb5-24"><a href="#cb5-24"></a>  tmp &lt;-<span class="st"> </span>counts.gtf[seqid <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">22</span>) <span class="op">&amp;</span><span class="st"> </span>gene_biotype<span class="op">==</span><span class="st">&#39;protein_coding&#39;</span>] <span class="op">%&gt;%</span><span class="st"> </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;gene_name&quot;</span>,<span class="kw">contains</span>(<span class="st">&quot;MMRF&quot;</span>))</span>
-<span id="cb5-25"><a href="#cb5-25"></a>  <span class="co"># aggregate trasncript counts to gene_name counts</span></span>
-<span id="cb5-26"><a href="#cb5-26"></a>  gene &lt;-<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">aggregate</span>(. <span class="op">~</span><span class="st"> </span>gene_name,<span class="dt">data=</span>tmp,<span class="dt">FUN=</span>sum))</span>
-<span id="cb5-27"><a href="#cb5-27"></a>  <span class="co"># find proportion of genes with &lt;100 counts in baseline samples only</span></span>
-<span id="cb5-28"><a href="#cb5-28"></a>  base &lt;-<span class="st"> </span>gene <span class="op">%&gt;%</span><span class="st"> </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;gene_name&quot;</span>,<span class="kw">all_of</span>(baseline.samples))</span>
-<span id="cb5-29"><a href="#cb5-29"></a>  base<span class="op">$</span>prop_base_lt100 &lt;-<span class="st"> </span><span class="kw">rowSums</span>(base[,<span class="op">-</span><span class="dv">1</span>] <span class="op">&lt;</span><span class="st"> </span><span class="dv">100</span>) <span class="op">/</span><span class="st"> </span><span class="kw">length</span>(baseline.samples)</span>
-<span id="cb5-30"><a href="#cb5-30"></a></span>
-<span id="cb5-31"><a href="#cb5-31"></a>  keep.genes &lt;-<span class="st"> </span>base[prop_base_lt100 <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.05</span>]<span class="op">$</span>gene_name</span>
-<span id="cb5-32"><a href="#cb5-32"></a></span>
-<span id="cb5-33"><a href="#cb5-33"></a>  <span class="co"># count all samples total reads and proportion of qc genes with &gt; 100 reads</span></span>
-<span id="cb5-34"><a href="#cb5-34"></a>  total_reads &lt;-<span class="st"> </span>gene[,<span class="op">-</span><span class="dv">1</span>][,<span class="kw">lapply</span>(.SD,sum)]</span>
-<span id="cb5-35"><a href="#cb5-35"></a>  total_reads_keep_genes &lt;-<span class="st"> </span>gene[gene_name <span class="op">%in%</span><span class="st"> </span>keep.genes,<span class="op">-</span><span class="dv">1</span>][,<span class="kw">lapply</span>(.SD,sum)]</span>
-<span id="cb5-36"><a href="#cb5-36"></a>  prop_gene_lt100 &lt;-<span class="st"> </span>gene[gene_name <span class="op">%in%</span><span class="st"> </span>keep.genes,<span class="op">-</span><span class="dv">1</span>][,<span class="kw">lapply</span>(.SD,<span class="cf">function</span>(x)<span class="kw">sum</span>(x<span class="op">&lt;</span><span class="dv">100</span>)<span class="op">/</span><span class="kw">length</span>(keep.genes))]</span>
-<span id="cb5-37"><a href="#cb5-37"></a>  samples&lt;-<span class="kw">data.table</span>(<span class="kw">t</span>((<span class="kw">rbind</span>(total_reads,total_reads_keep_genes,prop_gene_lt100))))</span>
-<span id="cb5-38"><a href="#cb5-38"></a>  <span class="kw">colnames</span>(samples)&lt;-<span class="kw">c</span>(<span class="st">&quot;total_reads&quot;</span>,<span class="st">&quot;total_reads_keep_genes&quot;</span>,<span class="st">&quot;prop_gene_lt100&quot;</span>)</span>
-<span id="cb5-39"><a href="#cb5-39"></a>  samples<span class="op">$</span>sample_id &lt;-<span class="st"> </span><span class="kw">colnames</span>(total_reads)</span>
-<span id="cb5-40"><a href="#cb5-40"></a>  </span>
-<span id="cb5-41"><a href="#cb5-41"></a>  remove.samples &lt;-<span class="st"> </span>samples[prop_gene_lt100<span class="op">&gt;</span><span class="fl">0.1</span>]<span class="op">$</span>sample_id</span>
-<span id="cb5-42"><a href="#cb5-42"></a></span>
-<span id="cb5-43"><a href="#cb5-43"></a>  out &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;keep.genes&quot;</span>=keep.genes,<span class="st">&quot;samples&quot;</span>=samples,<span class="st">&quot;remove.samples&quot;</span>=remove.samples)</span>
-<span id="cb5-44"><a href="#cb5-44"></a>  <span class="kw">return</span>(out)</span>
-<span id="cb5-45"><a href="#cb5-45"></a>}</span>
-<span id="cb5-46"><a href="#cb5-46"></a></span>
-<span id="cb5-47"><a href="#cb5-47"></a>process_transcripts &lt;-<span class="st"> </span><span class="cf">function</span>(qc.melt.dt){</span>
-<span id="cb5-48"><a href="#cb5-48"></a>  temp.dt &lt;-<span class="st"> </span>qc.melt.dt[,total_raw_counts<span class="op">:</span><span class="er">=</span><span class="kw">sum</span>(count),by=<span class="kw">c</span>(<span class="st">&#39;sample_id&#39;</span>,<span class="st">&#39;gene_name&#39;</span>)]</span>
-<span id="cb5-49"><a href="#cb5-49"></a>  temp.dt[,kb_length<span class="op">:</span><span class="er">=</span>length<span class="op">/</span><span class="dv">1000</span>]</span>
-<span id="cb5-50"><a href="#cb5-50"></a>  final.dt&lt;-temp.dt[,<span class="kw">list</span>(<span class="dt">cpk=</span><span class="kw">sum</span>((count<span class="op">+</span><span class="dv">1</span><span class="op">/</span>name_n_transcripts)<span class="op">/</span>kb_length)),by=<span class="kw">c</span>(<span class="st">&#39;sample_id&#39;</span>,<span class="st">&#39;gene_name&#39;</span>,<span class="st">&#39;total_raw_counts&#39;</span>)]</span>
-<span id="cb5-51"><a href="#cb5-51"></a></span>
-<span id="cb5-52"><a href="#cb5-52"></a>  final.dt[,size_factor<span class="op">:</span><span class="er">=</span><span class="kw">median</span>(cpk),by=<span class="st">&#39;sample_id&#39;</span>]</span>
-<span id="cb5-53"><a href="#cb5-53"></a>  final.dt[,cpkmed<span class="op">:</span><span class="er">=</span>cpk<span class="op">/</span>size_factor]</span>
-<span id="cb5-54"><a href="#cb5-54"></a>  final.dt[,logcpkmed<span class="op">:</span><span class="er">=</span><span class="kw">log2</span>(cpkmed)]</span>
-<span id="cb5-55"><a href="#cb5-55"></a></span>
-<span id="cb5-56"><a href="#cb5-56"></a>  med.molten &lt;-<span class="st"> </span>final.dt[,mean<span class="op">:</span><span class="er">=</span><span class="kw">mean</span>(logcpkmed),by=<span class="st">&#39;gene_name&#39;</span>]</span>
-<span id="cb5-57"><a href="#cb5-57"></a>  med.molten[,sd<span class="op">:</span><span class="er">=</span><span class="kw">sd</span>(logcpkmed),by=<span class="st">&#39;gene_name&#39;</span>]</span>
-<span id="cb5-58"><a href="#cb5-58"></a>  med.molten[,adjlogcpkmed<span class="op">:</span><span class="er">=</span>logcpkmed]</span>
-<span id="cb5-59"><a href="#cb5-59"></a>  med.molten[(logcpkmed<span class="op">-</span>mean)<span class="op">/</span>sd<span class="op">&gt;=</span><span class="dv">5</span>,adjlogcpkmed<span class="op">:</span><span class="er">=</span>mean<span class="op">+</span><span class="dv">5</span><span class="op">*</span>sd]</span>
-<span id="cb5-60"><a href="#cb5-60"></a>  med.molten[(logcpkmed<span class="op">-</span>mean)<span class="op">/</span>sd<span class="op">&lt;=</span><span class="st"> </span><span class="dv">-5</span>,adjlogcpkmed<span class="op">:</span><span class="er">=</span>mean<span class="dv">-5</span><span class="op">*</span>sd]</span>
-<span id="cb5-61"><a href="#cb5-61"></a></span>
-<span id="cb5-62"><a href="#cb5-62"></a>  out&lt;-<span class="kw">list</span>(<span class="st">&quot;melt&quot;</span>=med.molten)</span>
-<span id="cb5-63"><a href="#cb5-63"></a>  <span class="kw">return</span>(out)</span>
-<span id="cb5-64"><a href="#cb5-64"></a>}</span>
-<span id="cb5-65"><a href="#cb5-65"></a></span>
-<span id="cb5-66"><a href="#cb5-66"></a>elbow_finder&lt;-<span class="cf">function</span>(data) {</span>
-<span id="cb5-67"><a href="#cb5-67"></a>  elbow.dt&lt;-data[<span class="kw">order</span>(<span class="op">-</span>value)][,idx<span class="op">:</span><span class="er">=</span>.I<span class="dv">-1</span>]</span>
-<span id="cb5-68"><a href="#cb5-68"></a>  elbow.dt[,selected<span class="op">:</span><span class="er">=</span><span class="kw">as.factor</span>(<span class="st">&#39;Not used&#39;</span>)]</span>
-<span id="cb5-69"><a href="#cb5-69"></a></span>
-<span id="cb5-70"><a href="#cb5-70"></a>  slope&lt;-(<span class="kw">min</span>(elbow.dt<span class="op">$</span>value)<span class="op">-</span><span class="kw">max</span>(elbow.dt<span class="op">$</span>value))<span class="op">/</span>(<span class="kw">nrow</span>(elbow.dt)<span class="op">-</span><span class="dv">1</span>)</span>
-<span id="cb5-71"><a href="#cb5-71"></a>  perpslope&lt;-(<span class="op">-</span><span class="dv">1</span><span class="op">/</span>slope)</span>
-<span id="cb5-72"><a href="#cb5-72"></a>  intercept&lt;-<span class="kw">max</span>(elbow.dt<span class="op">$</span>value) <span class="co"># Is this accurate?</span></span>
-<span id="cb5-73"><a href="#cb5-73"></a>  elbow.dt[,perpcept<span class="op">:</span><span class="er">=</span>value <span class="op">-</span><span class="st"> </span>perpslope<span class="op">*</span>idx]</span>
-<span id="cb5-74"><a href="#cb5-74"></a></span>
-<span id="cb5-75"><a href="#cb5-75"></a>  elbow.dt[,y<span class="op">:</span><span class="er">=</span>(perpcept<span class="op">*</span>slope <span class="op">-</span><span class="st"> </span>intercept<span class="op">*</span>perpslope)<span class="op">/</span>(slope<span class="op">-</span>perpslope)]</span>
-<span id="cb5-76"><a href="#cb5-76"></a>  elbow.dt[,x<span class="op">:</span><span class="er">=</span>(intercept<span class="op">-</span>perpcept)<span class="op">/</span>(perpslope <span class="op">-</span><span class="st"> </span>slope)]</span>
-<span id="cb5-77"><a href="#cb5-77"></a>  elbow.dt[,dist<span class="op">:</span><span class="er">=</span><span class="kw">sqrt</span>((value<span class="op">-</span>y)<span class="op">^</span><span class="dv">2</span> <span class="op">+</span><span class="st"> </span>(idx<span class="op">-</span>x)<span class="op">^</span><span class="dv">2</span>)]</span>
-<span id="cb5-78"><a href="#cb5-78"></a></span>
-<span id="cb5-79"><a href="#cb5-79"></a>  maxidx&lt;-<span class="kw">which.max</span>(elbow.dt<span class="op">$</span>dist)</span>
-<span id="cb5-80"><a href="#cb5-80"></a>  elbow.dt[idx<span class="op">&lt;</span>maxidx]<span class="op">$</span>selected&lt;-<span class="kw">as.factor</span>(<span class="st">&#39;Selected&#39;</span>)</span>
-<span id="cb5-81"><a href="#cb5-81"></a>  elbow.dt[,propvar<span class="op">:</span><span class="er">=</span><span class="kw">cumsum</span>(value)<span class="op">/</span><span class="kw">sum</span>(value)]</span>
-<span id="cb5-82"><a href="#cb5-82"></a>  elbow.dt</span>
-<span id="cb5-83"><a href="#cb5-83"></a>}</span>
-<span id="cb5-84"><a href="#cb5-84"></a></span>
-<span id="cb5-85"><a href="#cb5-85"></a>find_pcs &lt;-<span class="st"> </span><span class="cf">function</span>(cbat.dt) {</span>
-<span id="cb5-86"><a href="#cb5-86"></a>  <span class="co"># run PCA on combat data</span></span>
-<span id="cb5-87"><a href="#cb5-87"></a>  pca &lt;-<span class="st"> </span><span class="kw">prcomp</span>(cbat.dt[,<span class="op">-</span><span class="st">&quot;sample_id&quot;</span>,<span class="dt">with=</span><span class="ot">FALSE</span>],<span class="dt">center=</span><span class="ot">TRUE</span>,<span class="dt">scale=</span><span class="ot">FALSE</span>,<span class="dt">retx=</span><span class="ot">TRUE</span>)</span>
-<span id="cb5-88"><a href="#cb5-88"></a>  pcvar &lt;-<span class="st"> </span><span class="kw">data.table</span>(<span class="dt">pc=</span><span class="kw">colnames</span>(pca<span class="op">$</span>x),<span class="dt">value=</span>pca<span class="op">$</span>sdev<span class="op">^</span><span class="dv">2</span>)</span>
-<span id="cb5-89"><a href="#cb5-89"></a>  elbow &lt;-<span class="st"> </span><span class="kw">elbow_finder</span>(pcvar)</span>
-<span id="cb5-90"><a href="#cb5-90"></a>  score &lt;-<span class="st"> </span><span class="kw">cbind</span>(cbat.dt[,<span class="st">&quot;sample_id&quot;</span>],pca<span class="op">$</span>x[,elbow[selected<span class="op">==</span><span class="st">&#39;Selected&#39;</span>]<span class="op">$</span>pc])</span>
-<span id="cb5-91"><a href="#cb5-91"></a>  </span>
-<span id="cb5-92"><a href="#cb5-92"></a>  out &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;score&quot;</span>=score,<span class="st">&quot;elbow&quot;</span>=elbow,<span class="st">&quot;pca&quot;</span>=pca)</span>
-<span id="cb5-93"><a href="#cb5-93"></a>  <span class="kw">return</span>(out)</span>
-<span id="cb5-94"><a href="#cb5-94"></a>}</span></code></pre></div>
-<p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Ctrl+Alt+I</em>.</p>
-<p>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the <em>Preview</em> button or press <em>Ctrl+Shift+K</em> to preview the HTML file).</p>
-<p>The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike <em>Knit</em>, <em>Preview</em> does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.</p>
-</div>
-</div>
+<div id="international-staging-system-iss" class="section level3">
+<h3>2. International staging system (ISS)</h3>
+<p>2.1. RUN LOGISTIC REGRESSION</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a>DAT =<span class="st"> </span><span class="kw">merge</span>(clinical[<span class="op">!</span><span class="kw">is.na</span>(clinical<span class="op">$</span>D_PT_iss),<span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_PT_iss&quot;</span>)],score_sd) <span class="co"># Remove samples with missing ISS values</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with ISS score =&quot;</span>,<span class="kw">nrow</span>(DAT)))</span></code></pre></div>
+<pre><code>## [1] &quot;Baseline samples with ISS score = 746&quot;</code></pre>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a>DAT<span class="op">$</span>ISS =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_PT_iss)</span>
+<span id="cb40-2"><a href="#cb40-2"></a></span>
+<span id="cb40-3"><a href="#cb40-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb40-4"><a href="#cb40-4"></a>glm.iss &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;D_PT_iss&quot;</span>)], <span class="dt">formula =</span> ISS <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb40-5"><a href="#cb40-5"></a><span class="kw">summary</span>(glm.iss)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = ISS ~ ., family = &quot;binomial&quot;, data = DAT[, -c(&quot;SEQ_ID&quot;, 
+##     &quot;D_PT_iss&quot;)])
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.5419  -1.0967   0.6097   0.9038   1.7178  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  0.716353   0.085882   8.341  &lt; 2e-16 ***
+## PC1_SD      -0.250410   0.084011  -2.981 0.002876 ** 
+## PC2_SD      -0.112476   0.085590  -1.314 0.188806    
+## PC3_SD       0.306528   0.084926   3.609 0.000307 ***
+## PC4_SD       0.301437   0.085554   3.523 0.000426 ***
+## PC5_SD      -0.168759   0.086002  -1.962 0.049730 *  
+## PC6_SD      -0.122488   0.085367  -1.435 0.151331    
+## PC7_SD       0.047009   0.085526   0.550 0.582558    
+## PC8_SD       0.172967   0.082404   2.099 0.035815 *  
+## PC9_SD      -0.177056   0.086871  -2.038 0.041537 *  
+## PC10_SD     -0.084717   0.085327  -0.993 0.320783    
+## PC11_SD     -0.007980   0.083530  -0.096 0.923894    
+## PC12_SD     -0.127222   0.086408  -1.472 0.140927    
+## PC13_SD     -0.203459   0.084119  -2.419 0.015576 *  
+## PC14_SD     -0.045457   0.086026  -0.528 0.597211    
+## PC15_SD     -0.085919   0.083249  -1.032 0.302040    
+## PC16_SD      0.118216   0.084211   1.404 0.160376    
+## PC17_SD      0.201740   0.084934   2.375 0.017537 *  
+## PC18_SD     -0.124063   0.085223  -1.456 0.145462    
+## PC19_SD      0.267513   0.085047   3.145 0.001658 ** 
+## PC20_SD     -0.124795   0.084349  -1.480 0.139003    
+## PC21_SD     -0.002778   0.082197  -0.034 0.973042    
+## PC22_SD      0.061945   0.083811   0.739 0.459842    
+## PC23_SD      0.088116   0.082736   1.065 0.286863    
+## PC24_SD      0.061606   0.084019   0.733 0.463410    
+## PC25_SD      0.174742   0.084511   2.068 0.038671 *  
+## PC26_SD      0.296497   0.085166   3.481 0.000499 ***
+## PC27_SD     -0.069486   0.082706  -0.840 0.400823    
+## PC28_SD      0.188272   0.084494   2.228 0.025865 *  
+## PC29_SD      0.182119   0.085356   2.134 0.032871 *  
+## PC30_SD     -0.021763   0.083640  -0.260 0.794712    
+## PC31_SD      0.028362   0.083267   0.341 0.733395    
+## PC32_SD     -0.037071   0.085487  -0.434 0.664541    
+## PC33_SD      0.064410   0.084075   0.766 0.443615    
+## PC34_SD      0.144335   0.085016   1.698 0.089554 .  
+## PC35_SD      0.088800   0.082878   1.071 0.283966    
+## PC36_SD      0.029589   0.084237   0.351 0.725398    
+## PC37_SD      0.018991   0.084142   0.226 0.821437    
+## PC38_SD      0.064115   0.084885   0.755 0.450059    
+## PC39_SD      0.012662   0.085564   0.148 0.882352    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 969.53  on 745  degrees of freedom
+## Residual deviance: 857.71  on 706  degrees of freedom
+## AIC: 937.71
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(glm.iss)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>() <span class="co"># Count sig dimensions in model</span></span>
+<span id="cb42-2"><a href="#cb42-2"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of the &quot;</span>,<span class="kw">ncol</span>(score_sd)<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot; dimensions were significat at p &lt; 0.05 in the combined model&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] &quot;13 of the 39 dimensions were significat at p &lt; 0.05 in the combined model&quot;</code></pre>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a><span class="co">#DAT$ISS = factor(DAT$D_PT_iss, levels = c(1,2,3), ordered = TRUE) # Order dependent variable</span></span>
+<span id="cb44-2"><a href="#cb44-2"></a><span class="co">#MOD.ISS = polr(data = DAT[,-c(&quot;SEQ_ID&quot;,&quot;D_PT_iss&quot;)], formula = ISS ~ ., Hess = T) # Ordinal logistic regression model</span></span>
+<span id="cb44-3"><a href="#cb44-3"></a><span class="co">#summary(MOD.ISS)</span></span></code></pre></div>
 </div>
 
 
