@@ -119,78 +119,76 @@ tme.sd = cbind(dim_time[,"SEQ_ID"],data.matrix(dim_time[,-"SEQ_ID"]) %*% diag(1/
 colnames(tme.sd) = c("SEQ_ID",paste(colnames(dim_time[,-"SEQ_ID"]),"_SD",sep = ""))
 ```
 
-### 2. Merge with clinical data and select samples to plot over time
+### 2. Cytogenetic changes over time
 
-2.1. Cytogenetics
+Merge with clinical data
 ```{r}
-dt = merge(clinical[,c("SEQ_ID","PUBLIC_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_ABNORMALITYPR8","D_TRI_CF_ABNORMALITYPR13","D_TRI_CF_ABNORMALITYPR3","D_TRI_CF_ABNORMALITYPR6")],
-           tme.sd,by="SEQ_ID")
+dt = merge(
+  clinical[,c("SEQ_ID","PUBLIC_ID","COLLECTION_REASON","VJ_INTERVAL",
+              "D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_ABNORMALITYPR8",
+              "D_TRI_CF_ABNORMALITYPR13","D_TRI_CF_ABNORMALITYPR3",
+              "D_TRI_CF_ABNORMALITYPR6","D_TRI_CF_1PAMPLIFICATI2",
+              "D_TRI_CF_T1416ABNORMAL")],
+  tme.sd,by="SEQ_ID")
 
-# find examples where cytogenetics changes over time
-# list baseline samples with "No"
-nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR11=="No"]$PUBLIC_ID
-id1 = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR11=="Yes"]$PUBLIC_ID
-
-nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR8=="No"]$PUBLIC_ID
-id2 = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR8=="Yes"]$PUBLIC_ID
-
-dt[PUBLIC_ID%in%c(id1,id2)]
-
-# PLOT DIMENSIONS FOR EXTREEM SAMPLES
-melt.pc = melt(tme.sd,id.vars = "SEQ_ID")
-
-# Select samples
-p1.dt = merge(
-  clinical[PUBLIC_ID%in%c(id1),c("SEQ_ID","PUBLIC_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_17PABNORMALCE")],
-  melt.pc,by="SEQ_ID"
-  )
-p1.dt
-p1.dt[,sig:=as.factor('N')]
-p1.dt[variable%in%c("PC3_SD","PC6_SD","PC39_SD")]$sig <- 'Y'
-p1.dt$variable = as.factor(p1.dt$variable)
-
-ids = unique(p1.dt$SEQ_ID)
-dat = p1.dt[,c("SEQ_ID","variable","value","sig")]
-dat
-
-b = ids[c(1,3)]
-for (i in seq_along(b)){
-  p = ggplot(data=dat[dat$SEQ_ID==b[i],],
-             aes(x=variable, y=value, fill=sig)) +
-    geom_bar(stat="identity") +
-    ylim(-3,3) +
-    annotate("text",x=30,y=3,label=b[i],size=3) +
-    scale_fill_manual(values = c('#999999', '#E69F00')) +
-    scale_x_discrete(name="dimension") +
-    theme_classic() +
-    theme(legend.position="none") +
-    theme(#axis.title=element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank())
-    
-  ggsave(filename = paste("plots/d17p_",b[i],".pdf",sep=""),plot = p,width=3.75,height=1.75)
-  print(p)
-}
-
-f = ids[c(2,4)]
-for (i in seq_along(f)){
-  p = ggplot(data=dat[dat$SEQ_ID==f[i],],
-             aes(x=variable, y=value, fill=sig)) +
-    geom_bar(stat="identity") +
-    ylim(-3,3) +
-    annotate("text",x=30,y=3,label=f[i],size=3) +
-    scale_fill_manual(values = c('#999999', '#56B4E9')) +
-    scale_x_discrete(name="dimension") +
-    theme_classic() +
-    theme(legend.position="none") +
-    theme(#axis.title=element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank())
-    
-  ggsave(filename = paste("plots/d17p_",f[i],".pdf",sep=""),plot = p,width=3.75,height=1.75)
-  print(p)
-}
-
+dt.melt = melt(tme.sd,id.vars = "SEQ_ID") #reformat for plotting
 ```
 
+2.1 del(17p): D_TRI_CF_ABNORMALITYPR11
 
+Find samples that acquire del(17p) over time
+```{r}
+nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR11=="No"]$PUBLIC_ID
+pid = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR11=="Yes"]$PUBLIC_ID
+dt[PUBLIC_ID%in%pid,c("PUBLIC_ID","SEQ_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR11")]
+```
+2.2 t(14;16): D_TRI_CF_ABNORMALITYPR8
+
+Find samples that acquire t(14;16) over time
+```{r}
+nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR8=="No"]$PUBLIC_ID
+pid = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR8=="Yes"]$PUBLIC_ID
+dt[PUBLIC_ID%in%pid,c("PUBLIC_ID","SEQ_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR8")]
+```
+
+Plot dimension profiles for **MMRF 2373**
+```{r}
+# Annotate dimensions significant in the D_TRI_CF_ABNORMALITYPR8 model (see clinical-risk.Rmd)
+dt.melt[,sig:=as.factor('N')]
+dt.melt[variable%in%c("PC2_SD","PC5_SD","PC10_SD",
+                      "PC12_SD","PC13_SD","PC16_SD",
+                      "PC19_SD","PC25_SD","PC28_SD",
+                      "PC35_SD","PC37_SD","PC39_SD")]$sig = 'Y'
+#dt.melt[variable%in%c("PC16_SD","PC19_SD","PC25_SD")]$sig = 'Y'
+dt.melt$variable = as.factor(dt.melt$variable)
+
+p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_2373_1_BM",],
+             aes(x=variable, y=value, fill=sig)) + 
+  geom_bar(stat="identity") +
+  ylim(-3,3) +
+  xlab("Dimension") +
+  ylab("Baseline") +
+  scale_fill_manual(values = c('#77777760','violet')) +
+  theme_classic() +
+  theme(legend.position="none") +
+  theme(axis.text=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title=element_text(size=8))
+p1 + coord_flip()
+ggsave(filename = "plots/t14_16_MMRF_2373_1_BM.png",plot = p1 + coord_flip(),width=2.5,height=3.4)
+
+p2 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_2373_2_BM",],
+             aes(x=variable, y=value, fill=sig)) + 
+  geom_bar(stat="identity") +
+  ylim(-3,3) +
+  xlab("Dimension") +
+  ylab("Month 15") +
+  scale_fill_manual(values = c('#77777760','gold')) +
+  theme_classic() +
+  theme(legend.position="none") +
+  theme(axis.text=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title=element_text(size=8))
+p2 + coord_flip()
+ggsave(filename = "plots/t14_16_MMRF_2373_2_BM.png",plot = p2 + coord_flip(),width=2.5,height=3.4)
+```

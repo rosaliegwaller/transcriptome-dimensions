@@ -18,7 +18,7 @@ library(ggplot2)
 Load transcriptome dimensions (PC1-PC)
 ```{r}
 load(file = params$data) # load processed data
-setwd("C:/Users/rosal/OneDrive - University of Utah/2020/disseminate/manuscripts/first-author/myeloma-tumor-rna-dimensions/supplement/Rmd_Notebooks_2020-08-20")
+setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook")
 ```
 
 ### 1. University of Arkansas UAMS-70 gene panel to classify patients as low or high risk for relapse
@@ -254,69 +254,4 @@ p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_277
         axis.title=element_text(size=8))
 p1
 ggsave(filename = "plots/SBUK-17_MMRF-2778.png",plot = p1,width=3.5,height=2.5)
-```
-
-pdt[,smp:=as.factor('A')]
-pdt[SEQ_ID==s1]$smp = 'U'
-pdt[SEQ_ID==s2]$smp = 'L'
-```
-Plot fitted values x actual values
-```{r}
-p1 = ggplot(pdt,aes(y = combined, x = score, shape = smp, color = smp)) +
-  geom_point() +
-  scale_color_manual(values = c('#FF000060','#FF0000','#FF0000')) +
-  theme_classic()+
-  xlab("SBUK-17 Score") + ylab("Predicted Score") +
-  theme(legend.position="none",
-        axis.title=element_text(size=8))
-p1
-ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=2.5,height=2.5)
-```
-
-
-Save list of significant dimensions
-```{r}
-sig.17 = fit.sig$PC
-
-# List dimensions significant in both
-sig.both = intersect(sig.17,sig.70)
-```
-
-Plot dimension profile for extreme samples
-```{r}
-# use same extreme samples
-dt.melt = melt(dt,id.vars = c("SEQ_ID","score","combined"))
-dt.melt[,sig:=as.factor('N')]
-dt.melt[variable%in%sig.17]$sig = 'Y'
-dt.melt$variable = as.factor(dt.melt$variable)
-
-p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_2106_1_BM",], #MMRF_2722_1_BM 
-             aes(x=variable, y=value, fill=sig)) + 
-  geom_bar(stat="identity") +
-  ylim(-3,3) +
-  xlab("Dimension") +
-  ylab("MMRF-2106") +
-  scale_fill_manual(values = c('#77777760','#FF0000')) +
-  theme_classic() +
-  theme(legend.position="none") +
-  theme(axis.text=element_blank(),
-        axis.ticks=element_blank(),
-        axis.title=element_text(size=8))
-p1
-ggsave(filename = "plots/SBUK-17_MMRF-2106.png",plot = p1,width=2.5,height=1.25)
-
-p2 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_2455_1_BM",], #MMRF_1325_1_BM
-             aes(x=variable, y=value, fill=sig)) + 
-  geom_bar(stat="identity") +
-  ylim(-3,3) +
-  xlab("Dimension") +
-  ylab("MMRF-2455") +
-  scale_fill_manual(values = c('#77777760','#FF0000')) +
-  theme_classic() +
-  theme(legend.position="none") +
-  theme(axis.text=element_blank(),
-        axis.ticks=element_blank(),
-        axis.title=element_text(size=8))
-p2
-ggsave(filename = "plots/SBUK-17_MMRF-2455.png",plot = p2,width=2.5,height=1.25)
 ```
