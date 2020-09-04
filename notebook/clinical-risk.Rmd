@@ -41,6 +41,9 @@ MOD <- glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR11 ~ ., famil
 summary(MOD)
 nsig = data.table(summary(MOD)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Save model
+mod.risk = list(d17p=MOD)
 ```
 PLOT
 ```{r}
@@ -53,8 +56,10 @@ fit.coeff$PC = colnames(dt[,-c("SEQ_ID","D_TRI_CF_ABNORMALITYPR11")])
 fit.sig = fit.coeff[fit.coeff$`Pr(>|z|)` < 0.05]
 dt.sig = dt %>% dplyr::select(all_of(fit.sig$PC))
 dt[,combined:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
+#dt[,all:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
 #dt[,sig:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate))]
-#dt[,all:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+dt[,all:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+dt[,all_ni:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate))]
 #tmp = merge(actual_preds,dt[,c("SEQ_ID","score","combined","all","sig")],by="SEQ_ID")
 
 pdt = dt[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR11","combined")]
@@ -88,6 +93,9 @@ MOD <- glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR8 ~ ., family
 summary(MOD)
 nsig = data.table(summary(MOD)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Save model
+mod.risk = c(mod.risk,list(t1416=MOD))
 ```
 PLOT
 ```{r}
@@ -147,6 +155,9 @@ MOD <- glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR13 ~ ., famil
 summary(MOD)
 nsig = data.table(summary(MOD)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Save model
+mod.risk = c(mod.risk,list(a1q=MOD))
 ```
 
 PLOT
@@ -206,6 +217,9 @@ MOD <- glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR3 ~ ., family
 summary(MOD)
 nsig = data.table(summary(MOD)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Save model
+mod.risk = c(mod.risk,list(t414=MOD))
 ```
 
 1.5. t(11;14): D_TRI_CF_ABNORMALITYPR6 & D_TRI_CF_T1114ABNORMAL (abundance)
@@ -220,6 +234,9 @@ MOD <- glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR6 ~ ., family
 summary(MOD)
 nsig = data.table(summary(MOD)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Save model
+mod.risk = c(mod.risk,list(t1114=MOD))
 ```
 
 
@@ -228,16 +245,22 @@ print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p 
 ```{r}
 DAT = merge(clinical[!is.na(clinical$D_PT_iss),c("SEQ_ID","D_PT_iss")],score_sd) # Remove samples with missing ISS values
 print(paste("Baseline samples with ISS score =",nrow(DAT)))
-DAT$ISS = as.factor(DAT$D_PT_iss)
-
+#DAT$ISS = as.factor(DAT$D_PT_iss)
 # Logistic regression
-glm.iss <- glm(data = DAT[,-c("SEQ_ID","D_PT_iss")], formula = ISS ~ ., family = "binomial")
-summary(glm.iss)
-nsig = data.table(summary(glm.iss)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
+#glm.iss <- glm(data = DAT[,-c("SEQ_ID","D_PT_iss")], formula = ISS ~ ., family = "binomial")
+#summary(glm.iss)
+
+DAT$ISS = factor(DAT$D_PT_iss, levels = c(1,2,3), ordered = TRUE) # Order dependent variable
+MOD = polr(data = DAT[,-c("SEQ_ID","D_PT_iss")], formula = ISS ~ ., Hess = T) # Ordinal logistic regression model
+summary(MOD)
+sig = pnorm(abs(coef(summary(MOD))[1:39,"t value"]),lower.tail = FALSE)*2
+nsig = data.table(sig) %>% subset(sig<0.05) %>% nrow() # Count sig dimensions in model
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
 
-#DAT$ISS = factor(DAT$D_PT_iss, levels = c(1,2,3), ordered = TRUE) # Order dependent variable
-#MOD.ISS = polr(data = DAT[,-c("SEQ_ID","D_PT_iss")], formula = ISS ~ ., Hess = T) # Ordinal logistic regression model
-#summary(MOD.ISS)
+# Save model
+mod.risk = c(mod.risk,list(iss=MOD))
 ```
-
+**Save model results**
+```{r}
+save(mod.risk,file = "rdata/mod.clinical-risk.rdata")
+```

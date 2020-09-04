@@ -11,9 +11,6 @@ params:
   data: /Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata
 ---
 
-Code to investigate associations between patient demographics (age, gender, self-reported race and ethnicity) and transcriptome dimensions using analysis of variance.
-
-
 ```{r load_packages, message=F, include=F}
 # Install and load required R packages
 library(dplyr)
@@ -119,7 +116,55 @@ tme.sd = cbind(dim_time[,"SEQ_ID"],data.matrix(dim_time[,-"SEQ_ID"]) %*% diag(1/
 colnames(tme.sd) = c("SEQ_ID",paste(colnames(dim_time[,-"SEQ_ID"]),"_SD",sep = ""))
 ```
 
-### 2. Cytogenetic changes over time
+### 2. PSL changes over times
+
+Load model results
+```{r}
+setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
+load(file = "rdata/lm.expression-scores.rdata") # generated in expression-scores.Rmd
+load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
+load(file = "rdata/mod.disease-course.rdata") # generated in disease-course.Rmd
+```
+
+**clinical risk**
+Merge with clinical data
+```{r}
+dt = merge(
+  clinical[,c("SEQ_ID","PUBLIC_ID","COLLECTION_REASON","VJ_INTERVAL",
+              "D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_ABNORMALITYPR8",
+              "D_TRI_CF_ABNORMALITYPR13","D_TRI_CF_ABNORMALITYPR3",
+              "D_TRI_CF_ABNORMALITYPR6","D_TRI_CF_1PAMPLIFICATI2",
+              "D_TRI_CF_T1416ABNORMAL")],
+  tme.sd,by="SEQ_ID")
+
+dt.melt = melt(tme.sd,id.vars = "SEQ_ID") #reformat for plotting
+```
+
+2.2 t(14;16): D_TRI_CF_ABNORMALITYPR8
+
+Find samples that acquire t(14;16) over time
+```{r}
+nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR8=="No"]$PUBLIC_ID
+pid = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR8=="Yes"]$PUBLIC_ID
+ex = dt[PUBLIC_ID%in%pid,c("PUBLIC_ID","SEQ_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR8")]$SEQ_ID
+
+pdtm = dt.melt[dt.melt$SEQ_ID%in%ex]
+```
+
+Compute poly-spectra liability (PSL) score at each time point
+```{r}
+pdt = dt[SEQ_ID%in%ex]
+fit = mod.risk$t1416
+fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
+#fit.coeff$PC = colnames(dt[,-c("SEQ_ID","score")])
+pdt[,psl:= rowSums(data.matrix(pdt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+#pdt = data.frame(age = md$model$D_PT_age,predictors = md$fitted.values,psl = dt$psl)
+```
+
+
+
+
+### 3. Cytogenetic changes over time
 
 Merge with clinical data
 ```{r}
@@ -141,6 +186,7 @@ Find samples that acquire del(17p) over time
 nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR11=="No"]$PUBLIC_ID
 pid = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR11=="Yes"]$PUBLIC_ID
 dt[PUBLIC_ID%in%pid,c("PUBLIC_ID","SEQ_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR11")]
+
 ```
 2.2 t(14;16): D_TRI_CF_ABNORMALITYPR8
 

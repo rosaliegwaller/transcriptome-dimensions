@@ -79,6 +79,11 @@ elbow_finder<-function(data) {
 }
 ```
 
+```{r}
+setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
+```
+
+
 1.1. LOAD GTF WITH RTRACKLAYER PACKAGE & COMPUTE GENE LENGTH AND NUMBER OF TRANSCRIPTS
 ```{r}
 gtf <- readGFF(filepath=params$gtf) # Read in GTF
@@ -306,6 +311,7 @@ ggplot(data = elbow,aes(y = value/sum(value)*100,x = idx+1,color = selected)) +
   scale_color_manual(values = c('#999999','#E69F00')) +
   labs(title="Variance explained by each dimension",
        x="dimension", y = "% variance")
+save(elbow,file = "rdata/elbow.rdata") # save elbow table
 ```
 
 5.3 TEST FOR ASSOCATION WITH BATCH

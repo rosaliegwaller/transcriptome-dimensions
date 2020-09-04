@@ -71,3 +71,7 @@ summary(glm.ethnic)
 nsig = data.table(summary(glm.ethnic)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
 ```
+**Save model results**
+```{r}
+save(lm.age,glm.gender,glm.race,glm.ethnic,file = "rdata/mod.demographic-risk.rdata")
+```

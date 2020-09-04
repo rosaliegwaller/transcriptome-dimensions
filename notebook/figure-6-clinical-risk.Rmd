@@ -1,0 +1,110 @@
+---
+title: "Figures of clinical risk models"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+---
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
+library(dplyr)
+library(data.table)
+library(ggplot2)
+#library(MASS)
+#library(gridExtra)
+```
+
+Load model results
+```{r}
+setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
+load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
+```
+
+Setup
+```{r}
+theme_set(theme_minimal() + 
+            theme(legend.position="none",
+                  axis.title=element_text(size=8),
+                  axis.text=element_text(size=7)))
+```
+
+Clinical risk
+```{r}
+# del(17p)
+md = mod.risk$d17p
+pdt = data.frame(d17p = md$model$D_TRI_CF_ABNORMALITYPR11,predictors = md$linear.predictors)
+
+p1 = ggplot(pdt, aes(x = factor(d17p), y = predictors, fill = d17p)) +
+  scale_fill_manual(values = c('#E69F00', '#56B4E9')) +
+  geom_violin() +
+  ylim(c(-15,6)) +
+  ylab("PSL Score") + xlab("del(17p)")
+p1
+ggsave(filename = "plots/d17p_violin.pdf",plot = p1,width=1.25,height=2.5)
+```
+
+```{r}
+# t(14;16)
+md = mod.risk$t1416
+pdt = data.frame(t1416 = md$model$D_TRI_CF_ABNORMALITYPR8,predictors = md$linear.predictors)
+
+p2 = ggplot(pdt, aes(x = factor(t1416), y = predictors, fill = t1416)) +
+  scale_fill_manual(values = c('#E69F00', '#56B4E9')) +
+  geom_violin() +
+  ylim(c(-15,6)) +
+  #theme(axis.text.y=element_blank())+
+  ylab("") + xlab("t(14;16)")
+p2
+ggsave(filename = "plots/t1416_violin.pdf",plot = p2,width=1.25,height=2.5)
+```
+
+```{r}
+# amp(1q)
+md = mod.risk$a1q
+pdt = data.frame(a1q = md$model$D_TRI_CF_ABNORMALITYPR13,predictors = md$linear.predictors)
+
+p3 = ggplot(pdt, aes(x = factor(a1q), y = predictors, fill = a1q)) +
+  scale_fill_manual(values = c('#E69F00', '#56B4E9')) +
+  geom_violin() +
+  ylim(c(-15,6)) +
+  #theme(axis.text.y=element_blank())+
+  ylab("") + xlab("amp(1q)")
+p3
+ggsave(filename = "plots/a1q_violin.pdf",plot = p3,width=1.25,height=2.5)
+```
+
+```{r}
+# t(4;14)
+md = mod.risk$t414
+pdt = data.frame(t414 = md$model$D_TRI_CF_ABNORMALITYPR3,predictors = md$linear.predictors)
+
+p4 = ggplot(pdt, aes(x = factor(t414), y = predictors, fill = t414)) +
+  scale_fill_manual(values = c('#E69F00', '#56B4E9')) +
+  geom_violin() +
+  ylim(c(-15,6)) +
+  #theme(axis.text.y=element_blank())+
+  ylab("") + xlab("t(4;14)")
+p4
+ggsave(filename = "plots/t414_violin.pdf",plot = p4,width=1.25,height=2.5)
+```
+
+```{r}
+# t(11;14)
+md = mod.risk$t1114
+pdt = data.frame(t1114 = md$model$D_TRI_CF_ABNORMALITYPR6,predictors = md$linear.predictors)
+
+p5 = ggplot(pdt, aes(x = factor(t1114), y = predictors, fill = t1114)) +
+  scale_fill_manual(values = c('#E69F00', '#56B4E9')) +
+  geom_violin() +
+  ylim(c(-15,6)) +
+  #theme(axis.text.y=element_blank())+
+  ylab("") + xlab("t(11;14)")
+p5
+ggsave(filename = "plots/t1114_violin.pdf",plot = p5,width=1.25,height=2.5)
+```
+
+```{r}
+# ISS
+md = mod.risk$iss
+```

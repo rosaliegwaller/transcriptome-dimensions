@@ -102,8 +102,8 @@ Plot fitted values x actual values
 ```{r}
 p1 = ggplot(pdt,aes(y = combined, x = score)) +
   geom_point(color = "#0033CC60") +
-  geom_point(data=pdt[SEQ_ID=="MMRF_1897_1_BM",],aes(y = combined, x = score),
-             shape = 21, color = "black", fill = "#0033CC", size = 2, stroke = 2) +
+  #geom_point(data=pdt[SEQ_ID=="MMRF_1897_1_BM",],aes(y = combined, x = score),
+  #           shape = 21, color = "black", fill = "#0033CC", size = 2, stroke = 2) +
   theme_classic()+
   xlab("UAMS-70 Score") + ylab("Predicted Score") +
   theme(legend.position="none",
@@ -190,6 +190,8 @@ df2 = round(summary(lm.17)$fstatistic[3])
 f = round(summary(lm.17)$fstatistic[1],digits = 1)
 p = formatC(pf(f,df1,df2,lower.tail = F), format = "E", digits = 1) # Compute p-value from f-statistic
 print(paste0("adjusted R^2=",ajr2,", F(",df1,",",df2,")=",f,", p=",p))
+
+#summary(lm.17)$coefficients
 ```
 
 2.3. PLOT
@@ -219,8 +221,8 @@ Plot fitted values x actual values
 ```{r}
 p1 = ggplot(pdt,aes(y = combined, x = score)) +
   geom_point(color = "#FF000060") +
-  geom_point(data=pdt[SEQ_ID=="MMRF_2778_1_BM",],aes(y = combined, x = score),
-             shape = 21, color = "black", fill = "#FF0000", size = 2, stroke = 2) +
+  #geom_point(data=pdt[SEQ_ID=="MMRF_2778_1_BM",],aes(y = combined, x = score),
+  #           shape = 21, color = "black", fill = "#FF0000", size = 2, stroke = 2) +
   theme_classic()+
   xlab("SBUK-17 Score") + ylab("Predicted Score") +
   theme(legend.position="none",
@@ -255,3 +257,8 @@ p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_277
 p1
 ggsave(filename = "plots/SBUK-17_MMRF-2778.png",plot = p1,width=3.5,height=2.5)
 ```
+**Save model results**
+```{r}
+save(lm.17,lm.70,file = "rdata/lm.expression-scores.rdata")
+```
+
