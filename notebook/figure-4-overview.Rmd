@@ -41,6 +41,8 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "UAMS-70"
+tb$r = summary(lm.70)$adj.r.squared
+tb$p = "<1E-16"
 tb$spectra = spectra
 smd = tb
 
@@ -130,7 +132,6 @@ tb = as.data.table(cbind(beta,pval))
 tb$y = "TTF"
 tb$spectra = spectra
 smd = rbind(smd,tb)
-
 ```
 
 Demographic risk
@@ -177,13 +178,6 @@ Tidy summary table
 ```{r}
 df <- as.data.frame(smd)
 df$sig = as.factor(if_else(df$pval<0.05,1,0))
-#df$sig_level = as.factor(if_else(df$pval<0.05 & df$pval>0.01,1,
- #                                if_else(df$pval<0.01 & df$pval>0.001,2,
-  #                                       if_else(df$pval<0.001 & df$pval>0.0001,3,
-   #                                              if_else(df$pval<0.0001 & df$pval>0.00001,4,
-    #                                                     if_else(df$pval<0.00001 & df$pval>0.000001,5,
-     #                                                            if_else(df$pval<0.000001,6,0)))))))
-#df$dir = as.factor(if_else(df$beta<0,"-",if_else(df$beta>0,"+","ns")))
 
 df$sig_level = if_else(df$pval<0.05 & df$pval>0.01,1,
                                  if_else(df$pval<0.01 & df$pval>0.001,2,
@@ -206,7 +200,6 @@ ordr2 <- c("UAMS-70","SBUK-17",
 df$y <- factor(df$y,levels = ordr2)
 df[df$sig==0,] <- NA 
 pldt <- droplevels(na.omit(df))
-#pldt = df
 summary(pldt)
 ```
 
@@ -218,20 +211,16 @@ theme_set(theme_minimal() +
             theme(legend.position="none",
                   axis.title=element_text(size=9),
                   axis.text=element_text(size=8)))
-#cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 ```
 
 Overview of all associations
 ```{r}
 #color based on direction of association
 p1 = ggplot(pldt, aes(y = y, x = spectra)) +
-  #geom_point(aes(colour = dir,size = sig_level),shape = 18,na.rm = T) +
-  #geom_point(aes(colour = dir_sig_level)) +
   geom_point(shape = 21, colour = "white", aes(fill = dir_sig_level), size = 3) +
   scale_fill_gradient2(low="#E69F00",mid="white",high="#0072B2",midpoint=0,na.value="#0072B2") +
-  #scale_color_manual(values = c("#E69F00","#0072B2")) +
   xlab("spectra") + ylab("") + scale_x_continuous(limits = c(1,39), breaks=seq(1,39,1)) +
-  theme(panel.grid.minor = element_blank()) #+ theme(legend.position = "none")
+  theme(panel.grid.minor = element_blank())
 p1
 ggsave(filename = "plots/overview.png",plot = p1,width=7.5,height=4.5)
 ```
