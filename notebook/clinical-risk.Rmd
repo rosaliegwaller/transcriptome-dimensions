@@ -15,6 +15,7 @@ library(data.table)
 library(ggplot2)
 library(MASS)
 library(survivalAnalysis)
+library("lmtest")
 ```
 
 Load transcriptome dimensions (PC1-PC)
@@ -25,9 +26,6 @@ setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook")
 
 ### 1. Cytogenetics
 Large somatic chromosomal DNA aberrations detected by cytogenetics are used to define prognostic risk groups in myeloma. Clinical risk categories defined by mSMART7 include: high risk, del(17p) and t(14;16); intermediate risk, amp(1q) and t(4;14); and standard risk, t(11;14). 
-```{r}
-#DAT = merge(clinical[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_ABNORMALITYPR8","D_TRI_CF_ABNORMALITYPR13","D_TRI_CF_ABNORMALITYPR3","D_TRI_CF_ABNORMALITYPR6")],score_sd)
-```
 
 1.1. del(17p): D_TRI_CF_ABNORMALITYPR11 & D_TRI_CF_17PABNORMALCE (abundance)
 ```{r}
@@ -37,48 +35,23 @@ print(paste("Baseline samples with data:",nrow(DAT),"(total),",nrow(DAT[DAT$D_TR
 DAT$D_TRI_CF_ABNORMALITYPR11 = as.factor(DAT$D_TRI_CF_ABNORMALITYPR11)
 
 # Logistic regression
-MOD <- glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR11 ~ ., family = "binomial")
+md.dt = DAT[,-"SEQ_ID"]
+MOD = glm(data = md.dt, formula = D_TRI_CF_ABNORMALITYPR11 ~ ., family = "binomial")
 summary(MOD)
+
+# Count number of significant spectra
 nsig = data.table(summary(MOD)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
 
 # Save model
 mod.risk = list(d17p=MOD)
-```
-PLOT
-```{r}
-dt = DAT
-fit = MOD
 
-# find predicted based on significant dimensions only
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-fit.coeff$PC = colnames(dt[,-c("SEQ_ID","D_TRI_CF_ABNORMALITYPR11")])
-fit.sig = fit.coeff[fit.coeff$`Pr(>|z|)` < 0.05]
-dt.sig = dt %>% dplyr::select(all_of(fit.sig$PC))
-dt[,combined:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
-#dt[,all:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
-#dt[,sig:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate))]
-dt[,all:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-dt[,all_ni:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate))]
-#tmp = merge(actual_preds,dt[,c("SEQ_ID","score","combined","all","sig")],by="SEQ_ID")
+# Overall p-value
+NLL = glm(data = md.dt, formula = D_TRI_CF_ABNORMALITYPR11 ~ 1, family = "binomial")
 
-pdt = dt[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR11","combined")]
-
-# find samples to highlight
-ids = c("MMRF_1624_1_BM","MMRF_1694_1_BM")
-pdt[SEQ_ID%in%ids]
-
-p1 = ggplot(pdt, aes(x = factor(D_TRI_CF_ABNORMALITYPR11), y = combined, fill = D_TRI_CF_ABNORMALITYPR11)) +
-  scale_fill_manual(values = c('#E69F00', '#56B4E9')) +
-  geom_violin() +
-  theme_classic() + 
-  theme(axis.title.x=element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank()) +
-  annotate(geom = "point", x = "No", y = -3.376687) + # "MMRF_1694_1_BM"
-  annotate(geom = "point", x = "No", y = -1.795554) # "MMRF_1624_1_BM"
-p1
-ggsave(filename = "plots/d17p_violin.pdf",plot = p1)#,width=3.5,height=3.5)
+mod.risk$d17p$p = pchisq(deviance(NLL)-deviance(MOD),
+                         df.residual(NLL)-df.residual(MOD),
+                         lower.tail=FALSE)
 ```
 
 1.2. t(14;16): D_TRI_CF_ABNORMALITYPR8 & D_TRI_CF_T1416ABNORMAL (abundance)
@@ -96,50 +69,13 @@ print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p 
 
 # Save model
 mod.risk = c(mod.risk,list(t1416=MOD))
-```
-PLOT
-```{r}
-dt = DAT
-fit = MOD
 
-# find predicted based on significant dimensions only
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-fit.coeff$PC = colnames(dt[,-c("SEQ_ID","D_TRI_CF_ABNORMALITYPR8")])
-fit.sig = fit.coeff[fit.coeff$`Pr(>|z|)` < 0.05]
-dt.sig = dt %>% dplyr::select(all_of(fit.sig$PC))
-dt[,combined:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
-#dt[,sig:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate))]
-#dt[,all:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-#tmp = merge(actual_preds,dt[,c("SEQ_ID","score","combined","all","sig")],by="SEQ_ID")
+# Overall p-value
+NLL = glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR8 ~ 1, family = "binomial")
 
-pdt = dt[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR8","combined")]
-
-# find samples to highlight
-ids = c("MMRF_2373_1_BM")
-pdt[SEQ_ID%in%ids]
-
-p1 = ggplot(pdt, aes(x = reorder(factor(D_TRI_CF_ABNORMALITYPR8),-combined), y = combined, fill = D_TRI_CF_ABNORMALITYPR8)) +
-  geom_boxplot(outlier.size=1) +
-  theme_classic() + 
-  scale_fill_manual(values=c('violet','gold')) +
-  xlab("t(14;16)") + ylab("Combined Dimensions") +
-  theme(legend.position="none",
-        axis.title=element_text(size=8)) +
-  geom_jitter(shape=16, position=position_jitter(0.2)) +
-  annotate(geom = "point", x = "No", colour = "red", size = 1.5, y = -1.421371) # "MMRF_2373_1_BM"
-p1
-
-p1 = ggplot(pdt, aes(x = reorder(factor(D_TRI_CF_ABNORMALITYPR8),-combined), y = combined, fill = D_TRI_CF_ABNORMALITYPR8)) +
-  geom_violin() +
-  theme_classic() + 
-  scale_fill_manual(values=c('violet','gold')) +
-  xlab("t(14;16)") + ylab("Combined Dimensions") +
-  theme(legend.position="none",
-        axis.title=element_text(size=8),
-        axis.text=element_text(size=7)) +
-  annotate(geom = "point", x = "No", colour = "black", size = 3, y = -1.421371) # "MMRF_2373_1_BM"
-p1 + coord_flip()
-ggsave(filename = "plots/t14_16_violin.pdf",plot = p1,width=2.5,height=3.5)
+mod.risk$t1416$p = pchisq(deviance(NLL)-deviance(MOD),
+                         df.residual(NLL)-df.residual(MOD),
+                         lower.tail=FALSE)
 ```
 
 
@@ -158,52 +94,15 @@ print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p 
 
 # Save model
 mod.risk = c(mod.risk,list(a1q=MOD))
+
+# Overall p-value
+NLL = glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR13 ~ 1, family = "binomial")
+
+mod.risk$a1q$p = pchisq(deviance(NLL)-deviance(MOD),
+                         df.residual(NLL)-df.residual(MOD),
+                         lower.tail=FALSE)
 ```
 
-PLOT
-```{r}
-dt = DAT
-fit = MOD
-
-# find predicted based on significant dimensions only
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-fit.coeff$PC = colnames(dt[,-c("SEQ_ID","D_TRI_CF_ABNORMALITYPR13")])
-fit.sig = fit.coeff[fit.coeff$`Pr(>|z|)` < 0.05]
-dt.sig = dt %>% dplyr::select(all_of(fit.sig$PC))
-dt[,combined:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
-#dt[,sig:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate))]
-#dt[,all:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-#tmp = merge(actual_preds,dt[,c("SEQ_ID","score","combined","all","sig")],by="SEQ_ID")
-
-pdt = dt[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR13","combined")]
-
-# find samples to highlight
-ids = c("MMRF_2373_1_BM")
-pdt[SEQ_ID%in%ids]
-
-p1 = ggplot(pdt, aes(x = reorder(factor(D_TRI_CF_ABNORMALITYPR13),-combined), y = combined, fill = D_TRI_CF_ABNORMALITYPR13)) +
-  geom_boxplot(outlier.size=1) +
-  theme_classic() + 
-  scale_fill_manual(values=c('violet','gold')) +
-  xlab("amp(1q)") + ylab("Combined Dimensions") +
-  theme(legend.position="none",
-        axis.title=element_text(size=8)) +
-  geom_jitter(shape=16, position=position_jitter(0.2)) +
-  annotate(geom = "point", x = "Yes", colour = "red", size = 1.5, y = -0.402793) # "MMRF_2373_1_BM"
-p1
-
-p1 = ggplot(pdt, aes(x = reorder(factor(D_TRI_CF_ABNORMALITYPR13),-combined), y = combined, fill = D_TRI_CF_ABNORMALITYPR13)) +
-  geom_violin() +
-  theme_classic() + 
-  scale_fill_manual(values=c('violet','gold')) +
-  xlab("amp(1q)") + ylab("Combined Dimensions") +
-  theme(legend.position="none",
-        axis.title=element_text(size=8),
-        axis.text=element_text(size=7)) +
-  annotate(geom = "point", x = "Yes", colour = "black", size = 3, y = -0.402793) # "MMRF_2373_1_BM"
-p1
-ggsave(filename = "plots/amp1q_violin.pdf",plot = p1,width=2.5,height=3.5)
-```
 
 1.4. t(4;14): D_TRI_CF_ABNORMALITYPR3 & D_TRI_CF_T414ABNORMALC (abundance)
 ```{r}
@@ -220,6 +119,13 @@ print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p 
 
 # Save model
 mod.risk = c(mod.risk,list(t414=MOD))
+
+# Overall p-value
+NLL = glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR3 ~ 1, family = "binomial")
+
+mod.risk$t414$p = pchisq(deviance(NLL)-deviance(MOD),
+                         df.residual(NLL)-df.residual(MOD),
+                         lower.tail=FALSE)
 ```
 
 1.5. t(11;14): D_TRI_CF_ABNORMALITYPR6 & D_TRI_CF_T1114ABNORMAL (abundance)
@@ -237,6 +143,13 @@ print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p 
 
 # Save model
 mod.risk = c(mod.risk,list(t1114=MOD))
+
+# Overall p-value
+NLL = glm(data = DAT[,-"SEQ_ID"], formula = D_TRI_CF_ABNORMALITYPR6 ~ 1, family = "binomial")
+
+mod.risk$t1114$p = pchisq(deviance(NLL)-deviance(MOD),
+                         df.residual(NLL)-df.residual(MOD),
+                         lower.tail=FALSE)
 ```
 
 
@@ -259,6 +172,13 @@ print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p 
 
 # Save model
 mod.risk = c(mod.risk,list(iss=MOD))
+
+# Overall p-value
+NLL = polr(data = DAT[,-c("SEQ_ID","D_PT_iss")], formula = ISS ~ 1, Hess = T)
+
+mod.risk$iss$p = pchisq(deviance(NLL)-deviance(MOD),
+                         df.residual(NLL)-df.residual(MOD),
+                         lower.tail=FALSE)
 ```
 **Save model results**
 ```{r}

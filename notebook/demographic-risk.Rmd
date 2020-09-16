@@ -34,6 +34,12 @@ summary(lm.age)
 
 nsig = data.table(summary(lm.age)$coeff[-1,"Pr(>|t|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Overall p-value
+df1 = summary(lm.age)$fstatistic[2]
+df2 = summary(lm.age)$fstatistic[3]
+f = summary(lm.age)$fstatistic[1]
+lm.age$p = pf(f,df1,df2,lower.tail = F) # Compute p-value from f-statistic
 ```
 
 ### 2. Gender
@@ -46,6 +52,13 @@ summary(glm.gender)
 
 nsig = data.table(summary(glm.gender)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Overall p-value
+NLL = glm(data = DAT[,-"SEQ_ID"],formula = D_PT_gender ~ 1,family = "binomial")
+
+glm.gender$p = pchisq(deviance(NLL)-deviance(glm.gender),
+                         df.residual(NLL)-df.residual(glm.gender),
+                         lower.tail=FALSE)
 ```
 
 ### 3. Self-reported race
@@ -58,6 +71,13 @@ summary(glm.race)
 
 nsig = data.table(summary(glm.race)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Overall p-value
+NLL = glm(data = DAT[,-"SEQ_ID"],formula = D_PT_race ~ 1,family = "binomial")
+
+glm.race$p = pchisq(deviance(NLL)-deviance(glm.race),
+                         df.residual(NLL)-df.residual(glm.race),
+                         lower.tail=FALSE)
 ```
 
 ### 4. Self-reported ethnicity
@@ -70,6 +90,13 @@ summary(glm.ethnic)
 
 nsig = data.table(summary(glm.ethnic)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Overall p-value
+NLL = glm(data = DAT[,-"SEQ_ID"],formula = D_PT_ethnic ~ 1,family = "binomial")
+
+glm.ethnic$p = pchisq(deviance(NLL)-deviance(glm.ethnic),
+                         df.residual(NLL)-df.residual(glm.ethnic),
+                         lower.tail=FALSE)
 ```
 **Save model results**
 ```{r}

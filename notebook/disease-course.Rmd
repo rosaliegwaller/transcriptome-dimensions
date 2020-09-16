@@ -37,20 +37,7 @@ nsig = data.table(summary(os$coxph)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>
 print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
 ```
 
-### 2. Progression-free suvival (PFS)
-```{r}
-DAT = merge(clinical[,c("SEQ_ID","ttcpfs","censpfs")],score_sd) # Select data
-DAT$censpfs = as.integer(DAT$censpfs) # Set variable type
-pfs <- analyse_multivariate(data = DAT,
-                           time_status = vars(ttcpfs,censpfs),
-                           covariates = colnames(dplyr::select(DAT,ends_with("_SD"))))
-summary(pfs$coxph)
-summary(pfs$coxph)$logtest
-nsig = data.table(summary(pfs$coxph)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
-print(paste0(nsig," of the ",ncol(score_sd)-1," dimensions were significat at p < 0.05 in the combined model"))
-```
-
-### 3. Time to first-line treatment failure (TFTF)
+### 2. Time to first-line treatment failure (TFTF)
 ```{r}
 DAT = merge(clinical[,c("SEQ_ID","ttctf1","censtf1")],score_sd) # Select data
 DAT$censtf1 = as.integer(DAT$censtf1) # Set variable type

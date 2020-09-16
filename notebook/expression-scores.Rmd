@@ -56,6 +56,7 @@ x$dw = anno_dw %>% rowMeans()
 x$score = x$up - x$dw # Note: expression already in log2 scale
 hist(x$score,breaks = 200,main = "Risk Score",xlab = "log2(mean up reg) - log2(mean down reg)")
 
+mean(x$score)
 rm(DAT,anno_up,up,down,anno_dw) # Cleanup variables
 ```
 
@@ -74,6 +75,12 @@ df2 = round(summary(lm.70)$fstatistic[3])
 f = round(summary(lm.70)$fstatistic[1],digits = 1)
 p = formatC(pf(f,df1,df2,lower.tail = F), format = "E", digits = 1) # Compute p-value from f-statistic
 print(paste0("adjusted R^2=",ajr2,", F(",df1,",",df2,")=",f,", p=",p))
+
+# Overall p-value
+df1 = summary(lm.70)$fstatistic[2]
+df2 = summary(lm.70)$fstatistic[3]
+f = summary(lm.70)$fstatistic[1]
+lm.70$p = pf(f,df1,df2,lower.tail = F) # Compute p-value from f-statistic
 ```
 
 1.3. **PLOT**
@@ -102,41 +109,12 @@ Plot fitted values x actual values
 ```{r}
 p1 = ggplot(pdt,aes(y = combined, x = score)) +
   geom_point(color = "#0033CC60") +
-  #geom_point(data=pdt[SEQ_ID=="MMRF_1897_1_BM",],aes(y = combined, x = score),
-  #           shape = 21, color = "black", fill = "#0033CC", size = 2, stroke = 2) +
   theme_classic()+
   xlab("UAMS-70 Score") + ylab("Predicted Score") +
   theme(legend.position="none",
         axis.title=element_text(size=8))
 p1
 ggsave(filename = "plots/UAMS-70_dot.pdf",plot = p1,width=3.5,height=3.5)
-```
-Save list of significant dimensions
-```{r}
-sig.70 = fit.sig$PC
-```
-
-Plot dimension profile for extreme samples
-```{r}
-dt.melt = melt(dt,id.vars = c("SEQ_ID","score","combined"))
-dt.melt[,sig:=as.factor('N')]
-dt.melt[variable%in%sig.70]$sig = 'Y'
-dt.melt$variable = as.factor(dt.melt$variable)
-
-p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_1897_1_BM",], #MMRF_2722_1_BM MMRF_1897_1_BM MMRF_2106_1_BM
-             aes(x=variable, y=value, fill=sig)) + 
-  geom_bar(stat="identity") +
-  ylim(-3,3) +
-  xlab("Dimension") +
-  ylab("MMRF-1897") +
-  scale_fill_manual(values = c('#77777760','#0033CC')) +
-  theme_classic() +
-  theme(legend.position="none") +
-  theme(axis.text=element_blank(),
-        axis.ticks=element_blank(),
-        axis.title=element_text(size=8))
-p1
-ggsave(filename = "plots/UAMS-70_MMRF-1897.png",plot = p1,width=3.5,height=2.5)
 ```
 
 ### 2. Br J Haematol. 2020 May 15. Development of a RNA sequencing-based prognostic gene signature in multiple myeloma
@@ -191,7 +169,11 @@ f = round(summary(lm.17)$fstatistic[1],digits = 1)
 p = formatC(pf(f,df1,df2,lower.tail = F), format = "E", digits = 1) # Compute p-value from f-statistic
 print(paste0("adjusted R^2=",ajr2,", F(",df1,",",df2,")=",f,", p=",p))
 
-#summary(lm.17)$coefficients
+# Overall p-value
+df1 = summary(lm.17)$fstatistic[2]
+df2 = summary(lm.17)$fstatistic[3]
+f = summary(lm.17)$fstatistic[1]
+lm.17$p = pf(f,df1,df2,lower.tail = F) # Compute p-value from f-statistic
 ```
 
 2.3. PLOT
@@ -221,8 +203,6 @@ Plot fitted values x actual values
 ```{r}
 p1 = ggplot(pdt,aes(y = combined, x = score)) +
   geom_point(color = "#FF000060") +
-  #geom_point(data=pdt[SEQ_ID=="MMRF_2778_1_BM",],aes(y = combined, x = score),
-  #           shape = 21, color = "black", fill = "#FF0000", size = 2, stroke = 2) +
   theme_classic()+
   xlab("SBUK-17 Score") + ylab("Predicted Score") +
   theme(legend.position="none",
@@ -230,33 +210,8 @@ p1 = ggplot(pdt,aes(y = combined, x = score)) +
 p1
 ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=3.5,height=3.5)
 ```
-Save list of significant dimensions
-```{r}
-sig.17 = fit.sig$PC
-```
 
-Plot dimension profile for extreme samples
-```{r}
-dt.melt = melt(dt,id.vars = c("SEQ_ID","score","combined"))
-dt.melt[,sig:=as.factor('N')]
-dt.melt[variable%in%sig.17]$sig = 'Y'
-dt.melt$variable = as.factor(dt.melt$variable)
 
-p1 = ggplot(data=dt.melt[dt.melt$variable%like%"_SD" & dt.melt$SEQ_ID=="MMRF_2778_1_BM",], #MMRF_2722_1_BM MMRF_1897_1_BM MMRF_2106_1_BM
-             aes(x=variable, y=value, fill=sig)) + 
-  geom_bar(stat="identity") +
-  ylim(-3,3) +
-  xlab("Dimension") +
-  ylab("MMRF-2778") +
-  scale_fill_manual(values = c('#77777760','#FF0000')) +
-  theme_classic() +
-  theme(legend.position="none") +
-  theme(axis.text=element_blank(),
-        axis.ticks=element_blank(),
-        axis.title=element_text(size=8))
-p1
-ggsave(filename = "plots/SBUK-17_MMRF-2778.png",plot = p1,width=3.5,height=2.5)
-```
 **Save model results**
 ```{r}
 save(lm.17,lm.70,file = "rdata/lm.expression-scores.rdata")

@@ -37,46 +37,7 @@ setorder(score_sd,sum)
 ids <- c(head(score_sd)[]$SEQ_ID,tail(score_sd)[]$SEQ_ID)
 ex <- molten[SEQ_ID%in%ids]
 ```
-
-Plot - old version
-```{r}
-for (i in seq_along(ids)){
-  p <- ggplot(data=ex[SEQ_ID==ids[i]],
-              aes(x=variable, y=value, fill=sign)) +
-    geom_bar(stat="identity") +
-    ylim(min(ex$value),max(ex$value))+
-    #annotate("text",x=2,y=min(ex$value),label=ids[i],size=5)+
-    theme(legend.position = "none")+
-    theme(panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(),
-          panel.background = element_blank(),
-          axis.title=element_blank(),
-          axis.text=element_blank(),
-          axis.ticks=element_blank())
-  print(p)
-  #ggsave(p,file=paste("plots/",ids[i],"_scaled.pdf",sep=''),scale=2)
-}
-```
-Plot - no color version
-```{r}
-for (i in seq_along(ids)){
-  p <- ggplot(data=ex[SEQ_ID==ids[i]],
-              aes(x=variable, y=value), fill="black") +
-    geom_bar(stat="identity") +
-    ylim(min(ex$value),max(ex$value))+
-    #annotate("text",x=2,y=min(ex$value),label=ids[i],size=5)+
-    theme(legend.position = "none")+
-    theme(panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(),
-          panel.background = element_blank(),
-          axis.title=element_blank(),
-          axis.text=element_blank(),
-          axis.ticks=element_blank())
-  print(p)
-  #ggsave(p,file=paste("plots/",ids[i],"_scaled.pdf",sep=''),scale=2)
-}
-```
-
+Plot
 ```{r}
 out = data.frame(SEQ_ID=character(),
                  variable=factor(),
@@ -236,6 +197,11 @@ library(grid)
 library(dplyr)
 library(lubridate)
 
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), ggplotGrob(p3), ggplotGrob(p4), size = "first"))
+```
+
+```{r}
 grid.newpage()
 ggsave(filename = "plots/spectra.pdf",
   plot = grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), ggplotGrob(p3), ggplotGrob(p4), size = "first")),

@@ -14,8 +14,7 @@ library(ggplot2)
 library(MASS)
 library(gridExtra)
 library(gtable)
-#library(survivalAnalysis)
-#library(lmtest)
+library(grid)
 ```
 
 Load model results
@@ -41,8 +40,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "UAMS-70"
-tb$r = summary(lm.70)$adj.r.squared
-tb$p = "<1E-16"
+tb$p = md$p
 tb$spectra = spectra
 smd = tb
 
@@ -52,6 +50,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "SBUK-17"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 ```
@@ -64,6 +63,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "del(17p)"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -73,6 +73,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "t(14;16)"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -82,6 +83,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "amp(1q)"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -91,6 +93,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "t(4;14)"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -100,6 +103,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "t(11;14)"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -109,6 +113,7 @@ beta = coef(md)
 pval = pnorm(abs(coef(summary(md))[1:39,"t value"]),lower.tail = FALSE)*2
 tb = as.data.table(cbind(beta,pval))
 tb$y = "ISS"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 ```
@@ -121,6 +126,7 @@ beta = coef(md)
 pval = coef(summary(md))[,5]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "OS"
+tb$p = summary(md)$logtest[3]
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -130,6 +136,7 @@ beta = coef(md)
 pval = coef(summary(md))[,5]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "TTF"
+tb$p = summary(md)$logtest[3]
 tb$spectra = spectra
 smd = rbind(smd,tb)
 ```
@@ -142,6 +149,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "Dx Age"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -151,6 +159,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "Gender"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -160,6 +169,7 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "Race"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 
@@ -169,10 +179,10 @@ beta = coef(md)[-1]
 pval = coef(summary(md))[-1,4]
 tb = as.data.table(cbind(beta,pval))
 tb$y = "Ethnicity"
+tb$p = md$p
 tb$spectra = spectra
 smd = rbind(smd,tb)
 ```
-
 
 Tidy summary table
 ```{r}
@@ -216,25 +226,23 @@ theme_set(theme_minimal() +
 Overview of all associations
 ```{r}
 #color based on direction of association
-p1 = ggplot(pldt, aes(y = y, x = spectra)) +
+p1 = ggplot(pldt, aes(y = y, x = spectra, label = p)) +
   geom_point(shape = 21, colour = "white", aes(fill = dir_sig_level), size = 3) +
   scale_fill_gradient2(low="#E69F00",mid="white",high="#0072B2",midpoint=0,na.value="#0072B2") +
-  xlab("spectra") + ylab("") + scale_x_continuous(limits = c(1,39), breaks=seq(1,39,1)) +
-  theme(panel.grid.minor = element_blank())
-p1
+  xlab("spectra") + ylab("") + scale_x_continuous(limits = c(0,40), breaks=seq(1,39,1)) +
+  theme(panel.grid.minor = element_blank()) + 
+  geom_text(aes(label = formatC(p,1,format = "g")),x=41,size=2.5)
 ggsave(filename = "plots/overview.png",plot = p1,width=7.5,height=4.5)
 ```
+Scree plot
+
 Scree plot
 ```{r}
 p2 = ggplot(data = elbow,aes(y = value/sum(value)*100,x = idx+1)) +
   geom_bar(stat="identity",fill="gray") +
   xlab("spectra") + ylab("variance (%)") + scale_x_continuous(limits = c(0,40), breaks=seq(1,39,1)) +
-  theme(panel.grid.minor.x = element_blank())
+  theme(panel.grid.minor.x = element_blank()) + 
+  geom_text(label = "64.5%",x=41,y=4,size=3)
 p2
 ggsave(filename = "plots/scree.png",plot = p2,width=7.45,height=1.5)
-```
-
-Overall model p-value
-```{r}
-
 ```
