@@ -22,6 +22,7 @@ setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
 load(file = "rdata/mod.disease-course.rdata")
 ```
 
+
 Plotting setup
 ```{r}
 theme_set(theme_minimal() + 

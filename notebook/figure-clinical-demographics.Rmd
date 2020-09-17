@@ -1,0 +1,207 @@
+---
+title: "Figures of clinical risk models"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+params:
+    data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
+---
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+```
+
+Load model results
+```{r}
+setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
+load(file = "rdata/mod.demographic-risk.rdata") # generated in demographic-risk.Rmd
+load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
+load(file = params$data) # load processed data
+```
+
+Setup
+```{r}
+theme_set(theme_classic() + 
+            theme(legend.position="none",legend.key.size = unit(0.5,"line"),
+                  legend.title = element_text(size=8),
+                  legend.text = element_text(size=7),
+                  axis.title=element_text(size=9),
+                  axis.text=element_text(size=8)))
+```
+
+### a) amp(1q)
+```{r}
+# check poly-spectra liability score calculation
+fit = mod.risk$a1q
+dat = merge(clinical[clinical$D_TRI_CF_ABNORMALITYPR13!="Not Done" & clinical$D_TRI_CF_ABNORMALITYPR13!="",
+                     c("SEQ_ID","D_TRI_CF_ABNORMALITYPR13")],score_sd)
+
+## calculate manually from beta values
+est = summary(fit)$coeff[-1,1] %>% data.table
+dat[,psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_TRI_CF_ABNORMALITYPR13")]) %*% diag(est$.)) + summary(fit)$coeff[1,1]]
+
+pdt = dat[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR13","psl")]
+
+#data.table(sort(fit$linear.predictors),sort(dat$psl))
+
+## check on matching
+unique(round(sort(fit$linear.predictors),digits = 8) == round(sort(dat$psl),digits = 8))
+```
+
+Plot
+```{r}
+pdt = data.frame(a1q = fit$model$D_TRI_CF_ABNORMALITYPR13,predictors = fit$linear.predictors)
+
+setorder(pdt,predictors)
+w = ggplot(pdt,aes(y=predictors,x=1:nrow(pdt),fill=a1q)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values = c("gray","#F67280"), name = "amp(1q)", labels = c("N (n=323)","Y (n=202)")) +
+  xlab("Patients (N=525)") + ylab("PSL Score") +
+  scale_x_continuous(limits = c(0,nrow(pdt)+1), breaks=seq(1,nrow(pdt),1)) +
+  #theme(legend.position = "top",
+  theme(legend.position = c(0.05,1), legend.justification = c(0.05,1),
+        axis.text = element_blank(), axis.ticks = element_blank())
+w
+ggsave(filename = "plots/a1q_waterfall.pdf",plot = w,width=4,height=1.75)
+```
+### b) t(11;14)
+```{r}
+# check poly-spectra liability score calculation
+fit = mod.risk$t1114
+dat = merge(clinical[clinical$D_TRI_CF_ABNORMALITYPR6!="Not Done" & clinical$D_TRI_CF_ABNORMALITYPR6!="",
+                     c("SEQ_ID","D_TRI_CF_ABNORMALITYPR6")],score_sd)
+
+## calculate manually from beta values
+est = summary(fit)$coeff[-1,1] %>% data.table
+dat[,psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_TRI_CF_ABNORMALITYPR6")]) %*% diag(est$.)) + summary(fit)$coeff[1,1]]
+
+pdt = dat[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR6","psl")]
+
+#data.table(sort(fit$linear.predictors),sort(dat$psl))
+
+## check on matching
+unique(round(sort(fit$linear.predictors),digits = 8) == round(sort(dat$psl),digits = 8))
+```
+
+Plot
+```{r}
+pdt = data.frame(t1114 = fit$model$D_TRI_CF_ABNORMALITYPR6,predictors = fit$linear.predictors)
+
+nrow(pdt[pdt$t1114=="No",])
+setorder(pdt,predictors)
+w = ggplot(pdt,aes(y=predictors,x=1:nrow(pdt),fill=t1114)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values = c("gray","#355C7D"), name = "t(11;14)", labels = c("N (n=441)","Y (n=153)")) +
+  xlab("Patients (N=594)") + ylab("PSL Score") +
+  scale_x_continuous(limits = c(0,nrow(pdt)+1), breaks=seq(1,nrow(pdt),1)) +
+  #theme(legend.position = "top",
+  theme(legend.position = c(0.05,1), legend.justification = c(0.05,1),
+        axis.text = element_blank(), axis.ticks = element_blank())
+w
+ggsave(filename = "plots/t1114_waterfall.pdf",plot = w,width=4,height=1.75)
+```
+### b) ISS
+```{r}
+fit = mod.risk$iss
+pdt = data.frame(iss = fit$model$ISS,predictors = fit$lp)
+
+dat = merge(clinical[!is.na(clinical$D_PT_iss),c("SEQ_ID","D_PT_iss")],score_sd)
+
+## calculate manually from beta values
+dat[,psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_PT_iss")]) %*% diag(coef(fit)))]
+
+## check on matching
+unique(round(sort(fit$lp),digits = 8) == round(sort(dat$psl),digits = 8))
+
+```
+
+Plot
+```{r}
+my_comparisons <- list( c("1", "2"), c("2", "3"), c("1", "3") )
+b = ggboxplot(pdt, x = "iss", y = "predictors",
+          color = "iss", add = "jitter",
+          legend = "none", ylab = "PSL Score", xlab = "ISS", 
+          size = 1) + 
+  stat_compare_means(comparisons = my_comparisons, size = 3) +
+  theme_classic() + 
+            theme(legend.position="none",legend.key.size = unit(0.5,"line"),
+                  legend.title = element_text(size=8),
+                  legend.text = element_text(size=7),
+                  axis.title=element_text(size=9),
+                  axis.text=element_text(size=8))
+
+b
+
+#b = ggplot(pdt, aes(x = factor(iss), y = predictors, color = iss)) +
+  #scale_fill_manual(values = c('#E69F00', '#56B4E9')) +
+ # geom_boxplot(size = 1) +
+#  ylab("PSL Score") + xlab("ISS")
+#b
+ggsave(filename = "plots/iss_boxplot.pdf",plot = b,width=3.5,height=3.5)
+```
+
+
+
+### c) gender x race
+```{r}
+# check poly-spectra liability score calculation
+fit = glm.gender
+dat = merge(clinical[clinical$D_PT_race%in%c(1,2),c("SEQ_ID","D_PT_gender","D_PT_race")],score_sd)
+
+## calculate manually from beta values
+est = summary(fit)$coeff[-1,1]
+dat[,psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_PT_gender","D_PT_race")]) %*% diag(est)) + summary(fit)$coeff[1,1]]
+
+pdt = dat[,c("SEQ_ID","D_PT_gender","D_PT_race","psl")]
+
+#data.table(sort(fit$linear.predictors),sort(dat$psl))
+
+## check on matching
+#unique(round(sort(fit$linear.predictors),digits = 8) == round(sort(dat$psl),digits = 8))
+```
+
+```{r}
+# clean up data table
+colnames(pdt) = c("ID","gender","race","gender_PSL")
+
+pdt$gender = as.factor(pdt$gender)
+pdt[gender == 1,"gender"] = "male"
+pdt[gender == 2,"gender"] = "female"
+
+pdt$race = as.factor(pdt$race)
+pdt[race == 1,"race"] = "white"
+pdt[race == 2,"race"] = "black"
+
+pdt
+```
+
+
+Plot
+```{r}
+p <- ggboxplot(pdt, x = "gender", y = "gender_PSL",
+          color = "gender", palette = "jco",
+          add = "jitter", ylab = "Gender PSL Score", xlab = "",
+          legend = "none",size = 1,
+          facet.by = "race", short.panel.labs = FALSE)
+# Use only p.format as label. Remove method name.
+p2 = p + stat_compare_means(method = 'anova', size = 3) +
+            theme(legend.position="none",legend.key.size = unit(0.5,"line"),
+                  legend.title = element_text(size=8),
+                  legend.text = element_text(size=7),
+                  axis.title=element_text(size=9),
+                  axis.text=element_text(size=8))
+p2
+ggsave(filename = "plots/dem_boxplot.pdf",plot = p2,width=7.5,height=4.5)
+
+nrow(pdt[gender=="male" & race=="white"])
+nrow(pdt[gender=="female" & race=="white"])
+nrow(pdt[gender=="male" & race=="black"])
+nrow(pdt[gender=="female" & race=="black"])
+```
+
+

@@ -147,7 +147,7 @@ Plot fitted values x actual values
 ```{r}
 p1 = ggplot(actual_preds,aes(y = predicted, x = actual)) +
   geom_point(color = "#0033CC60") +
-  xlab("UAMS-70 Score") + ylab("Predicted Score")
+  xlab("UAMS-70 Score") + ylab("PSL Score")
 p1
 ggsave(filename = "plots/UAMS-70_dot.pdf",plot = p1,width=3.75,height=3.75)
 ```
@@ -158,7 +158,7 @@ setorder(actual_preds,predicted)
 w <- ggplot(actual_preds,aes(y=predicted-2.424285,x=1:nrow(actual_preds),fill=bin)) + # predicted score - high risk cutoff from clustering
   geom_bar(stat="identity") +
   scale_fill_manual(values = c("blue","gray"), name = "UAMS-70 Risk Group", labels = c("High (n=151)", "Low (n=616)")) +
-  xlab("Patients (N=767)") + ylab("Predicted Score") +
+  xlab("Patients (N=767)") + ylab("PSL Score") +
   scale_x_continuous(limits = c(0,nrow(actual_preds)+1), breaks=seq(1,nrow(actual_preds),1)) +
   theme(legend.position = c(0.05,1), legend.justification = c(0.05,1),
         axis.text = element_blank(), axis.ticks = element_blank())
@@ -242,7 +242,7 @@ Plot fitted values x actual values
 ```{r}
 p1 = ggplot(actual_preds,aes(y = predicted, x = actual)) +
   geom_point(color = "#FF000060") +
-  xlab("SBUK-17 Score") + ylab("Predicted Score")
+  xlab("SBUK-17 Score") + ylab("PSL Score")
 p1
 ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=3.75,height=3.75)
 ```
