@@ -54,11 +54,36 @@ x$dw = anno_dw %>% rowMeans()
 
 # COMPUTE PROPORTION OF MEAN UP/DOWN AND PLOT
 x$score = x$up - x$dw # Note: expression already in log2 scale
-hist(x$score,breaks = 200,main = "Risk Score",xlab = "log2(mean up reg) - log2(mean down reg)")
+#hist(x$score,breaks = 200,main = "Risk Score",xlab = "log2(mean up reg) - log2(mean down reg)")
 
-mean(x$score)
+#mean(x$score)
 rm(DAT,anno_up,up,down,anno_dw) # Cleanup variables
 ```
+**Clustering**
+```{r}
+# K-Means Cluster Analysis
+fit <- kmeans(x$score, 3)
+
+# get cluster max
+aggregate(x$score,by=list(fit$cluster),FUN=max)
+
+# append cluster assignment
+x.score <- data.frame(x, fit$cluster)
+
+# proportion in high/low risk group
+nrow(x.score[x.score$score > 2.424285,])/nrow(x.score)
+nrow(x.score[x.score$score < 2.424285,])/nrow(x.score)
+```
+
+**Histogram**
+```{r}
+h <- hist(x.score$score,breaks = 150,main = "",xlab = expression("Log"[2]*" Geometric Mean Ratio"))#,ylim = c(0,18))
+abline(v=2.424285, col="purple",lwd=3)
+text(x=1,y=18,labels = "80.4%")
+text(x=3,y=18,labels = "19.6%")
+text(x=2.42,y=20,labels = "2.42")
+```
+
 
 1.2. **LINEAR REGRESSION WITH DIMENSIONS**
 ```{r}
@@ -83,39 +108,65 @@ f = summary(lm.70)$fstatistic[1]
 lm.70$p = pf(f,df1,df2,lower.tail = F) # Compute p-value from f-statistic
 ```
 
-1.3. **PLOT**
+1.3. **Logistic regression, high v low risk score**
+```{r}
+dt.70$bin = as.factor(if_else(dt.70$score<2.424285,"low","high"))
+glm.70 = glm(data = dt.70[,-c("SEQ_ID","up","dw","score")], formula = bin ~ ., family = "binomial") # run logistic regression with UAMS risk score as dependent variable
+summary(glm.70)
+
+nsig = data.table(summary(glm.70)$coeff[-1,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow() # Count sig dimensions in model
+print(paste0(nsig," of the ",ncol(dt.70[,-c("SEQ_ID","up","dw")])-1," dimensions were significat at p < 0.05 in the combined model"))
+
+# Overall p-value
+NLL = glm(data = dt.70[,-c("SEQ_ID","up","dw","score")], formula = bin ~ 1, family = "binomial")
+
+pchisq(deviance(NLL)-deviance(glm.70),
+                         df.residual(NLL)-df.residual(glm.70),
+                         lower.tail=FALSE)
+```
+
+1.4. **PLOT**
+
+```{r}
+theme_set(theme_classic() + 
+            theme(legend.position="none",
+                  legend.title = element_text(size=8),
+                  legend.text = element_text(size=7),
+                  axis.title=element_text(size=9),
+                  axis.text=element_text(size=8)))
+```
 
 Actual v predicted values
 ```{r}
-dt = dt.70[,-c("up","dw")]
 fit = lm.70
-actual_preds <- data.table(cbind(dt[,"SEQ_ID"],actual=fit$model$score,predicted=fit$fitted.values))
-cor(actual_preds[,-"SEQ_ID"])
+actual_preds <- data.table(cbind(dt.70[,c("SEQ_ID","bin")],actual=fit$model$score,predicted=fit$fitted.values))
+cor(actual_preds[,-c("SEQ_ID","bin")])
 mean(abs((actual_preds$predicted - actual_preds$actual))/actual_preds$actual) # mean absolute percentage error
-
-# find predicted based on significant dimensions only
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table
-fit.coeff$PC = colnames(dt[,-c("SEQ_ID","score")])
-fit.sig = fit.coeff[fit.coeff$`Pr(>|t|)` < 0.05]
-dt.sig = dt %>% dplyr::select(all_of(fit.sig$PC))
-dt[,combined:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
-
-pdt = dt[,c("SEQ_ID","score","combined")]
-
-head(pdt[order(score,combined),])
-tail(pdt[order(score,combined),])
 ```
 Plot fitted values x actual values
 ```{r}
-p1 = ggplot(pdt,aes(y = combined, x = score)) +
+p1 = ggplot(actual_preds,aes(y = predicted, x = actual)) +
   geom_point(color = "#0033CC60") +
-  theme_classic()+
-  xlab("UAMS-70 Score") + ylab("Predicted Score") +
-  theme(legend.position="none",
-        axis.title=element_text(size=8))
+  xlab("UAMS-70 Score") + ylab("Predicted Score")
 p1
-ggsave(filename = "plots/UAMS-70_dot.pdf",plot = p1,width=3.5,height=3.5)
+ggsave(filename = "plots/UAMS-70_dot.pdf",plot = p1,width=3.75,height=3.75)
 ```
+
+Waterfall High/Low risk score
+```{r}
+setorder(actual_preds,predicted)
+w <- ggplot(actual_preds,aes(y=predicted-2.424285,x=1:nrow(actual_preds),fill=bin)) + # predicted score - high risk cutoff from clustering
+  geom_bar(stat="identity") +
+  scale_fill_manual(values = c("blue","gray"), name = "UAMS-70 Risk Group", labels = c("High (n=151)", "Low (n=616)")) +
+  xlab("Patients (N=767)") + ylab("Predicted Score") +
+  scale_x_continuous(limits = c(0,nrow(actual_preds)+1), breaks=seq(1,nrow(actual_preds),1)) +
+  theme(legend.position = c(0.05,1), legend.justification = c(0.05,1),
+        axis.text = element_blank(), axis.ticks = element_blank())
+w
+ggsave(filename = "plots/UAMS-70_waterfall.pdf",plot = w,width=7.5,height=2.5)
+```
+
+
 
 ### 2. Br J Haematol. 2020 May 15. Development of a RNA sequencing-based prognostic gene signature in multiple myeloma
 DOI: 10.1111/bjh.16744
@@ -185,32 +236,16 @@ fit = lm.17
 actual_preds <- data.table(cbind(dt[,"SEQ_ID"],actual=fit$model$score,predicted=fit$fitted.values))
 cor(actual_preds[,-"SEQ_ID"])
 mean(abs((actual_preds$predicted - actual_preds$actual))/actual_preds$actual) # mean absolute percentage error
-
-# find predicted based on significant dimensions only
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-fit.coeff$PC = colnames(dt[,-c("SEQ_ID","score")])
-fit.sig = fit.coeff[fit.coeff$`Pr(>|t|)` < 0.05]
-dt.sig = dt %>% dplyr::select(all_of(fit.sig$PC))
-dt[,combined:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate)) + summary(fit)$coeff[1,1]]
-#dt[,sig:= rowSums(data.matrix(dt.sig) %*% diag(fit.sig$Estimate))]
-#dt[,all:= rowSums(data.matrix(dt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-#tmp = merge(actual_preds,dt[,c("SEQ_ID","score","combined","all","sig")],by="SEQ_ID")
-
-pdt = dt[,c("SEQ_ID","score","combined")]
-pdt[order(score,combined),][score>10&score<13&combined>7&combined<9]
 ```
+
 Plot fitted values x actual values
 ```{r}
-p1 = ggplot(pdt,aes(y = combined, x = score)) +
+p1 = ggplot(actual_preds,aes(y = predicted, x = actual)) +
   geom_point(color = "#FF000060") +
-  theme_classic()+
-  xlab("SBUK-17 Score") + ylab("Predicted Score") +
-  theme(legend.position="none",
-        axis.title=element_text(size=8))
+  xlab("SBUK-17 Score") + ylab("Predicted Score")
 p1
-ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=3.5,height=3.5)
+ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=3.75,height=3.75)
 ```
-
 
 **Save model results**
 ```{r}
