@@ -234,7 +234,6 @@ p1 = ggplot(pldt, aes(y = y, x = spectra, label = p)) +
   geom_text(aes(label = formatC(p,1,format = "g")),x=41,size=2.5)
 ggsave(filename = "plots/overview.png",plot = p1,width=7.5,height=4.5)
 ```
-Scree plot
 
 Scree plot
 ```{r}

@@ -19,6 +19,7 @@ library(ggplot2)
 library(MASS)
 library(survivalAnalysis)
 library(sva)
+library(gridExtra)
 ```
 
 Load data
@@ -27,6 +28,7 @@ load(file = params$data) # load processed data
 gene.load = read.csv(file = params$gene_loadings) %>% data.table()# dimension gene loadings
 pca.score = read.csv(file = params$score) %>% data.table() # dimension values
 load(file = "rdata/mod.clinical-risk.rdata") # baseline clinical risk models
+load(file = "rdata/mod.disease-course.rdata") # baseline surival
 ```
 
 ### 1. Derive dimensions in longitudinal samples
@@ -117,13 +119,171 @@ tme.sd = cbind(dim_time[,"SEQ_ID"],data.matrix(dim_time[,-"SEQ_ID"]) %*% diag(1/
 colnames(tme.sd) = c("SEQ_ID",paste(colnames(dim_time[,-"SEQ_ID"]),"_SD",sep = ""))
 ```
 
-### PLOT SPECTRA CHART OVER TIME
-Select samples for MMRF 1157
+
+### 2. PLOT SPECTRA OVER TIME
 ```{r}
-ids = unique(dt.melt[grep("1157",dt.melt$SEQ_ID),]$SEQ_ID)
+theme_set(theme_classic() + theme(axis.title=element_text(size=9), axis.text=element_text(size=8), 
+                                  legend.title=element_text(size=9), legend.text=element_text(size=8)))
 ```
 
-TIdy data
+Setup data
+```{r}
+# merge with clinical data
+dt = merge(
+  clinical[,c("SEQ_ID","PUBLIC_ID","COLLECTION_REASON","VJ_INTERVAL", # TODO: add time in days variable
+              "D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_ABNORMALITYPR8",
+              "D_TRI_CF_ABNORMALITYPR13","D_TRI_CF_ABNORMALITYPR3",
+              "D_TRI_CF_ABNORMALITYPR6","D_TRI_CF_1PAMPLIFICATI2",
+              "D_TRI_CF_T1416ABNORMAL","D_PT_iss","ttcos","censos")],
+  tme.sd,by="SEQ_ID")
+
+# find samples with multiple timepoints
+count.dt = as.data.frame(table(dt$PUBLIC_ID))
+ids = droplevels(count.dt[count.dt$Freq>2,]$Var1)
+
+# select samples with multiple timepoints
+pdt = dt[PUBLIC_ID%in%ids]
+
+# change timepoint to months
+#pdt$VJ_INTERVAL
+pdt$Month = c(0,9,15,0,66,78,0,12,27,0,21,24,33,54,0,3,9,0,30,45,51,0,21,30,0,30,36,0,12,21,30,0,9,15,0,27,30)
+
+pdt[,c('VJ_INTERVAL',"Month")]
+```
+
+**2.2 PSL changes over times**
+
+2.2.1 Clinical Risk
+
+Compute poly-spectra liability (PSL) scores at each time point
+```{r}
+fit = mod.risk$d17p # D_TRI_CF_ABNORMALITYPR11
+fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
+pdt[,d17p:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+
+fit = mod.risk$t1416 # D_TRI_CF_ABNORMALITYPR8
+fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
+pdt[,t1416:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+
+fit = mod.risk$a1q # D_TRI_CF_ABNORMALITYPR13
+fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
+pdt[,a1q:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+
+fit = mod.risk$t414 # D_TRI_CF_ABNORMALITYPR3
+fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
+pdt[,t414:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+
+fit = mod.risk$t1114 # D_TRI_CF_ABNORMALITYPR6
+fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
+pdt[,t1114:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
+
+fit = mod.risk$iss # ISS
+pdt[,iss:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(coef(fit)))]
+
+fit = mod.risk$iss # OS
+pdt[,iss:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(coef(fit)))]
+
+pdt
+```
+
+Plot over time
+
+All together
+```{r}
+melt.psl = melt(pdt[,c("PUBLIC_ID","Month","d17p","t1416","a1q","t414","t1114","iss")],id.vars = c("PUBLIC_ID","Month"))
+
+melt.psl$fish = as.character(NA)
+
+melt.psl[variable=="d17p","fish"] = pdt$D_TRI_CF_ABNORMALITYPR11
+melt.psl[variable=="t1416","fish"] = pdt$D_TRI_CF_ABNORMALITYPR8
+melt.psl[variable=="a1q","fish"] = pdt$D_TRI_CF_ABNORMALITYPR13
+melt.psl[variable=="t414","fish"] = pdt$D_TRI_CF_ABNORMALITYPR3
+melt.psl[variable=="t1114","fish"] = pdt$D_TRI_CF_ABNORMALITYPR6
+
+melt.psl[fish == "Not Done","fish"] = ""
+melt.psl
+```
+
+
+```{r}
+pdf(file = "over-time-plots.pdf")
+
+for (i in ids) {
+  p = ggplot(data=melt.psl[PUBLIC_ID==i & variable!="iss",],aes(x=Month,y=value,group=variable)) +
+        geom_line(size=1,color="gray",aes(linetype=variable)) +
+        geom_point(size=4,aes(color=fish)) +  
+        ylim(c(-7.5,5)) + xlim(c(0,80)) +
+        scale_color_manual(values = c("gray","black","red"), name = "Tumor Change", labels = c("NA", "No","Yes")) +
+        scale_linetype_manual(values = c(2,3,4,5,6), name = "", labels = c("d(17p)","t(14;16)","a(1q)","t(4;14)","t(11;14)")) +
+        ylab("PSL Score") + xlab("Month") + ggtitle(i) +
+        theme(legend.position = "right")
+  print(p)
+}
+
+# ISS over time
+
+melt.iss = melt(pdt[,c("PUBLIC_ID","Month","iss")],id.vars = c("PUBLIC_ID","Month"))
+
+rng = c(min(mod.risk$iss$lp),max(mod.risk$iss$lp))
+
+ggplot(data=melt.iss,aes(x=Month,y=value,color=PUBLIC_ID)) +
+        geom_line(size=1,linetype=2) +
+        geom_point(size=4) + 
+        ylim(rng) + xlim(c(0,80)) +
+        ylab("PSL Score") + xlab("Month") + ggtitle("ISS") +
+        theme(legend.position = "right")
+
+for (i in ids) {
+  p = ggplot(data=melt.iss[PUBLIC_ID==i,],aes(x=Month,y=value,group=variable)) +
+        geom_line(size=1,color="gray",linetype=2) +
+        geom_point(size=4) +  
+        ylim(rng) + xlim(c(0,80)) +
+        #scale_color_manual(values = c("gray","black","red"), name = "Tumor Change", labels = c("NA", "No","Yes")) +
+        #scale_linetype_manual(values = c(2,3,4,5,6), name = "", labels = c("d(17p)","t(14;16)","a(1q)","t(4;14)","t(11;14)")) +
+        ylab("PSL Score") + xlab("Month") + ggtitle(paste("ISS",i)) +
+        theme(legend.position = "right")
+  print(p)
+}
+
+
+# 2.2.2. Overall Survival
+
+pdt$os_psl = rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(os$coxph$coef))
+
+rng = c(min(os$coxph$linear.predictors),max(os$coxph$linear.predictors))
+
+melt.os = melt(pdt[,c("PUBLIC_ID","Month","os_psl","ttcos","censos")],id.vars = c("PUBLIC_ID","Month","ttcos","censos"))
+
+melt.os$tdy = melt.os$Month/12*365.25
+melt.os$smt = round(melt.os$ttcos*0.0328767)
+melt.os$censos = as.factor(melt.os$censos)
+
+ggplot(data=melt.os,aes(x=Month,y=value,color=PUBLIC_ID)) +
+        geom_line(size=1,linetype=2) +
+        geom_point(size=4) + 
+        ylim(rng) + xlim(c(0,80)) +
+        geom_vline(aes(xintercept = smt,color=PUBLIC_ID,linetype=censos), size=1) +
+        ylab("PSL Score") + xlab("Month") + ggtitle("Overall Survival") +
+        theme(legend.position = "right")
+
+for (i in ids) {
+  p = ggplot(data=melt.os[PUBLIC_ID==i,],aes(x=Month,y=value,group=variable)) +
+        geom_line(size=1,color="gray",linetype=2) +
+        geom_point(size=4) + 
+        ylim(rng) + xlim(c(0,80)) +
+        geom_vline(aes(xintercept = smt), color = "red", size=1) +
+        ylab("PSL Score") + xlab("Month") + ggtitle(paste("Overall Survival",i)) +
+        theme(legend.position = "right")
+  print(p)
+}
+
+dev.off()
+```
+
+
+**2.1. Spectra Chart**
+
+Tidy data
 ```{r}
 out = data.frame(SEQ_ID=character(),
                  variable=factor(),
@@ -161,141 +321,3 @@ p_a = ggplot(data=out[SEQ_ID%in%dset],aes(x=id, y=abs(value), fill=lv, group=var
 ggsave(filename = "plots/spectra_time.png",plot = p_a,width=7.5,height=5.5)
 p_a
 ```
-
-
-### 2. PSL changes over times
-**clinical risk**
-Merge with clinical data
-```{r}
-dt = merge(
-  clinical[,c("SEQ_ID","PUBLIC_ID","COLLECTION_REASON","VJ_INTERVAL",
-              "D_TRI_CF_ABNORMALITYPR11","D_TRI_CF_ABNORMALITYPR8",
-              "D_TRI_CF_ABNORMALITYPR13","D_TRI_CF_ABNORMALITYPR3",
-              "D_TRI_CF_ABNORMALITYPR6","D_TRI_CF_1PAMPLIFICATI2",
-              "D_TRI_CF_T1416ABNORMAL")],
-  tme.sd,by="SEQ_ID")
-
-dt.melt = melt(tme.sd,id.vars = "SEQ_ID") #reformat for plotting
-```
-
-2.2 t(14;16): D_TRI_CF_ABNORMALITYPR8
-
-Find samples that acquire t(14;16) over time
-```{r}
-nab = dt[VJ_INTERVAL=="Baseline" & D_TRI_CF_ABNORMALITYPR8=="No"]$PUBLIC_ID
-pid = dt[PUBLIC_ID%in%nab & D_TRI_CF_ABNORMALITYPR8=="Yes"]$PUBLIC_ID
-ex = dt[PUBLIC_ID%in%pid,c("PUBLIC_ID","SEQ_ID","COLLECTION_REASON","VJ_INTERVAL","D_TRI_CF_ABNORMALITYPR8")]$SEQ_ID
-
-pdtm = dt.melt[dt.melt$SEQ_ID%in%ex]
-```
-
-Compute poly-spectra liability (PSL) score at each time point
-```{r}
-pdt = dt[SEQ_ID%in%ex]
-fit = mod.risk$t1416
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-#fit.coeff$PC = colnames(dt[,-c("SEQ_ID","score")])
-pdt[,psl:= rowSums(data.matrix(pdt %>% dplyr::select(contains("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-#pdt = data.frame(age = md$model$D_PT_age,predictors = md$fitted.values,psl = dt$psl)
-
-pdt
-```
-
-Plot dimension profiles for **MMRF 2373**
-```{r}
-# data tidy
-ids = c("MMRF_2373_1_BM","MMRF_2373_2_BM")
-dat = dt.melt[SEQ_ID%in%ids] # select samples
-dat$sign <- ifelse(dat$value >= 0, "positive", "negative")
-
-out = data.frame(SEQ_ID=character(),
-                 variable=factor(),
-                 value=numeric(),
-                 sign=character(),
-                 perc=numeric())
-
-for (i in seq_along(ids)){
-  data = dat[SEQ_ID==ids[i]]
-  tot = sum(abs(data$value)) 
-  data$perc = abs(data$value)/tot
-  out = rbind(out,data)
-}
-
-out$id = gsub("_BM","",gsub("MMRF_","",out$SEQ_ID))
-
-out$lv = if_else(out$value < -2, -2,
-                 if_else(out$value > 2, 2, out$value))
-
-theme_set(theme_minimal() + theme(axis.title=element_text(size=9), axis.text=element_text(size=8), 
-                                  legend.title=element_text(size=9), legend.text=element_text(size=8)))
-
-dset = ids #[c(1:2,11:12)]
-```
-
-Plot Spectra Chart
-```{r}
-dt = out
-dt$abs_value = abs(dt$value)
-#dt
-
-dt_spread = tidyr::spread(dt[,c("id","variable","abs_value")], id, abs_value)
-dt_spread$y = cumsum(dt_spread[,2])
-dt_spread$yend = cumsum(dt_spread[,3])
-dt_spread$x = 1 + 0.8/2
-dt_spread$xend = 2 - 0.8/2
-#dt_spread
-
-p2 = ggplot() +
-  geom_bar(data = dt,aes(x = id, y = abs_value, fill = lv, group = variable),
-           stat = "identity",position = position_stack(reverse = TRUE), color="black", width=0.8) +
-  scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0) + 
-  geom_segment(data = dt_spread,aes(x = x, xend = xend, y = y, yend = yend)) +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-        axis.title.y = element_blank(), legend.position = "right",
-        panel.grid = element_blank()) +
-  xlab("patient") + ylab("spectra") + 
-  #ylim(c(0,43)) +
-  labs(fill = "value") + 
-  #scale_y_continuous(limits=c(0, 45)) +
-  coord_flip()
-#ggsave(filename = "plots/spectra_2.pdf",plot = p2,width=7.5,height=3.5)
-p2
-```
-Plot settings
-```{r}
-theme_set(theme_classic() + 
-            theme(legend.position="none",legend.key.size = unit(0.5,"line"),
-                  legend.title = element_text(size=8),
-                  legend.text = element_text(size=7),
-                  axis.title=element_text(size=9),
-                  axis.text=element_text(size=8)))
-```
-
-
-Plot PSL Score change on baseline waterfall plot
-```{r}
-pdt[,c("SEQ_ID","psl")] # capture time-point PSL
-
-
-
-load(file = "rdata/mod.clinical-risk.rdata") # baseline clinical risk models
-fit = mod.risk$t1416 # find baseline waterfall
-pdt1 = data.frame(t1416 = fit$model$D_TRI_CF_ABNORMALITYPR8,predictors = fit$linear.predictors)
-
-#nrow(pdt1)
-
-setorder(pdt1,predictors)
-w = ggplot(pdt1,aes(y=predictors,x=1:nrow(pdt1),fill=t1416)) +
-  geom_bar(stat="identity") +
-  scale_fill_manual(values = c("gray","red"), name = "t(14;16)", labels = c("N (n=501)","Y (n=53)")) +
-  xlab("Patients (N=554)") + ylab("PSL Score") +
-  scale_x_continuous(limits = c(0,nrow(pdt1)+1), breaks=seq(1,nrow(pdt1),1)) +
-  #theme(legend.position = "top",
-  theme(legend.position = c(0.05,1), legend.justification = c(0.05,1),
-        axis.text = element_blank(), axis.ticks = element_blank()) +
-  geom_hline(yintercept=-1.6374314,color = "gray", size=1) +
-  geom_hline(yintercept=-0.6486604,color = "red", size=1)
-w
-#ggsave(filename = "plots/t1114_waterfall.pdf",plot = w,width=4,height=1.75)
-```
-

@@ -57,14 +57,14 @@ Plot
 ```{r}
 pdt = data.frame(a1q = fit$model$D_TRI_CF_ABNORMALITYPR13,predictors = fit$linear.predictors)
 
-setorder(pdt,predictors)
+setorder(pdt,-predictors)
 w = ggplot(pdt,aes(y=predictors,x=1:nrow(pdt),fill=a1q)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values = c("gray","#F67280"), name = "amp(1q)", labels = c("N (n=323)","Y (n=202)")) +
   xlab("Patients (N=525)") + ylab("PSL Score") +
   scale_x_continuous(limits = c(0,nrow(pdt)+1), breaks=seq(1,nrow(pdt),1)) +
   #theme(legend.position = "top",
-  theme(legend.position = c(0.05,1), legend.justification = c(0.05,1),
+  theme(legend.position = c(1,1), legend.justification = c(1,1),
         axis.text = element_blank(), axis.ticks = element_blank())
 w
 ggsave(filename = "plots/a1q_waterfall.pdf",plot = w,width=4,height=1.75)
@@ -93,14 +93,14 @@ Plot
 pdt = data.frame(t1114 = fit$model$D_TRI_CF_ABNORMALITYPR6,predictors = fit$linear.predictors)
 
 nrow(pdt[pdt$t1114=="No",])
-setorder(pdt,predictors)
+setorder(pdt,-predictors)
 w = ggplot(pdt,aes(y=predictors,x=1:nrow(pdt),fill=t1114)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values = c("gray","#355C7D"), name = "t(11;14)", labels = c("N (n=441)","Y (n=153)")) +
   xlab("Patients (N=594)") + ylab("PSL Score") +
   scale_x_continuous(limits = c(0,nrow(pdt)+1), breaks=seq(1,nrow(pdt),1)) +
   #theme(legend.position = "top",
-  theme(legend.position = c(0.05,1), legend.justification = c(0.05,1),
+  theme(legend.position = c(1,1), legend.justification = c(1,1),
         axis.text = element_blank(), axis.ticks = element_blank())
 w
 ggsave(filename = "plots/t1114_waterfall.pdf",plot = w,width=4,height=1.75)

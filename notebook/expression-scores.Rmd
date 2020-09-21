@@ -154,13 +154,13 @@ ggsave(filename = "plots/UAMS-70_dot.pdf",plot = p1,width=3.75,height=3.75)
 
 Waterfall High/Low risk score
 ```{r}
-setorder(actual_preds,predicted)
+setorder(actual_preds,-predicted)
 w <- ggplot(actual_preds,aes(y=predicted-2.424285,x=1:nrow(actual_preds),fill=bin)) + # predicted score - high risk cutoff from clustering
   geom_bar(stat="identity") +
   scale_fill_manual(values = c("blue","gray"), name = "UAMS-70 Risk Group", labels = c("High (n=151)", "Low (n=616)")) +
   xlab("Patients (N=767)") + ylab("PSL Score") +
   scale_x_continuous(limits = c(0,nrow(actual_preds)+1), breaks=seq(1,nrow(actual_preds),1)) +
-  theme(legend.position = c(0.05,1), legend.justification = c(0.05,1),
+  theme(legend.position = c(1,1), legend.justification = c(1,1),
         axis.text = element_blank(), axis.ticks = element_blank())
 w
 ggsave(filename = "plots/UAMS-70_waterfall.pdf",plot = w,width=7.5,height=2.5)
