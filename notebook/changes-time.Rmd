@@ -20,6 +20,7 @@ library(MASS)
 library(survivalAnalysis)
 library(sva)
 library(gridExtra)
+library(RColorBrewer)
 ```
 
 Load data
@@ -124,6 +125,7 @@ colnames(tme.sd) = c("SEQ_ID",paste(colnames(dim_time[,-"SEQ_ID"]),"_SD",sep = "
 ```{r}
 theme_set(theme_classic() + theme(axis.title=element_text(size=9), axis.text=element_text(size=8), 
                                   legend.title=element_text(size=9), legend.text=element_text(size=8)))
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 ```
 
 Setup data
@@ -221,18 +223,28 @@ for (i in ids) {
 
 ```{r}
 # ISS over time
-
 melt.iss = melt(pdt[,c("PUBLIC_ID","Month","iss")],id.vars = c("PUBLIC_ID","Month"))
+melt.iss$id = as.integer(gsub("MMRF_","",melt.iss$PUBLIC_ID))
+melt.iss$id = as.factor(melt.iss$id)
 
 rng = c(min(mod.risk$iss$lp),max(mod.risk$iss$lp))
 
-ggplot(data=melt.iss,aes(x=Month,y=value,color=PUBLIC_ID)) +
+pI = ggplot(data=melt.iss,aes(x=Month,y=value,color=id)) +
         geom_line(size=1,linetype=1) +
-        geom_point(size=4) + 
-        ylim(rng) + xlim(c(0,80)) +
+        geom_point(size=4,shape=18) + 
+        #ylim(rng) + 
+        xlim(c(0,80)) +
         ylab("PSL Score") + xlab("Month") + ggtitle("ISS") +
-        theme(legend.position = "right")
+        scale_color_manual(values = c("#AA0DFE","#3283FE","#1CBE4F","#C4451C","#FE00FA","#FEAF16","#2ED9FF","#1CFFCE","#B10DA1","#FBE426","#325A9B")) +
+        theme(legend.position = "none")
+        
+melt.iss.first = melt.iss[Month==0,]
+pI + geom_text(data=melt.iss.first,x=-3,aes(y=value,label=id),size=3,check_overlap = TRUE)
+ggsave(pI,filename = "plots/iss-time.pdf",width=7.5,height=4)
+```
 
+```{r}
+# old individual plots
 for (i in ids) {
   p = ggplot(data=melt.iss[PUBLIC_ID==i,],aes(x=Month,y=value,group=variable)) +
         geom_line(size=1,color="gray",linetype=1) +
@@ -252,30 +264,50 @@ pdt$os_psl = rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% d
 rng = c(min(os$coxph$linear.predictors),max(os$coxph$linear.predictors))
 
 melt.os = melt(pdt[,c("PUBLIC_ID","Month","os_psl","ttcos","censos")],id.vars = c("PUBLIC_ID","Month","ttcos","censos"))
+melt.os$id = as.integer(gsub("MMRF_","",melt.os$PUBLIC_ID))
+melt.os$id_os = melt.os$id * melt.os$censos
+
+melt.os$id = as.factor(melt.os$id)
+melt.os$id_os = as.factor(melt.os$id_os)
 
 melt.os$tdy = melt.os$Month/12*365.25
 melt.os$smt = round(melt.os$ttcos*0.0328767)
 melt.os$censos = as.factor(melt.os$censos)
 
-p1 = ggplot(data=melt.os,aes(x=Month,y=value,color=PUBLIC_ID)) +
+p1 = ggplot(data=melt.os,aes(x=Month,y=value,color=id)) +
         geom_line(size=1,linetype=1) +
-        geom_point(size=4) + 
-        ylim(rng) + xlim(c(0,80)) +
-        #geom_vline(aes(xintercept = smt,color=PUBLIC_ID,linetype=censos), size=1) +
-        ylab("PSL Score") + xlab("Month") + ggtitle("Overall Survival") +
+        geom_point(size=3) + 
+        #ylim(rng) + 
+        xlim(c(0,80)) +
+        ylab("PSL Score") + xlab("Month") + #ggtitle("Overall Survival") +
+        #scale_color_manual(values = c("#9E0142","#D53E4F","#F46D43","#FDAE61","#FEE08B","#FFFFBF","#E6F598","#ABDDA4","#66C2A5","#3288BD","#5E4FA2")) +
+        #scale_color_manual(values = c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#FFFF99")) +
+        scale_color_manual(values = c("#AA0DFE","#3283FE","#1CBE4F","#C4451C","#FE00FA","#FEAF16","#2ED9FF","#1CFFCE","#B10DA1","#FBE426","#325A9B")) +
         theme(legend.position = "right")
 
-#p1 + geom_point(shape = 22, aes(fill = censos, y = smt, x = value))
 
+# add survival point
 melt.os.last = melt.os %>% group_by(PUBLIC_ID) %>% top_n(1, Month)
 melt.os.last[melt.os.last$smt==77,"smt"] = 78
 melt.os.last = as.data.table(melt.os.last)
 
-p1 + geom_segment(data = melt.os.last, size = 1,
-                  aes(color=PUBLIC_ID, x = Month, xend = smt, y = value, yend = value),linetype = 2) +
-  geom_point(data = melt.os.last, shape = 22, size = 5, 
-             aes(fill = censos, x = smt, y = value)) +
-  scale_fill_manual(values = c("black","white"))
+p2 = p1 + geom_segment(data = melt.os.last,size=0.3,
+                  aes(color=id, x = Month, xend = smt, y = value, yend = value),linetype = 3) +
+  geom_rect(data=melt.os.last, mapping=aes(xmin=smt - 0.1, xmax=smt + 0.2, ymin=value - 0.16, ymax= value + 0.16, fill = id_os),size=0.3) +
+  #scale_fill_manual(values = c("white","#F46D43","#66C2A5","#3288BD","#5E4FA2"))
+  scale_fill_manual(values = c("white","#1CBE4F","#B10DA1","#FBE426","#325A9B")) +
+  theme(legend.position = "none")
+p2
+ggsave(p2,filename = "plots/survival-time.png",width=7.5,height=4)
+```
+
+```{r}
+# old plots
+p1 + geom_segment(data = melt.os.last, size = 0.5,
+                  aes(color=PUBLIC_ID, x = Month, xend = smt, y = value, yend = value),linetype = 3) +
+  geom_point(data = melt.os.last, size = 6, 
+             aes(shape = censos, x = smt, y = value)) +
+  scale_shape_manual(values = c(0,15))
 
 
 for (i in ids) {
@@ -290,13 +322,9 @@ for (i in ids) {
                      aes(x = Month, xend = smt, y = value, yend = value),linetype = 2) + 
         geom_point(data = melt.os.last[PUBLIC_ID==i,], shape = 22, size = 5,
                    aes(fill = censos, x = smt, y = value)) +
-        scale_fill_manual(values = c("black","white"))
+        scale_fill_manual(values = c("white","black"))
   print(p)
 }
-
-
-
-#dev.off()
 ```
 
 
