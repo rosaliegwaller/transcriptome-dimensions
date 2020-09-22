@@ -206,8 +206,6 @@ melt.psl
 
 
 ```{r}
-pdf(file = "over-time-plots.pdf")
-
 for (i in ids) {
   p = ggplot(data=melt.psl[PUBLIC_ID==i & variable!="iss",],aes(x=Month,y=value,group=variable)) +
         geom_line(size=1,color="gray",aes(linetype=variable)) +
@@ -219,7 +217,9 @@ for (i in ids) {
         theme(legend.position = "right")
   print(p)
 }
+```
 
+```{r}
 # ISS over time
 
 melt.iss = melt(pdt[,c("PUBLIC_ID","Month","iss")],id.vars = c("PUBLIC_ID","Month"))
@@ -227,7 +227,7 @@ melt.iss = melt(pdt[,c("PUBLIC_ID","Month","iss")],id.vars = c("PUBLIC_ID","Mont
 rng = c(min(mod.risk$iss$lp),max(mod.risk$iss$lp))
 
 ggplot(data=melt.iss,aes(x=Month,y=value,color=PUBLIC_ID)) +
-        geom_line(size=1,linetype=2) +
+        geom_line(size=1,linetype=1) +
         geom_point(size=4) + 
         ylim(rng) + xlim(c(0,80)) +
         ylab("PSL Score") + xlab("Month") + ggtitle("ISS") +
@@ -235,17 +235,16 @@ ggplot(data=melt.iss,aes(x=Month,y=value,color=PUBLIC_ID)) +
 
 for (i in ids) {
   p = ggplot(data=melt.iss[PUBLIC_ID==i,],aes(x=Month,y=value,group=variable)) +
-        geom_line(size=1,color="gray",linetype=2) +
+        geom_line(size=1,color="gray",linetype=1) +
         geom_point(size=4) +  
         ylim(rng) + xlim(c(0,80)) +
-        #scale_color_manual(values = c("gray","black","red"), name = "Tumor Change", labels = c("NA", "No","Yes")) +
-        #scale_linetype_manual(values = c(2,3,4,5,6), name = "", labels = c("d(17p)","t(14;16)","a(1q)","t(4;14)","t(11;14)")) +
         ylab("PSL Score") + xlab("Month") + ggtitle(paste("ISS",i)) +
         theme(legend.position = "right")
   print(p)
 }
+```
 
-
+```{r}
 # 2.2.2. Overall Survival
 
 pdt$os_psl = rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(os$coxph$coef))
@@ -258,26 +257,46 @@ melt.os$tdy = melt.os$Month/12*365.25
 melt.os$smt = round(melt.os$ttcos*0.0328767)
 melt.os$censos = as.factor(melt.os$censos)
 
-ggplot(data=melt.os,aes(x=Month,y=value,color=PUBLIC_ID)) +
-        geom_line(size=1,linetype=2) +
+p1 = ggplot(data=melt.os,aes(x=Month,y=value,color=PUBLIC_ID)) +
+        geom_line(size=1,linetype=1) +
         geom_point(size=4) + 
         ylim(rng) + xlim(c(0,80)) +
-        geom_vline(aes(xintercept = smt,color=PUBLIC_ID,linetype=censos), size=1) +
+        #geom_vline(aes(xintercept = smt,color=PUBLIC_ID,linetype=censos), size=1) +
         ylab("PSL Score") + xlab("Month") + ggtitle("Overall Survival") +
         theme(legend.position = "right")
 
+#p1 + geom_point(shape = 22, aes(fill = censos, y = smt, x = value))
+
+melt.os.last = melt.os %>% group_by(PUBLIC_ID) %>% top_n(1, Month)
+melt.os.last[melt.os.last$smt==77,"smt"] = 78
+melt.os.last = as.data.table(melt.os.last)
+
+p1 + geom_segment(data = melt.os.last, size = 1,
+                  aes(color=PUBLIC_ID, x = Month, xend = smt, y = value, yend = value),linetype = 2) +
+  geom_point(data = melt.os.last, shape = 22, size = 5, 
+             aes(fill = censos, x = smt, y = value)) +
+  scale_fill_manual(values = c("black","white"))
+
+
 for (i in ids) {
   p = ggplot(data=melt.os[PUBLIC_ID==i,],aes(x=Month,y=value,group=variable)) +
-        geom_line(size=1,color="gray",linetype=2) +
+        geom_line(size=1,color="gray",linetype=1) +
         geom_point(size=4) + 
         ylim(rng) + xlim(c(0,80)) +
         geom_vline(aes(xintercept = smt), color = "red", size=1) +
         ylab("PSL Score") + xlab("Month") + ggtitle(paste("Overall Survival",i)) +
-        theme(legend.position = "right")
+        theme(legend.position = "right") +
+        geom_segment(data = melt.os.last[PUBLIC_ID==i,], size = 1,
+                     aes(x = Month, xend = smt, y = value, yend = value),linetype = 2) + 
+        geom_point(data = melt.os.last[PUBLIC_ID==i,], shape = 22, size = 5,
+                   aes(fill = censos, x = smt, y = value)) +
+        scale_fill_manual(values = c("black","white"))
   print(p)
 }
 
-dev.off()
+
+
+#dev.off()
 ```
 
 
