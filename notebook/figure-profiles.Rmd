@@ -13,6 +13,7 @@ params:
 library(dplyr)
 library(data.table)
 library(ggplot2)
+library(grid)
 ```
 
 Load transcriptome dimensions (PC1-PC39)
@@ -29,8 +30,8 @@ molten$sign <- ifelse(molten$value >= 0, "positive", "negative")
 
 Select extreme examples
 ```{r}
-min(molten$value)
-max(molten$value)
+#min(molten$value)
+#max(molten$value)
 
 score_sd$sum <- score_sd[,-1] %>% rowSums() #sum standardized pc values
 setorder(score_sd,sum)
@@ -105,6 +106,7 @@ p1 = ggplot() +
 ggsave(filename = "plots/spectra_1.pdf",plot = p1,width=7.5,height=3.5)
 p1
 ```
+
 ```{r}
 dt = out[SEQ_ID%in%dset[1:2]]
 dt$abs_value = abs(dt$value)
@@ -163,6 +165,7 @@ p3 = ggplot() +
 ggsave(filename = "plots/spectra_3.pdf",plot = p3,width=7.5,height=3.5)
 p3
 ```
+
 ```{r}
 dt = out[SEQ_ID%in%dset[3:4]]
 dt$abs_value = abs(dt$value)
@@ -191,21 +194,8 @@ p4 = ggplot() +
 ggsave(filename = "plots/spectra_4.pdf",plot = p4,width=7.5,height=3.5)
 p4
 ```
-```{r}
-library(ggplot2)
-library(grid)
-library(dplyr)
-library(lubridate)
 
+```{r}
 grid.newpage()
 grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), ggplotGrob(p3), ggplotGrob(p4), size = "first"))
-```
-
-```{r}
-grid.newpage()
-ggsave(filename = "plots/spectra.pdf",
-  plot = grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), ggplotGrob(p3), ggplotGrob(p4), size = "first")),
-  width=7.5,height=5)
-
-p = as.ggplot(grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), ggplotGrob(p3), ggplotGrob(p4), size = "first")))
 ```

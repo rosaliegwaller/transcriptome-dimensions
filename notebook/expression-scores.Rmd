@@ -65,14 +65,14 @@ rm(DAT,anno_up,up,down,anno_dw) # Cleanup variables
 fit <- kmeans(x$score, 3)
 
 # get cluster max
-aggregate(x$score,by=list(fit$cluster),FUN=max)
+#aggregate(x$score,by=list(fit$cluster),FUN=max)
 
 # append cluster assignment
 x.score <- data.frame(x, fit$cluster)
 
 # proportion in high/low risk group
-nrow(x.score[x.score$score > 2.424285,])/nrow(x.score)
-nrow(x.score[x.score$score < 2.424285,])/nrow(x.score)
+#nrow(x.score[x.score$score > 2.424285,])/nrow(x.score)
+#nrow(x.score[x.score$score < 2.424285,])/nrow(x.score)
 ```
 
 **Histogram**
@@ -149,7 +149,7 @@ p1 = ggplot(actual_preds,aes(y = predicted, x = actual)) +
   geom_point(color = "#0033CC60") +
   xlab("UAMS-70 Score") + ylab("PSL Score")
 p1
-ggsave(filename = "plots/UAMS-70_dot.pdf",plot = p1,width=3.75,height=3.75)
+#ggsave(filename = "plots/UAMS-70_dot.pdf",plot = p1,width=3.75,height=3.75)
 ```
 
 Waterfall High/Low risk score
@@ -163,7 +163,7 @@ w <- ggplot(actual_preds,aes(y=predicted-2.424285,x=1:nrow(actual_preds),fill=bi
   theme(legend.position = c(1,1), legend.justification = c(1,1),
         axis.text = element_blank(), axis.ticks = element_blank())
 w
-ggsave(filename = "plots/UAMS-70_waterfall.pdf",plot = w,width=7.5,height=2.5)
+#ggsave(filename = "plots/UAMS-70_waterfall.pdf",plot = w,width=7.5,height=2.5)
 ```
 
 
@@ -244,7 +244,7 @@ p1 = ggplot(actual_preds,aes(y = predicted, x = actual)) +
   geom_point(color = "#FF000060") +
   xlab("SBUK-17 Score") + ylab("PSL Score")
 p1
-ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=3.75,height=3.75)
+#ggsave(filename = "plots/SBUK-17_dot.pdf",plot = p1,width=3.75,height=3.75)
 ```
 
 **Save model results**

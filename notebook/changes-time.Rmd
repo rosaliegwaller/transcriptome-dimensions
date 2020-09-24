@@ -122,6 +122,8 @@ colnames(tme.sd) = c("SEQ_ID",paste(colnames(dim_time[,-"SEQ_ID"]),"_SD",sep = "
 
 
 ### 2. PLOT SPECTRA OVER TIME
+
+PSL changes over times
 ```{r}
 theme_set(theme_classic() + theme(axis.title=element_text(size=9), axis.text=element_text(size=8), 
                                   legend.title=element_text(size=9), legend.text=element_text(size=8)))
@@ -150,115 +152,12 @@ pdt = dt[PUBLIC_ID%in%ids]
 #pdt$VJ_INTERVAL
 pdt$Month = c(0,9,15,0,66,78,0,12,27,0,21,24,33,54,0,3,9,0,30,45,51,0,21,30,0,30,36,0,12,21,30,0,9,15,0,27,30)
 
-pdt[,c('VJ_INTERVAL',"Month")]
+#pdt[,c('VJ_INTERVAL',"Month")]
 ```
 
-**2.2 PSL changes over times**
-
-2.2.1 Clinical Risk
-
-Compute poly-spectra liability (PSL) scores at each time point
-```{r}
-fit = mod.risk$d17p # D_TRI_CF_ABNORMALITYPR11
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-pdt[,d17p:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-
-fit = mod.risk$t1416 # D_TRI_CF_ABNORMALITYPR8
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-pdt[,t1416:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-
-fit = mod.risk$a1q # D_TRI_CF_ABNORMALITYPR13
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-pdt[,a1q:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-
-fit = mod.risk$t414 # D_TRI_CF_ABNORMALITYPR3
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-pdt[,t414:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-
-fit = mod.risk$t1114 # D_TRI_CF_ABNORMALITYPR6
-fit.coeff = summary(fit)$coeff[-1,] %>% data.table()
-pdt[,t1114:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(fit.coeff$Estimate)) + summary(fit)$coeff[1,1]]
-
-fit = mod.risk$iss # ISS
-pdt[,iss:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(coef(fit)))]
-
-fit = mod.risk$iss # OS
-pdt[,iss:= rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(coef(fit)))]
-
-pdt
-```
-
-Plot over time
-
-All together
-```{r}
-melt.psl = melt(pdt[,c("PUBLIC_ID","Month","d17p","t1416","a1q","t414","t1114","iss")],id.vars = c("PUBLIC_ID","Month"))
-
-melt.psl$fish = as.character(NA)
-
-melt.psl[variable=="d17p","fish"] = pdt$D_TRI_CF_ABNORMALITYPR11
-melt.psl[variable=="t1416","fish"] = pdt$D_TRI_CF_ABNORMALITYPR8
-melt.psl[variable=="a1q","fish"] = pdt$D_TRI_CF_ABNORMALITYPR13
-melt.psl[variable=="t414","fish"] = pdt$D_TRI_CF_ABNORMALITYPR3
-melt.psl[variable=="t1114","fish"] = pdt$D_TRI_CF_ABNORMALITYPR6
-
-melt.psl[fish == "Not Done","fish"] = ""
-melt.psl
-```
-
-
-```{r}
-for (i in ids) {
-  p = ggplot(data=melt.psl[PUBLIC_ID==i & variable!="iss",],aes(x=Month,y=value,group=variable)) +
-        geom_line(size=1,color="gray",aes(linetype=variable)) +
-        geom_point(size=4,aes(color=fish)) +  
-        ylim(c(-7.5,5)) + xlim(c(0,80)) +
-        scale_color_manual(values = c("gray","black","red"), name = "Tumor Change", labels = c("NA", "No","Yes")) +
-        scale_linetype_manual(values = c(2,3,4,5,6), name = "", labels = c("d(17p)","t(14;16)","a(1q)","t(4;14)","t(11;14)")) +
-        ylab("PSL Score") + xlab("Month") + ggtitle(i) +
-        theme(legend.position = "right")
-  print(p)
-}
-```
-
-```{r}
-# ISS over time
-melt.iss = melt(pdt[,c("PUBLIC_ID","Month","iss")],id.vars = c("PUBLIC_ID","Month"))
-melt.iss$id = as.integer(gsub("MMRF_","",melt.iss$PUBLIC_ID))
-melt.iss$id = as.factor(melt.iss$id)
-
-rng = c(min(mod.risk$iss$lp),max(mod.risk$iss$lp))
-
-pI = ggplot(data=melt.iss,aes(x=Month,y=value,color=id)) +
-        geom_line(size=1,linetype=1) +
-        geom_point(size=4,shape=18) + 
-        #ylim(rng) + 
-        xlim(c(0,80)) +
-        ylab("PSL Score") + xlab("Month") + ggtitle("ISS") +
-        scale_color_manual(values = c("#AA0DFE","#3283FE","#1CBE4F","#C4451C","#FE00FA","#FEAF16","#2ED9FF","#1CFFCE","#B10DA1","#FBE426","#325A9B")) +
-        theme(legend.position = "none")
-        
-melt.iss.first = melt.iss[Month==0,]
-pI + geom_text(data=melt.iss.first,x=-3,aes(y=value,label=id),size=3,check_overlap = TRUE)
-ggsave(pI,filename = "plots/iss-time.pdf",width=7.5,height=4)
-```
-
-```{r}
-# old individual plots
-for (i in ids) {
-  p = ggplot(data=melt.iss[PUBLIC_ID==i,],aes(x=Month,y=value,group=variable)) +
-        geom_line(size=1,color="gray",linetype=1) +
-        geom_point(size=4) +  
-        ylim(rng) + xlim(c(0,80)) +
-        ylab("PSL Score") + xlab("Month") + ggtitle(paste("ISS",i)) +
-        theme(legend.position = "right")
-  print(p)
-}
-```
-
+Compute poly-spectra liability (PSL) scores at each time point for overall survival
 ```{r}
 # 2.2.2. Overall Survival
-
 pdt$os_psl = rowSums(data.matrix(pdt %>% dplyr::select(starts_with("PC"))) %*% diag(os$coxph$coef))
 
 rng = c(min(os$coxph$linear.predictors),max(os$coxph$linear.predictors))
@@ -276,12 +175,9 @@ melt.os$censos = as.factor(melt.os$censos)
 
 p1 = ggplot(data=melt.os,aes(x=Month,y=value,color=id)) +
         geom_line(size=1,linetype=1) +
-        geom_point(size=3) + 
-        #ylim(rng) + 
+        geom_point(size=3) +
         xlim(c(0,80)) +
-        ylab("PSL Score") + xlab("Month") + #ggtitle("Overall Survival") +
-        #scale_color_manual(values = c("#9E0142","#D53E4F","#F46D43","#FDAE61","#FEE08B","#FFFFBF","#E6F598","#ABDDA4","#66C2A5","#3288BD","#5E4FA2")) +
-        #scale_color_manual(values = c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#FFFF99")) +
+        ylab("PSL Score") + xlab("Month") + ggtitle("Overall Survival") +
         scale_color_manual(values = c("#AA0DFE","#3283FE","#1CBE4F","#C4451C","#FE00FA","#FEAF16","#2ED9FF","#1CFFCE","#B10DA1","#FBE426","#325A9B")) +
         theme(legend.position = "right")
 
@@ -294,77 +190,8 @@ melt.os.last = as.data.table(melt.os.last)
 p2 = p1 + geom_segment(data = melt.os.last,size=0.3,
                   aes(color=id, x = Month, xend = smt, y = value, yend = value),linetype = 3) +
   geom_rect(data=melt.os.last, mapping=aes(xmin=smt - 0.1, xmax=smt + 0.2, ymin=value - 0.16, ymax= value + 0.16, fill = id_os),size=0.3) +
-  #scale_fill_manual(values = c("white","#F46D43","#66C2A5","#3288BD","#5E4FA2"))
   scale_fill_manual(values = c("white","#1CBE4F","#B10DA1","#FBE426","#325A9B")) +
   theme(legend.position = "none")
 p2
-ggsave(p2,filename = "plots/survival-time.png",width=7.5,height=4)
-```
-
-```{r}
-# old plots
-p1 + geom_segment(data = melt.os.last, size = 0.5,
-                  aes(color=PUBLIC_ID, x = Month, xend = smt, y = value, yend = value),linetype = 3) +
-  geom_point(data = melt.os.last, size = 6, 
-             aes(shape = censos, x = smt, y = value)) +
-  scale_shape_manual(values = c(0,15))
-
-
-for (i in ids) {
-  p = ggplot(data=melt.os[PUBLIC_ID==i,],aes(x=Month,y=value,group=variable)) +
-        geom_line(size=1,color="gray",linetype=1) +
-        geom_point(size=4) + 
-        ylim(rng) + xlim(c(0,80)) +
-        geom_vline(aes(xintercept = smt), color = "red", size=1) +
-        ylab("PSL Score") + xlab("Month") + ggtitle(paste("Overall Survival",i)) +
-        theme(legend.position = "right") +
-        geom_segment(data = melt.os.last[PUBLIC_ID==i,], size = 1,
-                     aes(x = Month, xend = smt, y = value, yend = value),linetype = 2) + 
-        geom_point(data = melt.os.last[PUBLIC_ID==i,], shape = 22, size = 5,
-                   aes(fill = censos, x = smt, y = value)) +
-        scale_fill_manual(values = c("white","black"))
-  print(p)
-}
-```
-
-
-**2.1. Spectra Chart**
-
-Tidy data
-```{r}
-out = data.frame(SEQ_ID=character(),
-                 variable=factor(),
-                 value=numeric(),
-                 perc=numeric())
-
-for (i in seq_along(ids)){
-  data = dt.melt[SEQ_ID==ids[i]]
-  tot = sum(abs(data$value)) 
-  data$perc = abs(data$value)/tot
-  out = rbind(out,data)
-}
-out$id = gsub("_BM","",gsub("MMRF_","",out$SEQ_ID))
-
-out$lv = if_else(out$value < -2, -2,
-                 if_else(out$value > 2, 2, out$value))
-out
-```
-
-Plot
-```{r}
-theme_set(theme_minimal() + theme(axis.title=element_text(size=9), axis.text=element_text(size=8), 
-                                  legend.title=element_text(size=9), legend.text=element_text(size=8)))
-
-dset = ids
-p_a = ggplot(data=out[SEQ_ID%in%dset],aes(x=id, y=abs(value), fill=lv, group=variable)) +
-  geom_bar(stat = "identity",position = position_stack(reverse = TRUE), color="black", width=0.9) +
-  scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0) +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-        legend.position = "right",
-        panel.grid = element_blank()) +
-  xlab("patient") + ylab("spectra") + 
-  labs(fill = "value") +
-  coord_flip()
-ggsave(filename = "plots/spectra_time.png",plot = p_a,width=7.5,height=5.5)
-p_a
+#ggsave(p2,filename = "plots/survival-time.png",width=7.5,height=4)
 ```

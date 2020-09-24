@@ -8,12 +8,11 @@ output:
 
 ```{r load_packages, message=F, include=F}
 # Install and load required R packages
-library(dplyr)
-library(data.table)
-library(ggplot2)
+library("dplyr")
+library("data.table")
+library("ggplot2")
 library("survminer")
 library("survival")
-#library(gridExtra)
 ```
 
 Load model results
@@ -21,7 +20,6 @@ Load model results
 setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
 load(file = "rdata/mod.disease-course.rdata")
 ```
-
 
 Plotting setup
 ```{r}
@@ -38,10 +36,9 @@ md = os
 pdt = data.frame(tme = md$data$ttcos, evt = md$data$censos, predictors = md$coxph$linear.predictors)
 pdt$trt = cut(pdt$predictors,quantile(pdt$predictors,c(0,1/3,2/3,1)),include.lowest = T) #tertiles
 
-p1 = ggsurvplot(survfit(Surv(time = pdt$tme, event = pdt$evt) ~ trt, data=pdt),palette=cbPalette[c(6,1,7)])
-p1
-ggsave(filename = "plots/os_kmplot.pdf",plot = p1,width=7.5,height=2.5)
+ggsurvplot(survfit(Surv(time = pdt$tme, event = pdt$evt) ~ trt, data=pdt),palette=cbPalette[c(6,1,7)])
 ```
+
 Time to first line treatment failure (TTF)
 ```{r}
 md = tf1
@@ -50,4 +47,3 @@ pdt$trt = cut(pdt$predictors,quantile(pdt$predictors,c(0,1/3,2/3,1)),include.low
 
 ggsurvplot(survfit(Surv(time = pdt$tme, event = pdt$evt) ~ trt, data=pdt),palette=cbPalette[c(6,1,7)])
 ```
-
