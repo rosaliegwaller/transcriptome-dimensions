@@ -62,13 +62,13 @@ setorder(pdt,-predictors)
 w = ggplot(pdt,aes(y=predictors,x=1:nrow(pdt),fill=a1q)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values = c("gray","#F67280"), name = "amp(1q)", labels = c("N (n=323)","Y (n=202)")) +
-  xlab("Patients (N=525)") + ylab("PSL Score") +
+  xlab("Patients (N=525)") + ylab("amp(1q) PSL Score") +
   scale_x_continuous(limits = c(0,nrow(pdt)+1), breaks=seq(1,nrow(pdt),1)) +
   #theme(legend.position = "top",
   theme(legend.position = c(1,1), legend.justification = c(1,1),
         axis.text = element_blank(), axis.ticks = element_blank())
 w
-#ggsave(filename = "plots/a1q_waterfall.pdf",plot = w,width=4,height=1.75)
+ggsave(filename = "plots/a1q_waterfall.pdf",plot = w,width=3.75,height=2)
 ```
 
 
@@ -100,13 +100,13 @@ setorder(pdt,-predictors)
 w = ggplot(pdt,aes(y=predictors,x=1:nrow(pdt),fill=t1114)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values = c("gray","#355C7D"), name = "t(11;14)", labels = c("N (n=441)","Y (n=153)")) +
-  xlab("Patients (N=594)") + ylab("PSL Score") +
+  xlab("Patients (N=594)") + ylab("t(11;14) PSL Score") +
   scale_x_continuous(limits = c(0,nrow(pdt)+1), breaks=seq(1,nrow(pdt),1)) +
   #theme(legend.position = "top",
   theme(legend.position = c(1,1), legend.justification = c(1,1),
         axis.text = element_blank(), axis.ticks = element_blank())
 w
-#ggsave(filename = "plots/t1114_waterfall.pdf",plot = w,width=4,height=1.75)
+ggsave(filename = "plots/t1114_waterfall.pdf",plot = w,width=3.75,height=2)
 ```
 
 
@@ -129,7 +129,7 @@ Plot
 my_comparisons <- list( c("1", "2"), c("2", "3"), c("1", "3") )
 b = ggboxplot(pdt, x = "iss", y = "predictors",
           color = "iss", add = "jitter",
-          legend = "none", ylab = "PSL Score", xlab = "ISS", 
+          legend = "none", ylab = "ISS PSL Score", xlab = "ISS", 
           size = 1) + 
   stat_compare_means(comparisons = my_comparisons, size = 3) +
   theme_classic() + 
@@ -140,29 +140,24 @@ b = ggboxplot(pdt, x = "iss", y = "predictors",
                   axis.text=element_text(size=8))
 
 b
-#ggsave(filename = "plots/iss_boxplot.pdf",plot = b,width=3.5,height=3.5)
+ggsave(filename = "plots/iss_boxplot.pdf",plot = b,width=3.75,height=4)
 ```
 
 
 ### d) gender x race
 ```{r}
-# check poly-spectra liability score calculation
-fit = glm.gender
-dat = merge(clinical[clinical$D_PT_race%in%c(1,2),c("SEQ_ID","D_PT_gender","D_PT_race")],score_sd)
+## calculate PSL scores from beta values
+dat = merge(clinical[,c("SEQ_ID","D_PT_gender","D_PT_race")],score_sd)
+est = summary(glm.gender)$coeff[-1,1]
+dat[,gender_psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_PT_gender","D_PT_race")]) %*% diag(est)) + summary(glm.gender)$coeff[1,1]]
 
-## calculate manually from beta values
-est = summary(fit)$coeff[-1,1]
-dat[,psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_PT_gender","D_PT_race")]) %*% diag(est)) + summary(fit)$coeff[1,1]]
+est = summary(glm.race)$coeff[-1,1]
+dat[,race_psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_PT_gender","D_PT_race","gender_psl")]) %*% diag(est)) + summary(glm.race)$coeff[1,1]]
 
-pdt = dat[,c("SEQ_ID","D_PT_gender","D_PT_race","psl")]
-
-#data.table(sort(fit$linear.predictors),sort(dat$psl))
-
-## check on matching
-#unique(round(sort(fit$linear.predictors),digits = 8) == round(sort(dat$psl),digits = 8))
+pdt = dat[,c("SEQ_ID","D_PT_gender","D_PT_race","gender_psl","race_psl")]
 
 # clean up data table
-colnames(pdt) = c("ID","gender","race","gender_PSL")
+colnames(pdt) = c("ID","gender","race","gender_psl","race_psl")
 
 pdt$gender = as.factor(pdt$gender)
 pdt[gender == 1,"gender"] = "male"
@@ -171,28 +166,53 @@ pdt[gender == 2,"gender"] = "female"
 pdt$race = as.factor(pdt$race)
 pdt[race == 1,"race"] = "white"
 pdt[race == 2,"race"] = "black"
-#pdt
+
+pdt$grp = ""
+pdt[gender == "male" & race == "black","grp"] = "black_male"
+pdt[gender == "male" & race == "white","grp"] = "white_male"
+pdt[gender == "female" & race == "black","grp"] = "black_female"
+pdt[gender == "female" & race == "white","grp"] = "white_female"
+
+pdt$grp = as.factor(pdt$grp)
+pdt
 ```
 
 Plot
 ```{r}
-p <- ggboxplot(pdt, x = "gender", y = "gender_PSL",
-          color = "gender", palette = "jco",
-          add = "jitter", ylab = "Gender PSL Score", xlab = "",
-          legend = "none",size = 1,
-          facet.by = "race", short.panel.labs = FALSE)
-# Use only p.format as label. Remove method name.
-p2 = p + stat_compare_means(method = 'anova', size = 3) +
+my_comparisons = list(c("female","male"))
+
+p2 = ggboxplot(pdt, x = "gender", y = "gender_psl",
+          color = "gender", add = "jitter", palette = "jco",
+          legend = "none", ylab = "Gender PSL Score", xlab = "", 
+          size = 1, order = c("female","male")) +
+    stat_compare_means(comparisons = my_comparisons, size = 3) +
+    theme_classic() + 
             theme(legend.position="none",legend.key.size = unit(0.5,"line"),
                   legend.title = element_text(size=8),
                   legend.text = element_text(size=7),
                   axis.title=element_text(size=9),
                   axis.text=element_text(size=8))
 p2
-#ggsave(filename = "plots/dem_boxplot.pdf",plot = p2,width=7.5,height=4.5)
+nrow(pdt[pdt$gender=="female"])
+nrow(pdt[pdt$gender=="male"])
+ggsave(filename = "plots/gender_boxplot.pdf",plot = p2,width=3.75,height=4)
+```
+```{r}
+my_comparisons = list(c("black","white"))
 
-#nrow(pdt[gender=="male" & race=="white"])
-#nrow(pdt[gender=="female" & race=="white"])
-#nrow(pdt[gender=="male" & race=="black"])
-#nrow(pdt[gender=="female" & race=="black"])
+p3 = ggboxplot(pdt[pdt$race%in%c("black","white")], x = "race", y = "race_psl",
+          color = "race", add = "jitter", palette = "npg",
+          legend = "none", ylab = "Race PSL Score", xlab = "", 
+          size = 1, order = c("black","white")) +
+    stat_compare_means(comparisons = my_comparisons, size = 3) +
+    theme_classic() + 
+            theme(legend.position="none",legend.key.size = unit(0.5,"line"),
+                  legend.title = element_text(size=8),
+                  legend.text = element_text(size=7),
+                  axis.title=element_text(size=9),
+                  axis.text=element_text(size=8))
+p3
+nrow(pdt[pdt$race=="black"])
+nrow(pdt[pdt$race=="white"])
+ggsave(filename = "plots/race_boxplot.pdf",plot = p3,width=3.75,height=4)
 ```

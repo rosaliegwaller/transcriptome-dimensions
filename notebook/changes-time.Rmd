@@ -177,7 +177,7 @@ p1 = ggplot(data=melt.os,aes(x=Month,y=value,color=id)) +
         geom_line(size=1,linetype=1) +
         geom_point(size=3) +
         xlim(c(0,80)) +
-        ylab("PSL Score") + xlab("Month") + ggtitle("Overall Survival") +
+        ylab("Overall Survival PSL Score") + xlab("Month") + #ggtitle("Overall Survival") +
         scale_color_manual(values = c("#AA0DFE","#3283FE","#1CBE4F","#C4451C","#FE00FA","#FEAF16","#2ED9FF","#1CFFCE","#B10DA1","#FBE426","#325A9B")) +
         theme(legend.position = "right")
 
@@ -193,5 +193,5 @@ p2 = p1 + geom_segment(data = melt.os.last,size=0.3,
   scale_fill_manual(values = c("white","#1CBE4F","#B10DA1","#FBE426","#325A9B")) +
   theme(legend.position = "none")
 p2
-#ggsave(p2,filename = "plots/survival-time.png",width=7.5,height=4)
+ggsave(p2,filename = "plots/survival-time.png",width=7.5,height=4)
 ```

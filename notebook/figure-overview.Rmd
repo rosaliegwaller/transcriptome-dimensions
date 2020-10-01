@@ -233,7 +233,7 @@ p1 = ggplot(pldt, aes(y = y, x = spectra, label = p)) +
   theme(panel.grid.minor = element_blank()) + 
   geom_text(aes(label = formatC(p,1,format = "g")),x=41,size=2.5)
 p1
-#ggsave(filename = "plots/overview.png",plot = p1,width=7.5,height=4.5)
+ggsave(filename = "plots/overview.png",plot = p1,width=7.5,height=4.5)
 ```
 
 Scree plot
@@ -244,5 +244,5 @@ p2 = ggplot(data = elbow,aes(y = value/sum(value)*100,x = idx+1)) +
   theme(panel.grid.minor.x = element_blank()) + 
   geom_text(label = "64.5%",x=41,y=4,size=3)
 p2
-#ggsave(filename = "plots/scree.png",plot = p2,width=7.45,height=1.5)
+ggsave(filename = "plots/scree.png",plot = p2,width=7.45,height=1.5)
 ```

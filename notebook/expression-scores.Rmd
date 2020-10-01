@@ -165,6 +165,10 @@ w <- ggplot(actual_preds,aes(y=predicted-2.424285,x=1:nrow(actual_preds),fill=bi
 w
 #ggsave(filename = "plots/UAMS-70_waterfall.pdf",plot = w,width=7.5,height=2.5)
 ```
+Overall hazards ratio from PSL score
+```{r}
+summary(lm(data = actual_preds, formula = actual ~ predicted))
+```
 
 
 

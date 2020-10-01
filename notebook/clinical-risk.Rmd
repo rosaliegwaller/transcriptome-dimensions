@@ -52,6 +52,12 @@ NLL = glm(data = md.dt, formula = D_TRI_CF_ABNORMALITYPR11 ~ 1, family = "binomi
 mod.risk$d17p$p = pchisq(deviance(NLL)-deviance(MOD),
                          df.residual(NLL)-df.residual(MOD),
                          lower.tail=FALSE)
+#mod.risk$d17p$p
+
+# Check on p-value based on signficant spectra only
+#md2 = glm(data = md.dt, formula = D_TRI_CF_ABNORMALITYPR11 ~ PC3_SD + PC6_SD + PC39_SD, family = "binomial")
+#summary(md2)
+#pchisq(deviance(NLL)-deviance(md2),df.residual(NLL)-df.residual(md2),lower.tail=FALSE)
 ```
 
 1.2. t(14;16): D_TRI_CF_ABNORMALITYPR8 & D_TRI_CF_T1416ABNORMAL (abundance)
