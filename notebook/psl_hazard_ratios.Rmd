@@ -1,0 +1,141 @@
+---
+title: "Calculate hazards ratios for the poly-spectra liability scores"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+---
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
+
+```
+
+Load model results
+```{r}
+setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
+load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
+load(file = "rdata/mod.demographic-risk.rdata") # generated in demographic-risk.Rmd
+load(file = "rdata/mod.disease-course.rdata") # generated in disease-course.Rmd
+```
+
+TO DO: split by decile and count n cases in each category
+
+### del(17p)
+```{r}
+fit = mod.risk$d17p
+d17p_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+
+# check PSL calculation
+unique(round(fit$fitted.values,12) == round(exp(d17p_psl)/(1+exp(d17p_psl)),12)) # equalivant
+data.table(PSL=d17p_psl,fitted_values=fit$fitted.values,ePSL=exp(d17p_psl)/(1+exp(d17p_psl))) # view data table 
+```
+
+### t(14;16)
+```{r}
+fit = mod.risk$t1416
+t1416_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+
+# check PSL calculation
+unique(round(fit$fitted.values,12) == round(exp(t1416_psl)/(1+exp(t1416_psl)),12)) # equalivant
+data.table(PSL=t1416_psl,fitted_values=fit$fitted.values,ePSL=exp(t1416_psl)/(1+exp(t1416_psl))) # view data table 
+```
+
+### amp(1q)
+```{r}
+fit = mod.risk$a1q
+a1q_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+
+# check PSL calculation
+unique(round(fit$fitted.values,13) == round(exp(a1q_psl)/(1+exp(a1q_psl)),13)) # equalivant
+data.table(PSL=a1q_psl,fitted_values=fit$fitted.values,ePSL=exp(a1q_psl)/(1+exp(a1q_psl))) # view data table 
+```
+
+### t(4;14)
+```{r}
+fit = mod.risk$t414
+t414_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+
+# check PSL calculation
+unique(round(fit$fitted.values,12) == round(exp(t414_psl)/(1+exp(t414_psl)),12)) # equalivant
+data.table(PSL=t414_psl,fitted_values=fit$fitted.values,ePSL=exp(t414_psl)/(1+exp(t414_psl))) # view data table 
+```
+
+### t(11;14)
+```{r}
+fit = mod.risk$t1114
+t1114_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+
+# check PSL calculation
+unique(round(fit$fitted.values,12) == round(exp(t1114_psl)/(1+exp(t1114_psl)),12)) # equalivant
+data.table(PSL=t1114_psl,fitted_values=fit$fitted.values,ePSL=exp(t1114_psl)/(1+exp(t1114_psl))) # view data table 
+```
+
+### ISS
+```{r}
+fit = mod.risk$iss
+iss_psl = rowSums(data.matrix(fit$model[,-1]) %*% diag(coef(fit))) # multiple each PC by the PC beta, sum across PCs
+
+# check PSL calculation
+unique(round(fit$lp,12) == round(iss_psl,12)) # equalivant
+data.table(iss_psl,fit$lp)
+```
+
+Overall Survival (OS)
+```{r}
+os_psl = rowSums(data.matrix(os$data[,-c(1:2)]) %*% diag(coef(os$coxph))) # multiple each PC by the PC beta, sum across PCs
+
+# check PSL calculation
+unique(round(os$coxph$linear.predictors,12) == round(os_psl,12)) # equalivant
+data.table(os_psl,os$coxph$linear.predictors)
+```
+
+Time to first line treatment failure (TTF)
+```{r}
+tf1_psl = rowSums(data.matrix(tf1$data[,-c(1:2)]) %*% diag(coef(tf1$coxph))) # multiple each PC by the PC beta, sum across PCs
+
+# check PSL calculation
+unique(round(tf1$coxph$linear.predictors,12) == round(tf1_psl,12)) # equalivant
+data.table(tf1_psl,tf1$coxph$linear.predictors)
+```
+
+Age
+```{r}
+
+
+```
+
+Gender
+```{r}
+fit = glm.gender
+gender.psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+
+# check PSL calculation
+unique(round(fit$fitted.values,12) == round(exp(gender.psl)/(1+exp(gender.psl)),12)) # equalivant
+data.table(PSL=gender.psl,fitted_values=fit$fitted.values,ePSL=exp(gender.psl)/(1+exp(gender.psl))) # view data table 
+```
+
+Race
+```{r}
+fit = glm.race
+psl.race = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+
+# check PSL calculation
+unique(round(fit$fitted.values,12) == round(exp(psl.race)/(1+exp(psl.race)),12)) # equalivant
+data.table(PSL=psl.race,fitted_values=fit$fitted.values,ePSL=exp(psl.race)/(1+exp(psl.race))) # view data table 
+```
+
+Ethnicity
+```{r}
+fit = glm.ethnic
+psl.ethnic = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+
+# check PSL calculation
+unique(round(fit$fitted.values,12) == round(exp(psl.ethnic)/(1+exp(psl.ethnic)),12)) # equalivant
+data.table(PSL=psl.ethnic,fitted_values=fit$fitted.values,ePSL=exp(psl.ethnic)/(1+exp(psl.ethnic))) # view data table 
+```
+
+
+
+
+
