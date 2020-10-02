@@ -8,7 +8,10 @@ output:
 
 ```{r load_packages, message=F, include=F}
 # Install and load required R packages
-
+library("data.table")
+library("dplyr")
+library("knitr")
+library("ggplot2")
 ```
 
 Load model results
@@ -19,120 +22,444 @@ load(file = "rdata/mod.demographic-risk.rdata") # generated in demographic-risk.
 load(file = "rdata/mod.disease-course.rdata") # generated in disease-course.Rmd
 ```
 
-TO DO: split by decile and count n cases in each category
-
-### del(17p)
+## del(17p)
 ```{r}
 fit = mod.risk$d17p
-d17p_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
 # check PSL calculation
-unique(round(fit$fitted.values,12) == round(exp(d17p_psl)/(1+exp(d17p_psl)),12)) # equalivant
-data.table(PSL=d17p_psl,fitted_values=fit$fitted.values,ePSL=exp(d17p_psl)/(1+exp(d17p_psl))) # view data table 
+unique(round(fit$fitted.values,12) == round(exp(psl)/(1+exp(psl)),12)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values,ePSL=exp(psl)/(1+exp(psl))) # view data table 
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$data$D_TRI_CF_ABNORMALITYPR11,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
+tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+kable(cnt,align = 'c',caption = "del(17p) PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_yes]
+b = cnt[decile%in%c(10),n_no]
+c = sum(cnt[decile%in%c(5,6),n_yes])
+d = sum(cnt[decile%in%c(5,6),n_no])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: del(17p) PSL in decile 10 compared with deciles 5 + 6 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-### t(14;16)
-```{r}
+## t(14;16)
+```{r, results = 'asis'}
 fit = mod.risk$t1416
-t1416_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
 # check PSL calculation
-unique(round(fit$fitted.values,12) == round(exp(t1416_psl)/(1+exp(t1416_psl)),12)) # equalivant
-data.table(PSL=t1416_psl,fitted_values=fit$fitted.values,ePSL=exp(t1416_psl)/(1+exp(t1416_psl))) # view data table 
+unique(round(fit$fitted.values,12) == round(exp(psl)/(1+exp(psl)),12)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values,ePSL=exp(psl)/(1+exp(psl))) # view data table 
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$data$D_TRI_CF_ABNORMALITYPR8,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
+tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+kable(cnt,align = 'c',caption = "t(14;16) PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_yes]
+b = cnt[decile%in%c(10),n_no]
+c = sum(cnt[decile%in%c(5,6),n_yes])
+d = sum(cnt[decile%in%c(5,6),n_no])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: t(14;16) PSL in decile 10 compared with deciles 5 + 6 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-### amp(1q)
+## amp(1q)
 ```{r}
 fit = mod.risk$a1q
-a1q_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
 # check PSL calculation
-unique(round(fit$fitted.values,13) == round(exp(a1q_psl)/(1+exp(a1q_psl)),13)) # equalivant
-data.table(PSL=a1q_psl,fitted_values=fit$fitted.values,ePSL=exp(a1q_psl)/(1+exp(a1q_psl))) # view data table 
+unique(round(fit$fitted.values,12) == round(exp(psl)/(1+exp(psl)),12)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values,ePSL=exp(psl)/(1+exp(psl))) # view data table 
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$data$D_TRI_CF_ABNORMALITYPR13,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
+tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+kable(cnt,align = 'c',caption = "amp(1q) PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_yes]
+b = cnt[decile%in%c(10),n_no]
+c = sum(cnt[decile%in%c(5,6),n_yes])
+d = sum(cnt[decile%in%c(5,6),n_no])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: amp(1q) PSL in decile 10 compared with deciles 5 + 6 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-### t(4;14)
+## t(4;14)
 ```{r}
 fit = mod.risk$t414
-t414_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
 # check PSL calculation
-unique(round(fit$fitted.values,12) == round(exp(t414_psl)/(1+exp(t414_psl)),12)) # equalivant
-data.table(PSL=t414_psl,fitted_values=fit$fitted.values,ePSL=exp(t414_psl)/(1+exp(t414_psl))) # view data table 
+unique(round(fit$fitted.values,12) == round(exp(psl)/(1+exp(psl)),12)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values,ePSL=exp(psl)/(1+exp(psl))) # view data table 
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$data$D_TRI_CF_ABNORMALITYPR3,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
+tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+kable(cnt,align = 'c',caption = "t(4;14) PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_yes]
+b = cnt[decile%in%c(10),n_no]
+c = sum(cnt[decile%in%c(5,6),n_yes])
+d = sum(cnt[decile%in%c(5,6),n_no])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: t(4;14) PSL in decile 10 compared with deciles 5 + 6 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-### t(11;14)
+## t(11;14)
 ```{r}
 fit = mod.risk$t1114
-t1114_psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
 # check PSL calculation
-unique(round(fit$fitted.values,12) == round(exp(t1114_psl)/(1+exp(t1114_psl)),12)) # equalivant
-data.table(PSL=t1114_psl,fitted_values=fit$fitted.values,ePSL=exp(t1114_psl)/(1+exp(t1114_psl))) # view data table 
+unique(round(fit$fitted.values,12) == round(exp(psl)/(1+exp(psl)),12)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values,ePSL=exp(psl)/(1+exp(psl))) # view data table 
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$data$D_TRI_CF_ABNORMALITYPR6,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
+tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+kable(cnt,align = 'c',caption = "t(11;14) PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_yes]
+b = cnt[decile%in%c(10),n_no]
+c = sum(cnt[decile%in%c(5,6),n_yes])
+d = sum(cnt[decile%in%c(5,6),n_no])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: t(11;14) PSL in decile 10 compared with deciles 5 + 6 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-### ISS
+## ISS
 ```{r}
 fit = mod.risk$iss
-iss_psl = rowSums(data.matrix(fit$model[,-1]) %*% diag(coef(fit))) # multiple each PC by the PC beta, sum across PCs
+psl = rowSums(data.matrix(fit$model[,-1]) %*% diag(coef(fit))) # multiple each PC by the PC beta, sum across PCs
 
 # check PSL calculation
-unique(round(fit$lp,12) == round(iss_psl,12)) # equalivant
-data.table(iss_psl,fit$lp)
+unique(round(fit$lp,12) == round(psl,12)) 
+#data.table(psl,fit$lp)
+
+# split into deciles
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$model$ISS,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category==1) %>% group_by(decile) %>% count(category,name = "n_1")
+tmp2 = dat %>% filter(category==2) %>% group_by(decile) %>% count(category,name = "n_2")
+tmp3 = dat %>% filter(category==3) %>% group_by(decile) %>% count(category,name = "n_3")
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T) %>% select("decile","n_1","n_2","n_3"))
+kable(cnt,align = 'c',caption = "ISS PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_3]
+b = cnt[decile%in%c(10),n_1]
+c = sum(cnt[decile%in%c(5,6),n_3])
+d = sum(cnt[decile%in%c(5,6),n_1])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: ISS PSL in decile 10 compared with deciles 5 + 6 for stage 1 v 3 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-Overall Survival (OS)
+## Overall Survival (OS)
 ```{r}
-os_psl = rowSums(data.matrix(os$data[,-c(1:2)]) %*% diag(coef(os$coxph))) # multiple each PC by the PC beta, sum across PCs
+psl = rowSums(data.matrix(os$data[,-c(1:2)]) %*% diag(coef(os$coxph))) # multiple each PC by the PC beta, sum across PCs
 
 # check PSL calculation
-unique(round(os$coxph$linear.predictors,12) == round(os_psl,12)) # equalivant
-data.table(os_psl,os$coxph$linear.predictors)
+unique(round(os$coxph$linear.predictors,12) == round(psl,12)) 
+#data.table(psl,os$coxph$linear.predictors)
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(os$data[,c(1:2)],psl=psl,decile=dcl)
+dat$category = if_else(dat$ttcos<=1000 & dat$censos==1,"dead",if_else(dat$ttcos>1000,"alive","censored")) # at 1000 days, describe in patient has died, is alive, or was censored before 1000 days
+dat
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="dead") %>% group_by(decile) %>% count(category,name = "n_dead")
+tmp2 = dat %>% filter(category=="alive") %>% group_by(decile) %>% count(category,name = "n_alive")
+tmp3 = dat %>% filter(category=="censored") %>% group_by(decile) %>% count(category,name="n_censored")
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T) %>% select("decile","n_dead","n_alive","n_censored"))
+kable(cnt,align = 'c',caption = "Overall Surival PSL decile counts at 1000 days") # remove censored before 1000 days
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_dead]
+b = cnt[decile%in%c(10),n_alive]
+c = sum(cnt[decile%in%c(5,6),n_dead])
+d = sum(cnt[decile%in%c(5,6),n_alive])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("HR OS PSL decile 10 compared with deciles 5 + 6 at 1000 days = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-Time to first line treatment failure (TTF)
+## Time to first line treatment failure (TTF)
 ```{r}
 tf1_psl = rowSums(data.matrix(tf1$data[,-c(1:2)]) %*% diag(coef(tf1$coxph))) # multiple each PC by the PC beta, sum across PCs
 
 # check PSL calculation
-unique(round(tf1$coxph$linear.predictors,12) == round(tf1_psl,12)) # equalivant
-data.table(tf1_psl,tf1$coxph$linear.predictors)
+unique(round(tf1$coxph$linear.predictors,12) == round(tf1_psl,12)) 
+#data.table(tf1_psl,tf1$coxph$linear.predictors)
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(tf1$data[,c(1:2)],psl=psl,decile=dcl)
+dat$category = if_else(dat$ttctf1<=1000 & dat$censtf1==1,"fail",if_else(dat$ttctf1>1000,"okay","censored")) # at 1000 days, describe if treatment has failed, not failed, or patient data censored before 1000 days
+dat
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="fail") %>% group_by(decile) %>% count(category,name = "n_fail")
+tmp2 = dat %>% filter(category=="okay") %>% group_by(decile) %>% count(category,name = "n_okay")
+tmp3 = dat %>% filter(category=="censored") %>% group_by(decile) %>% count(category,name="n_censored")
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T) %>% select("decile","n_fail","n_okay","n_censored"))
+kable(cnt,align = 'c',caption = "TTF PSL decile counts at 1000 days") # remove censored before 1000 days
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_fail]
+b = cnt[decile%in%c(10),n_okay]
+c = sum(cnt[decile%in%c(5,6),n_fail])
+d = sum(cnt[decile%in%c(5,6),n_okay])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("HR TTF PSL decile 10 compared with deciles 5 + 6 at 1000 days = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-Age
+## Age
 ```{r}
+fit = lm.age
+psl = rowSums(data.matrix(fit$model[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
+# check PSL calculation
+unique(round(fit$fitted.values,10) == round(psl,10)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values) # view data table 
 
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(age=fit$model$D_PT_age,psl=psl,decile=dcl)
+dat$category = as.factor(if_else(dat$age<60,1,2)) # two categories: <60 or >=60 at diagnosis
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/2,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="1") %>% group_by(decile) %>% count(category,name = "n_1")
+tmp2 = dat %>% filter(category=="2") %>% group_by(decile) %>% count(category,name = "n_2")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_1","n_2"))
+kable(cnt,align = 'c',caption = "Age PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(1),n_1]
+b = cnt[decile%in%c(1),n_2]
+c = sum(cnt[decile%in%c(5,6),n_1])
+d = sum(cnt[decile%in%c(5,6),n_2])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: Age PSL in decile 1 compared with deciles 5 + 6 for <60 or >=60 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-Gender
+## Gender
 ```{r}
 fit = glm.gender
-gender.psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
 # check PSL calculation
-unique(round(fit$fitted.values,12) == round(exp(gender.psl)/(1+exp(gender.psl)),12)) # equalivant
-data.table(PSL=gender.psl,fitted_values=fit$fitted.values,ePSL=exp(gender.psl)/(1+exp(gender.psl))) # view data table 
+unique(round(fit$fitted.values,12) == round(exp(psl)/(1+exp(psl)),12)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values,ePSL=exp(psl)/(1+exp(psl))) # view data table 
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$data$D_PT_gender,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="1") %>% group_by(decile) %>% count(category,name = "n_1")
+tmp2 = dat %>% filter(category=="2") %>% group_by(decile) %>% count(category,name = "n_2")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_1","n_2"))
+kable(cnt,align = 'c',caption = "Gender PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_2]
+b = cnt[decile%in%c(10),n_1]
+c = sum(cnt[decile%in%c(5,6),n_2])
+d = sum(cnt[decile%in%c(5,6),n_1])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: Gender PSL in decile 10 compared with deciles 5 + 6 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-Race
+## Race
 ```{r}
 fit = glm.race
-psl.race = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
 # check PSL calculation
-unique(round(fit$fitted.values,12) == round(exp(psl.race)/(1+exp(psl.race)),12)) # equalivant
-data.table(PSL=psl.race,fitted_values=fit$fitted.values,ePSL=exp(psl.race)/(1+exp(psl.race))) # view data table 
+unique(round(fit$fitted.values,12) == round(exp(psl)/(1+exp(psl)),12)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values,ePSL=exp(psl)/(1+exp(psl))) # view data table 
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$data$D_PT_race,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="1") %>% group_by(decile) %>% count(category,name = "n_1")
+tmp2 = dat %>% filter(category=="2") %>% group_by(decile) %>% count(category,name = "n_2")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_1","n_2"))
+kable(cnt,align = 'c',caption = "Race PSL decile counts")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_2]
+b = cnt[decile%in%c(10),n_1]
+c = sum(cnt[decile%in%c(5,6),n_2])
+d = sum(cnt[decile%in%c(5,6),n_1])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: Race PSL in decile 10 compared with deciles 5 + 6 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
-Ethnicity
+## Ethnicity
 ```{r}
 fit = glm.ethnic
-psl.ethnic = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
+psl = rowSums(data.matrix(fit$data[,-1]) %*% diag(coef(fit)[-1])) + coef(fit)[1] # multiple each PC by the PC beta, sum across PCs, add the intercept beta
 
 # check PSL calculation
-unique(round(fit$fitted.values,12) == round(exp(psl.ethnic)/(1+exp(psl.ethnic)),12)) # equalivant
-data.table(PSL=psl.ethnic,fitted_values=fit$fitted.values,ePSL=exp(psl.ethnic)/(1+exp(psl.ethnic))) # view data table 
+unique(round(fit$fitted.values,12) == round(exp(psl)/(1+exp(psl)),12)) 
+#data.table(PSL=psl,fitted_values=fit$fitted.values,ePSL=exp(psl)/(1+exp(psl))) # view data table 
+
+# split into decile
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+dat = data.table(category=fit$data$D_PT_ethnic,psl=psl,decile=dcl)
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="1") %>% group_by(decile) %>% count(category,name = "n_1")
+tmp2 = dat %>% filter(category=="2") %>% group_by(decile) %>% count(category,name = "n_2")
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_1","n_2"))
+kable(cnt,align = 'c',caption = "Ethnicity PSL decile counts")
+
+cnt[is.na(cnt)] <- 0 # replace NA with 0
+
+# calculate hazards ratios
+a = cnt[decile%in%c(1),n_1]
+b = cnt[decile%in%c(1),n_2]
+c = sum(cnt[decile%in%c(5,6),n_1])
+d = sum(cnt[decile%in%c(5,6),n_2])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("Odds Ratio: Ethnicity PSL in decile 1 compared with deciles 5 + 6 = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
 
