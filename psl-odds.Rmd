@@ -1,5 +1,5 @@
 ---
-title: "Calculate hazards ratios for the poly-spectra liability scores"
+title: "Odds ratios for poly-spectra liability"
 output:
   html_document:
     theme: united
@@ -16,7 +16,7 @@ library("ggplot2")
 
 Load model results
 ```{r}
-setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
+setwd("C:/Users/rosal/github/transcriptome-dimensions/")
 load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
 load(file = "rdata/mod.demographic-risk.rdata") # generated in demographic-risk.Rmd
 load(file = "rdata/mod.disease-course.rdata") # generated in disease-course.Rmd
@@ -222,7 +222,7 @@ ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white
 tmp1 = dat %>% filter(category==1) %>% group_by(decile) %>% count(category,name = "n_1")
 tmp2 = dat %>% filter(category==2) %>% group_by(decile) %>% count(category,name = "n_2")
 tmp3 = dat %>% filter(category==3) %>% group_by(decile) %>% count(category,name = "n_3")
-cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T) %>% select("decile","n_1","n_2","n_3"))
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T))[,c("decile","n_1","n_2","n_3")]
 kable(cnt,align = 'c',caption = "ISS PSL decile counts")
 
 # calculate hazards ratios
@@ -260,8 +260,14 @@ ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white
 tmp1 = dat %>% filter(category=="dead") %>% group_by(decile) %>% count(category,name = "n_dead")
 tmp2 = dat %>% filter(category=="alive") %>% group_by(decile) %>% count(category,name = "n_alive")
 tmp3 = dat %>% filter(category=="censored") %>% group_by(decile) %>% count(category,name="n_censored")
-cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T) %>% select("decile","n_dead","n_alive","n_censored"))
-kable(cnt,align = 'c',caption = "Overall Surival PSL decile counts at 1000 days") # remove censored before 1000 days
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T))[,c("decile","n_dead","n_alive","n_censored")]
+avg_all = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(ttcos),mean) # average days to death per decile - ignore censored values
+avg_c1 = dat %>% filter(censos==1) %>% group_by(decile) %>% summarise_at(vars(ttcos),mean)
+avg_c0 = dat %>% filter(censos==0) %>% group_by(decile) %>% summarise_at(vars(ttcos),mean)
+evts = dat %>% filter(censos==1) %>% group_by(decile) %>% count(censos,name="n_events")  # number of events per decile
+c2 = data.table(merge(merge(avg_all,avg_c0,by = "decile"),merge(avg_c1,evts,by="decile")))[,-"censos"]
+colnames(c2) = c("decile","avg_days","avg_days_censored","avg_days_dead","events")
+kable(merge(cnt,c2,by="decile"),align = 'c',caption = "Overall Surival PSL decile counts at 1000 days") # remove censored before 1000 days
 
 # calculate hazards ratios
 a = cnt[decile%in%c(10),n_dead]
@@ -298,8 +304,14 @@ ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white
 tmp1 = dat %>% filter(category=="fail") %>% group_by(decile) %>% count(category,name = "n_fail")
 tmp2 = dat %>% filter(category=="okay") %>% group_by(decile) %>% count(category,name = "n_okay")
 tmp3 = dat %>% filter(category=="censored") %>% group_by(decile) %>% count(category,name="n_censored")
-cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T) %>% select("decile","n_fail","n_okay","n_censored"))
-kable(cnt,align = 'c',caption = "TTF PSL decile counts at 1000 days") # remove censored before 1000 days
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T))[,c("decile","n_fail","n_okay","n_censored")]
+avg_all = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean) # average days to death per decile - ignore censored values
+avg_c1 = dat %>% filter(censtf1==1) %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean)
+avg_c0 = dat %>% filter(censtf1==0) %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean)
+evts = dat %>% filter(censtf1==1) %>% group_by(decile) %>% count(censtf1,name="n_events")  # number of events per decile
+c2 = data.table(merge(merge(avg_all,avg_c0,by = "decile"),merge(avg_c1,evts,by="decile")))[,-"censtf1"]
+colnames(c2) = c("decile","avg_days","avg_days_censored","avg_days_fail","events")
+kable(merge(cnt,c2,by="decile"),align = 'c',caption = "Time to first treatment fail PSL decile counts at 1000 days") # remove censored before 1000 days
 
 # calculate hazards ratios
 a = cnt[decile%in%c(10),n_fail]
@@ -333,16 +345,17 @@ dat$category = as.factor(if_else(dat$age<60,1,2)) # two categories: <60 or >=60 
 ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/2,color="white") + theme_classic()
 
 # count number in each category by decile
-tmp1 = dat %>% filter(category=="1") %>% group_by(decile) %>% count(category,name = "n_1")
-tmp2 = dat %>% filter(category=="2") %>% group_by(decile) %>% count(category,name = "n_2")
-cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_1","n_2"))
+tmp1 = dat %>% filter(category=="1") %>% group_by(decile) %>% count(category,name = "n_lt60")
+tmp2 = dat %>% filter(category=="2") %>% group_by(decile) %>% count(category,name = "n_ge60")
+avg = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(age),mean) # average days to death per decile - ignore censored values
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),avg,by="decile"))[,c("decile","n_lt60","n_ge60","age")]
 kable(cnt,align = 'c',caption = "Age PSL decile counts")
 
 # calculate hazards ratios
-a = cnt[decile%in%c(1),n_1]
-b = cnt[decile%in%c(1),n_2]
-c = sum(cnt[decile%in%c(5,6),n_1])
-d = sum(cnt[decile%in%c(5,6),n_2])
+a = cnt[decile%in%c(1),n_lt60]
+b = cnt[decile%in%c(1),n_ge60]
+c = sum(cnt[decile%in%c(5,6),n_lt60])
+d = sum(cnt[decile%in%c(5,6),n_ge60])
 
 hr10 = (a/b)/(c/d)
 se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))

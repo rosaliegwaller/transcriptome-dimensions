@@ -63,6 +63,7 @@ glm.gender$p = pchisq(deviance(NLL)-deviance(glm.gender),
 
 ### 3. Self-reported race
 ```{r}
+merge(clinical,score_sd,by="SEQ_ID") %>% group_by(D_PT_race) %>% count() # count by race
 DAT = merge(clinical[clinical$D_PT_race%in%c(1,2),c("SEQ_ID","D_PT_race")],score_sd) # Select data
 DAT$D_PT_race = as.factor(DAT$D_PT_race)
 
@@ -82,6 +83,7 @@ glm.race$p = pchisq(deviance(NLL)-deviance(glm.race),
 
 ### 4. Self-reported ethnicity
 ```{r}
+merge(clinical,score_sd,by="SEQ_ID") %>% group_by(D_PT_ethnic) %>% count() # count by ethnic
 DAT = merge(clinical[clinical$D_PT_ethnic%in%c(1,2),c("SEQ_ID","D_PT_ethnic")],score_sd) # Select data
 DAT$D_PT_ethnic = as.factor(DAT$D_PT_ethnic)
 
