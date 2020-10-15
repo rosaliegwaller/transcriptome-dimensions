@@ -18,9 +18,9 @@ params:
     gene_loadings: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/pca_gene_loadings.csv"
     out: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
 ---
-Code used to generate transcriptome dimension framework reported in "TANSCRIPTOME DIMENSIONS: AGNOSTIC EXPRESSION VARIABLES TO EMPOWER GENOMIC EPIDEMIOLOGY STUDIES" by Waller et al. 
+Code used to generate SPECTRA approach and results reported in "SPECTRA: AGNOSTIC EXPRESSION VARIABLES FOR FLEXIBLE TRANSCRIPTOME MODELING IN COMPLEX DISEASE" by Waller et al.
 
-Application of the QUOEx framework to the MMRF CoMMpass study.
+Application of the SPECTRA approach to the MMRF CoMMpass study.
 
 This code provides the set of dimension variables for use in various models with disparate outcomes.
 
@@ -35,7 +35,7 @@ e) Myeloma dimensions for tracking changes over time.
 ##### Required Data
 Download publicly available Myeloma data and save in working directory or change parameter path in setup block to the file location
 
-1. **MMRF CoMMpass study gene expression estimates.** Download transcript-based expression estimates processed by Salmon (version 0.7.2) from the CoMMpass Study (release IA14) MMRF web portal (https://research.themmrf.org/). Download file: MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz.
+1. **MMRF CoMMpass study gene expression estimates.** Download transcript-based expression estimates processed by Salmon (version 0.7.2) from the CoMMpass Study (release IA14) after registering MMRF web portal (https://research.themmrf.org/). Download file: MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz.
 
 2. **Gene Transfer Format (GTF) file.** Use the same GTF to process as the CoMMpass Study used to generate expression estimates. Download here: ftp://ftp.ensembl.org/pub/release-74/gtf/homo_sapiens/Homo_sapiens.GRCh37.74.gtf.gz.
 
@@ -80,7 +80,7 @@ elbow_finder<-function(data) {
 ```
 
 ```{r}
-setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
+setwd("C:/Users/rosal/github/transcriptome-dimensions/")
 ```
 
 
@@ -362,8 +362,12 @@ colnames(sd.score) = c("SEQ_ID",paste(colnames(pca.score %>% select(starts_with(
 6.3. SAVE AS RDATA FOR ADDITIONAL ANALYSES
 ```{r}
 exp_cbat = cbat.dt # save normalized and batch corrected expression estimates 
-score_sd = sd.score # save standardized dimension socres in baseline samples
+score_sd = sd.score # save standardized dimension scores in baseline samples
 clinical = cin # save clinical data
+
+# merge clinical and standardized dimension scores in baseline samples
+clin_spectra_sd = merge(clinical,score_sd,by="SEQ_ID")
+write.csv(clin_spectra_sd,file = "data/baseline-clinical-spectra-sd.csv",row.names = F)
 
 # get list of samples with baseline and follow up RNAseq
 followup = clinical %>% 
