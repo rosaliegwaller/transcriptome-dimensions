@@ -6,7 +6,7 @@ output:
     highlight: tango
 ---
 
-```{r load_packages, message=F, include=F}
+```{r load_packages, message=F}
 # Install and load required R packages
 library("data.table")
 library("dplyr")
@@ -16,7 +16,6 @@ library("ggplot2")
 
 Load model results
 ```{r}
-setwd("C:/Users/rosal/github/transcriptome-dimensions/")
 load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
 load(file = "rdata/mod.demographic-risk.rdata") # generated in demographic-risk.Rmd
 load(file = "rdata/mod.disease-course.rdata") # generated in disease-course.Rmd
@@ -41,7 +40,7 @@ ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white
 # count number in each category by decile
 tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
 tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
-cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% dplyr::select("decile","n_no","n_yes"))
 kable(cnt,align = 'c',caption = "del(17p) PSL decile counts")
 
 # calculate hazards ratios
@@ -77,7 +76,7 @@ ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white"
 # count number in each category by decile
 tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
 tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
-cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% dplyr::select("decile","n_no","n_yes"))
 kable(cnt,align = 'c',caption = "t(14;16) PSL decile counts")
 
 # calculate hazards ratios
@@ -113,7 +112,7 @@ ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white"
 # count number in each category by decile
 tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
 tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
-cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% dplyr::select("decile","n_no","n_yes"))
 kable(cnt,align = 'c',caption = "amp(1q) PSL decile counts")
 
 # calculate hazards ratios
@@ -149,7 +148,7 @@ ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white"
 # count number in each category by decile
 tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
 tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
-cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% dplyr::select("decile","n_no","n_yes"))
 kable(cnt,align = 'c',caption = "t(4;14) PSL decile counts")
 
 # calculate hazards ratios
@@ -185,7 +184,7 @@ ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/5,color="white"
 # count number in each category by decile
 tmp1 = dat %>% filter(category=="No") %>% group_by(decile) %>% count(category,name = "n_no")
 tmp2 = dat %>% filter(category=="Yes") %>% group_by(decile) %>% count(category,name = "n_yes")
-cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% select("decile","n_no","n_yes"))
+cnt = data.table(merge(tmp1,tmp2,by=c("decile"),all = T) %>% dplyr::select("decile","n_no","n_yes"))
 kable(cnt,align = 'c',caption = "t(11;14) PSL decile counts")
 
 # calculate hazards ratios
@@ -241,16 +240,24 @@ paste0("Odds Ratio: ISS PSL in decile 10 compared with deciles 5 + 6 for stage 1
 
 ## Overall Survival (OS)
 ```{r}
-psl = rowSums(data.matrix(os$data[,-c(1:2)]) %*% diag(coef(os$coxph))) # multiple each PC by the PC beta, sum across PCs
+# multiply each PC by the PC beta, sum across PCs
+psl = rowSums(data.matrix(os$data[,-c(1:2)]) %*% diag(coef(os$coxph))) 
 
 # check PSL calculation
 unique(round(os$coxph$linear.predictors,12) == round(psl,12)) 
 #data.table(psl,os$coxph$linear.predictors)
 
-# split into decile
-dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
+# split into deciles
+dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),
+          include.lowest = T,labels = F)
 dat = data.table(os$data[,c(1:2)],psl=psl,decile=dcl)
-dat$category = if_else(dat$ttcos<=1000 & dat$censos==1,"dead",if_else(dat$ttcos>1000,"alive","censored")) # at 1000 days, describe in patient has died, is alive, or was censored before 1000 days
+```
+
+**OS at 1 year**
+```{r}
+# is patient dead, alive, or last seen prior to cutoff?
+dat$category = if_else(dat$ttcos<=365 & dat$censos==1,"dead",
+                       if_else(dat$ttcos>365,"alive","censored")) 
 dat
 
 # plot distribution
@@ -261,13 +268,19 @@ tmp1 = dat %>% filter(category=="dead") %>% group_by(decile) %>% count(category,
 tmp2 = dat %>% filter(category=="alive") %>% group_by(decile) %>% count(category,name = "n_alive")
 tmp3 = dat %>% filter(category=="censored") %>% group_by(decile) %>% count(category,name="n_censored")
 cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T))[,c("decile","n_dead","n_alive","n_censored")]
-avg_all = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(ttcos),mean) # average days to death per decile - ignore censored values
+
+# average days to death per decile - ignore censored values
+avg_all = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(ttcos),mean) 
 avg_c1 = dat %>% filter(censos==1) %>% group_by(decile) %>% summarise_at(vars(ttcos),mean)
 avg_c0 = dat %>% filter(censos==0) %>% group_by(decile) %>% summarise_at(vars(ttcos),mean)
-evts = dat %>% filter(censos==1) %>% group_by(decile) %>% count(censos,name="n_events")  # number of events per decile
+
+# number of events per decile
+evts = dat %>% filter(censos==1) %>% group_by(decile) %>% count(censos,name="n_events")  
 c2 = data.table(merge(merge(avg_all,avg_c0,by = "decile"),merge(avg_c1,evts,by="decile")))[,-"censos"]
 colnames(c2) = c("decile","avg_days","avg_days_censored","avg_days_dead","events")
-kable(merge(cnt,c2,by="decile"),align = 'c',caption = "Overall Surival PSL decile counts at 1000 days") # remove censored before 1000 days
+
+kable(merge(cnt,c2,by="decile"),align = 'c',
+      caption = "Overall Surival PSL decile counts at 365 days")
 
 # calculate hazards ratios
 a = cnt[decile%in%c(10),n_dead]
@@ -280,21 +293,69 @@ se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
 ci10_l = exp(log(hr10)-1.96*se10)
 ci10_u = exp(log(hr10)+1.96*se10)
 
-paste0("HR OS PSL decile 10 compared with deciles 5 + 6 at 1000 days = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
+paste0("HR OS PSL decile 10 compared with deciles 5 + 6 at 365 days = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
+```
+
+**OS at 3 years**
+```{r}
+# is patient dead, alive, or last seen prior to cutoff
+dat$category = if_else(dat$ttcos<=365*3 & dat$censos==1,"dead",
+                       if_else(dat$ttcos>365*3,"alive","censored")) 
+dat
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="dead") %>% group_by(decile) %>% count(category,name = "n_dead")
+tmp2 = dat %>% filter(category=="alive") %>% group_by(decile) %>% count(category,name = "n_alive")
+tmp3 = dat %>% filter(category=="censored") %>% group_by(decile) %>% count(category,name="n_censored")
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T))[,c("decile","n_dead","n_alive","n_censored")]
+
+# average days to death per decile - ignore censored values
+avg_all = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(ttcos),mean) 
+avg_c1 = dat %>% filter(censos==1) %>% group_by(decile) %>% summarise_at(vars(ttcos),mean)
+avg_c0 = dat %>% filter(censos==0) %>% group_by(decile) %>% summarise_at(vars(ttcos),mean)
+
+# number of events per decile
+evts = dat %>% filter(censos==1) %>% group_by(decile) %>% count(censos,name="n_events")  
+c2 = data.table(merge(merge(avg_all,avg_c0,by = "decile"),merge(avg_c1,evts,by="decile")))[,-"censos"]
+colnames(c2) = c("decile","avg_days","avg_days_censored","avg_days_dead","events")
+
+kable(merge(cnt,c2,by="decile"),align = 'c',
+      caption = "Overall Surival PSL decile counts at 3 years")
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_dead]
+b = cnt[decile%in%c(10),n_alive]
+c = sum(cnt[decile%in%c(5,6),n_dead])
+d = sum(cnt[decile%in%c(5,6),n_alive])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("HR OS PSL decile 10 compared with deciles 5 + 6 at ",365*3," days = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
 ## Time to first line treatment failure (TTF)
 ```{r}
-tf1_psl = rowSums(data.matrix(tf1$data[,-c(1:2)]) %*% diag(coef(tf1$coxph))) # multiple each PC by the PC beta, sum across PCs
+tf_psl = rowSums(data.matrix(tf$data[,-c(1:2)]) %*% diag(coef(tf$coxph))) # multiple each PC by the PC beta, sum across PCs
 
 # check PSL calculation
-unique(round(tf1$coxph$linear.predictors,12) == round(tf1_psl,12)) 
+unique(round(tf$coxph$linear.predictors,12) == round(tf_psl,12)) 
 #data.table(tf1_psl,tf1$coxph$linear.predictors)
 
 # split into decile
 dcl = cut(psl,quantile(psl,c(0,1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,1)),include.lowest = T,labels = F)
-dat = data.table(tf1$data[,c(1:2)],psl=psl,decile=dcl)
-dat$category = if_else(dat$ttctf1<=1000 & dat$censtf1==1,"fail",if_else(dat$ttctf1>1000,"okay","censored")) # at 1000 days, describe if treatment has failed, not failed, or patient data censored before 1000 days
+dat = data.table(tf$data[,c(1:2)],psl=psl,decile=dcl)
+```
+
+**TTF at 1 year**
+```{r}
+dat$category = if_else(dat$ttctf1<=365 & dat$censtf1==1,"fail",if_else(dat$ttctf1>365,"okay","censored")) 
+# describe if treatment has failed, not failed, or patient data censored
 dat
 
 # plot distribution
@@ -305,13 +366,19 @@ tmp1 = dat %>% filter(category=="fail") %>% group_by(decile) %>% count(category,
 tmp2 = dat %>% filter(category=="okay") %>% group_by(decile) %>% count(category,name = "n_okay")
 tmp3 = dat %>% filter(category=="censored") %>% group_by(decile) %>% count(category,name="n_censored")
 cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T))[,c("decile","n_fail","n_okay","n_censored")]
-avg_all = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean) # average days to death per decile - ignore censored values
+
+# average days to death per decile - ignore censored values
+avg_all = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean) 
 avg_c1 = dat %>% filter(censtf1==1) %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean)
 avg_c0 = dat %>% filter(censtf1==0) %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean)
-evts = dat %>% filter(censtf1==1) %>% group_by(decile) %>% count(censtf1,name="n_events")  # number of events per decile
+
+# number of events per decile
+evts = dat %>% filter(censtf1==1) %>% group_by(decile) %>% count(censtf1,name="n_events")  
 c2 = data.table(merge(merge(avg_all,avg_c0,by = "decile"),merge(avg_c1,evts,by="decile")))[,-"censtf1"]
 colnames(c2) = c("decile","avg_days","avg_days_censored","avg_days_fail","events")
-kable(merge(cnt,c2,by="decile"),align = 'c',caption = "Time to first treatment fail PSL decile counts at 1000 days") # remove censored before 1000 days
+
+kable(merge(cnt,c2,by="decile"),align = 'c',
+      caption = "Time to first treatment fail PSL decile counts at 365 days") 
 
 # calculate hazards ratios
 a = cnt[decile%in%c(10),n_fail]
@@ -324,7 +391,53 @@ se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
 ci10_l = exp(log(hr10)-1.96*se10)
 ci10_u = exp(log(hr10)+1.96*se10)
 
-paste0("HR TTF PSL decile 10 compared with deciles 5 + 6 at 1000 days = ",round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
+paste0("HR TTF PSL decile 10 compared with deciles 5 + 6 at 365 days = ",
+       round(hr10,digits = 2)," (",round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
+```
+
+**TTF at 3 years**
+```{r}
+dat$category = if_else(dat$ttctf1<=365*3 & dat$censtf1==1,"fail",if_else(dat$ttctf1>365*3,"okay","censored")) 
+# describe if treatment has failed, not failed, or patient data censored
+dat
+
+# plot distribution
+ggplot(dat) + geom_dotplot(aes(x=psl,fill=category),binwidth = 1/10,color="white") + theme_classic()
+
+# count number in each category by decile
+tmp1 = dat %>% filter(category=="fail") %>% group_by(decile) %>% count(category,name = "n_fail")
+tmp2 = dat %>% filter(category=="okay") %>% group_by(decile) %>% count(category,name = "n_okay")
+tmp3 = dat %>% filter(category=="censored") %>% group_by(decile) %>% count(category,name="n_censored")
+cnt = data.table(merge(merge(tmp1,tmp2,by=c("decile"),all = T),tmp3,by="decile",all=T))[,c("decile","n_fail","n_okay","n_censored")]
+
+# average days to death per decile - ignore censored values
+avg_all = dat %>% filter() %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean) 
+avg_c1 = dat %>% filter(censtf1==1) %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean)
+avg_c0 = dat %>% filter(censtf1==0) %>% group_by(decile) %>% summarise_at(vars(ttctf1),mean)
+
+# number of events per decile
+evts = dat %>% filter(censtf1==1) %>% group_by(decile) %>% count(censtf1,name="n_events")  
+c2 = data.table(merge(merge(avg_all,avg_c0,by = "decile"),merge(avg_c1,evts,by="decile")))[,-"censtf1"]
+colnames(c2) = c("decile","avg_days","avg_days_censored","avg_days_fail","events")
+
+# remove censored before X days
+kable(merge(cnt,c2,by="decile"),align = 'c',
+      caption = "Time to first treatment fail PSL decile counts at 3 years") 
+
+# calculate hazards ratios
+a = cnt[decile%in%c(10),n_fail]
+b = cnt[decile%in%c(10),n_okay]
+c = sum(cnt[decile%in%c(5,6),n_fail])
+d = sum(cnt[decile%in%c(5,6),n_okay])
+
+hr10 = (a/b)/(c/d)
+se10 = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+ci10_l = exp(log(hr10)-1.96*se10)
+ci10_u = exp(log(hr10)+1.96*se10)
+
+paste0("HR TTF PSL decile 10 compared with deciles 5 + 6 at ",365*3,
+       " days = ",round(hr10,digits = 2)," (",
+       round(ci10_l,digits = 2),"-",round(ci10_u,digits = 2),")")
 ```
 
 ## Age
