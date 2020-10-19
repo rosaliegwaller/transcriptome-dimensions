@@ -6,7 +6,7 @@ output:
     highlight: tango
 ---
 
-```{r load_packages, message=F, include=F}
+```{r load_packages, message=F}
 # Install and load required R packages
 library(dplyr)
 library(data.table)
@@ -19,7 +19,6 @@ library(grid)
 
 Load model results
 ```{r}
-setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
 load(file = "rdata/lm.expression-scores.rdata") # generated in expression-scores.Rmd
 load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
 load(file = "rdata/mod.demographic-risk.rdata") # generated in demographic-risk.Rmd
@@ -131,7 +130,7 @@ tb$spectra = spectra
 smd = rbind(smd,tb)
 
 # Time to first line treatment failure (TTF)
-md = tf1$coxph
+md = tf$coxph
 beta = coef(md)
 pval = coef(summary(md))[,5]
 tb = as.data.table(cbind(beta,pval))
