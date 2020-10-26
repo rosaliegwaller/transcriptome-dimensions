@@ -1,0 +1,247 @@
+---
+title: "Overivew figure of spectra and model results"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+---
+
+```{r load_packages, message=F}
+# Install and load required R packages
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(MASS)
+library(gridExtra)
+library(gtable)
+library(grid)
+```
+
+Load model results
+```{r}
+load(file = "rdata/lm.expression-scores.rdata") # generated in expression-scores.Rmd
+load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
+load(file = "rdata/mod.demographic-risk.rdata") # generated in demographic-risk.Rmd
+load(file = "rdata/mod.disease-course.rdata") # generated in disease-course.Rmd
+load(file = "rdata/elbow.rdata")
+```
+
+**Create summary data frame**
+```{r}
+spectra = 1:39 # number of spectra analyzed in each model
+```
+
+Expression scores
+```{r}
+# UAMS-70
+md = lm.70
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "UAMS-70"
+tb$p = md$p
+tb$spectra = spectra
+smd = tb
+
+# SBUK-17
+md = lm.17
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "SBUK-17"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+```
+
+Clinical risk
+```{r}
+# del(17p)
+md = mod.risk$d17p
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "del(17p)"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# t(14;16)
+md = mod.risk$t1416
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "t(14;16)"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# amp(1q)
+md = mod.risk$a1q
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "amp(1q)"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# t(4;14)
+md = mod.risk$t414
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "t(4;14)"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# t(11;14)
+md = mod.risk$t1114
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "t(11;14)"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# ISS
+md = mod.risk$iss
+beta = coef(md)
+pval = pnorm(abs(coef(summary(md))[1:39,"t value"]),lower.tail = FALSE)*2
+tb = as.data.table(cbind(beta,pval))
+tb$y = "ISS"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+```
+
+Disease course
+```{r}
+# Overall Survival
+md = os$coxph
+beta = coef(md)
+pval = coef(summary(md))[,5]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "OS"
+tb$p = summary(md)$logtest[3]
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# Time to first line treatment failure (TTF)
+md = tf$coxph
+beta = coef(md)
+pval = coef(summary(md))[,5]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "TTF"
+tb$p = summary(md)$logtest[3]
+tb$spectra = spectra
+smd = rbind(smd,tb)
+```
+
+Demographic risk
+```{r}
+# Age
+md = lm.age
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "Dx Age"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# Gender
+md = glm.gender
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "Gender"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# Race
+md = glm.race
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "Race"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+
+# Ethnicity
+md = glm.ethnic
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "Ethnicity"
+tb$p = md$p
+tb$spectra = spectra
+smd = rbind(smd,tb)
+```
+
+Tidy summary table
+```{r}
+df <- as.data.frame(smd)
+df$sig = as.factor(if_else(df$pval<0.05,1,0))
+
+df$sig_level = if_else(df$pval<0.05 & df$pval>0.01,1,
+                                 if_else(df$pval<0.01 & df$pval>0.001,2,
+                                         if_else(df$pval<0.001 & df$pval>0.0001,3,
+                                                 if_else(df$pval<0.0001 & df$pval>0.00001,4,
+                                                         if_else(df$pval<0.00001 & df$pval>0.000001,5,
+                                                                 if_else(df$pval<0.000001,6,0))))))
+df$dir = if_else(df$beta<0,-1,1)
+
+df$dir_sig_level = df$dir * df$sig_level
+
+ordr <- c("Ethnicity","Race","Gender","Dx Age",
+          "TTF","OS",
+          "ISS","t(11;14)","t(4;14)","amp(1q)","t(14;16)","del(17p)",
+          "SBUK-17","UAMS-70")
+ordr2 <- c("UAMS-70","SBUK-17",
+           "del(17p)","t(14;16)","amp(1q)","t(4;14)","t(11;14)","ISS",
+           "OS","TTF",
+           "Dx Age","Gender","Race","Ethnicity")
+df$y <- factor(df$y,levels = ordr2)
+df[df$sig==0,] <- NA 
+pldt <- droplevels(na.omit(df))
+#summary(pldt)
+```
+
+### Plot
+
+Setup
+```{r}
+theme_set(theme_minimal() + 
+            theme(legend.position="none",
+                  axis.title=element_text(size=9),
+                  axis.text=element_text(size=8)))
+```
+
+Overview of all associations
+```{r}
+#color based on direction of association
+p1 = ggplot(pldt, aes(y = y, x = spectra, label = p)) +
+  geom_point(shape = 21, colour = "white", aes(fill = dir_sig_level), size = 3) +
+  scale_fill_gradient2(low="#E69F00",mid="white",high="#0072B2",midpoint=0,na.value="#0072B2") +
+  xlab("spectra") + ylab("") + scale_x_continuous(limits = c(0,40), breaks=seq(1,39,1)) +
+  theme(panel.grid.minor = element_blank()) + 
+  geom_text(aes(label = formatC(p,1,format = "g")),x=41,size=2.5)
+p1
+ggsave(filename = "plots/overview.png",plot = p1,width=7.5,height=4.5)
+```
+
+Scree plot
+```{r}
+p2 = ggplot(data = elbow,aes(y = value/sum(value)*100,x = idx+1)) +
+  geom_bar(stat="identity",fill="gray") +
+  xlab("spectra") + ylab("variance (%)") + scale_x_continuous(limits = c(0,40), breaks=seq(1,39,1)) +
+  theme(panel.grid.minor.x = element_blank()) + 
+  geom_text(label = "64.5%",x=41,y=4,size=3)
+p2
+ggsave(filename = "plots/scree.png",plot = p2,width=7.45,height=1.5)
+```

@@ -1,0 +1,201 @@
+---
+title: "Figure 3. Patient spectra profiles"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+params:
+  data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
+---
+
+```{r load_packages, message=F, include=F}
+# Install and load required R packages
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(grid)
+```
+
+Load transcriptome dimensions (PC1-PC39)
+```{r}
+load(file = params$data) # load processed data
+rm(params,exp_time,exp_cbat,clinical) # remove extra variables
+```
+
+Tidy data for plotting
+```{r}
+molten <- melt(score_sd,id.vars = c("SEQ_ID"))
+molten$sign <- ifelse(molten$value >= 0, "positive", "negative")
+```
+
+Select extreme examples
+```{r}
+#min(molten$value)
+#max(molten$value)
+
+score_sd$sum <- score_sd[,-1] %>% rowSums() #sum standardized pc values
+setorder(score_sd,sum)
+ids <- c(head(score_sd)[]$SEQ_ID,tail(score_sd)[]$SEQ_ID)
+ex <- molten[SEQ_ID%in%ids]
+```
+Plot
+```{r}
+out = data.frame(SEQ_ID=character(),
+                 variable=factor(),
+                 value=numeric(),
+                 sign=character(),
+                 perc=numeric())
+
+for (i in seq_along(ids)){
+  data = ex[SEQ_ID==ids[i]]
+  tot = sum(abs(data$value)) 
+  data$perc = abs(data$value)/tot
+  out = rbind(out,data)
+}
+out$id = gsub("_1_BM","",gsub("MMRF_","",out$SEQ_ID))
+
+out$lv = if_else(out$value < -2, -2,
+                 if_else(out$value > 2, 2, out$value))
+
+theme_set(theme_minimal() + theme(axis.title=element_text(size=9), axis.text=element_text(size=8), 
+                                  legend.title=element_text(size=9), legend.text=element_text(size=8)))
+
+dset = ids[c(1:2,11:12)]
+p_a = ggplot(data=out[SEQ_ID%in%dset],aes(x=id, y=abs(value), fill=lv, group=variable)) +
+  geom_bar(stat = "identity",position = position_stack(reverse = TRUE), color="black", width=0.9) +
+  scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        legend.position = "right",
+        panel.grid = element_blank()) +
+  xlab("patient") + ylab("spectra") + 
+  labs(fill = "value") +
+  coord_flip()
+ggsave(filename = "plots/spectra_legend.pdf",plot = p_a,width=7.5,height=5.5)
+p_a
+```
+
+```{r}
+dt = out[SEQ_ID%in%dset[1:2]]
+dt[SEQ_ID%in%dset[2]]$id = "spectra"
+dt$abs_value = abs(dt$value)
+dt[id=="spectra"]$abs_value = 1/39*sum(dt[id=="spectra"]$abs_value)
+dt[id=="spectra"]$lv = 0
+#dt
+
+dt_spread = tidyr::spread(dt[,c("id","variable","abs_value")], id, abs_value)
+dt_spread$y = cumsum(dt_spread[,2])
+dt_spread$yend = cumsum(dt_spread[,3])
+dt_spread$x = 1 + 0.8/2
+dt_spread$xend = 2 - 0.8/2
+#dt_spread
+
+p1 = ggplot() +
+  geom_bar(data = dt,aes(x = id, y = abs_value, fill = lv, group = variable),
+           stat = "identity",position = position_stack(reverse = TRUE), color="black", width=0.8) +
+  scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0) + 
+  geom_segment(data = dt_spread,aes(x = x, xend = xend, y = y, yend = yend)) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.title = element_blank(), legend.position = "none",
+        panel.grid = element_blank()) +
+  xlab("patient") + ylab("spectra") + 
+  #ylim(c(0,43)) +
+  labs(fill = "value") +
+  annotate("text", x = 2, y=cumsum(dt[id=="spectra"]$abs_value)-.5, label = 1:39, size = 2) + 
+  scale_y_continuous(limits=c(0, 45)) +
+  coord_flip()
+ggsave(filename = "plots/spectra_1.pdf",plot = p1,width=7.5,height=3.5)
+p1
+```
+
+```{r}
+dt = out[SEQ_ID%in%dset[1:2]]
+dt$abs_value = abs(dt$value)
+#dt
+
+dt_spread = tidyr::spread(dt[,c("id","variable","abs_value")], id, abs_value)
+dt_spread$y = cumsum(dt_spread[,2])
+dt_spread$yend = cumsum(dt_spread[,3])
+dt_spread$x = 1 + 0.8/2
+dt_spread$xend = 2 - 0.8/2
+#dt_spread
+
+p2 = ggplot() +
+  geom_bar(data = dt,aes(x = id, y = abs_value, fill = lv, group = variable),
+           stat = "identity",position = position_stack(reverse = TRUE), color="black", width=0.8) +
+  scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0) + 
+  geom_segment(data = dt_spread,aes(x = x, xend = xend, y = y, yend = yend)) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.title = element_blank(), legend.position = "none",
+        panel.grid = element_blank()) +
+  xlab("patient") + ylab("spectra") + 
+  #ylim(c(0,43)) +
+  labs(fill = "value") + 
+  scale_y_continuous(limits=c(0, 45)) +
+  coord_flip()
+ggsave(filename = "plots/spectra_2.pdf",plot = p2,width=7.5,height=3.5)
+p2
+```
+
+```{r}
+dt = out[SEQ_ID%in%dset[2:3]]
+dt$abs_value = abs(dt$value)
+dt$order = as.numeric(dt$id)
+#dt
+
+dt_spread = tidyr::spread(dt[,c("id","variable","abs_value")], id, abs_value)
+dt_spread$y = cumsum(dt_spread[,3])
+dt_spread$yend = cumsum(dt_spread[,2])
+dt_spread$x = 1 + 0.8/2
+dt_spread$xend = 2 - 0.8/2
+#dt_spread
+
+p3 = ggplot() +
+  geom_bar(data = dt,aes(x = reorder(id,-order), y = abs_value, fill = lv, group = variable),
+           stat = "identity",position = position_stack(reverse = TRUE), color="black", width=0.8) +
+  scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0) + 
+  geom_segment(data = dt_spread,aes(x = x, xend = xend, y = y, yend = yend)) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.title = element_blank(), legend.position = "none",
+        panel.grid = element_blank()) +
+  xlab("patient") + ylab("spectra") + 
+  #ylim(c(0,43)) +
+  labs(fill = "value") + 
+  scale_y_continuous(limits=c(0, 45)) +
+  coord_flip()
+ggsave(filename = "plots/spectra_3.pdf",plot = p3,width=7.5,height=3.5)
+p3
+```
+
+```{r}
+dt = out[SEQ_ID%in%dset[3:4]]
+dt$abs_value = abs(dt$value)
+#dt
+
+dt_spread = tidyr::spread(dt[,c("id","variable","abs_value")], id, abs_value)
+dt_spread$y = cumsum(dt_spread[,2])
+dt_spread$yend = cumsum(dt_spread[,3])
+dt_spread$x = 1 + 0.8/2
+dt_spread$xend = 2 - 0.8/2
+#dt_spread
+
+p4 = ggplot() +
+  geom_bar(data = dt,aes(x = id, y = abs_value, fill = lv, group = variable),
+           stat = "identity",position = position_stack(reverse = TRUE), color="black", width=0.8) +
+  scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0) + 
+  geom_segment(data = dt_spread,aes(x = x, xend = xend, y = y, yend = yend)) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.title = element_blank(), legend.position = "none",
+        panel.grid = element_blank()) +
+  xlab("patient") + ylab("spectra") + 
+  #ylim(c(0,43)) +
+  labs(fill = "value") +
+  scale_y_continuous(limits=c(0, 45)) +
+  coord_flip()
+ggsave(filename = "plots/spectra_4.pdf",plot = p4,width=7.5,height=3.5)
+p4
+```
+
+```{r}
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), ggplotGrob(p3), ggplotGrob(p4), size = "first"))
+```
