@@ -430,9 +430,10 @@ summary {
 </div>
 
 
+<p>Code to clean, normalize, and batch correction in the longitudinal CoMMpass RNA samples. Calculation of the CD138+ spectra in the longitudinal samples. Generation of Figure 7 - survival and spectra changes over time.</p>
 <div id="setup" class="section level3">
 <h3>0. Setup</h3>
-<p>!!! Define data directory !!!</p>
+<p>Define data directory</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>data_dir =<span class="st"> &quot;/path/to/data&quot;</span> <span class="co"># exclude ending &quot;/&quot;</span></span></code></pre></div>
 <p>Load packages</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># Install and load required R packages</span></span>
@@ -528,9 +529,9 @@ summary {
 <span id="cb20-4"><a href="#cb20-4"></a><span class="kw">rm</span>(vr,cin_vr,dt,DAT,BATCH,MOD,cbat) <span class="co"># Cleanup variables</span></span></code></pre></div>
 <p>1.9. DERIVE SPECTRA</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a>dim_time =<span class="st"> </span><span class="kw">cbind</span>(cbat.dt[,<span class="st">&quot;SEQ_ID&quot;</span>],<span class="kw">scale</span>(<span class="kw">data.matrix</span>(cbat.dt[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>]),<span class="dt">center=</span>gene.load<span class="op">$</span>CENTER_MEAN,<span class="dt">scale =</span> <span class="ot">FALSE</span>) <span class="op">%*%</span><span class="st"> </span><span class="kw">data.matrix</span>(gene.load[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;GENE_NAME&quot;</span>,<span class="st">&quot;CENTER_MEAN&quot;</span>)]))</span>
-<span id="cb21-2"><a href="#cb21-2"></a><span class="co"># Note, dimension values in baseline samples are slightly different as batch correction included a different sample set</span></span></code></pre></div>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="co"># Note, spectra values in baseline samples are slightly different as batch correction included a different sample set</span></span></code></pre></div>
 <p>1.10. STANDARDIZE TO BASELINE CD138+ SPECTRA</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>pca.sd =<span class="st"> </span><span class="kw">apply</span>(pca.score[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>],<span class="dv">2</span>,sd) <span class="co"># find standard deviation of original MM dimensions</span></span>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>pca.sd =<span class="st"> </span><span class="kw">apply</span>(pca.score[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>],<span class="dv">2</span>,sd) <span class="co"># find standard deviation of original MM spectra</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a>tme.sd =<span class="st"> </span><span class="kw">cbind</span>(dim_time[,<span class="st">&quot;SEQ_ID&quot;</span>],<span class="kw">data.matrix</span>(dim_time[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>]) <span class="op">%*%</span><span class="st"> </span><span class="kw">diag</span>(<span class="dv">1</span><span class="op">/</span>pca.sd)) <span class="co"># divide by SD</span></span>
 <span id="cb22-3"><a href="#cb22-3"></a><span class="kw">colnames</span>(tme.sd) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="kw">paste</span>(<span class="kw">colnames</span>(dim_time[,<span class="op">-</span><span class="st">&quot;SEQ_ID&quot;</span>]),<span class="st">&quot;_SD&quot;</span>,<span class="dt">sep =</span> <span class="st">&quot;&quot;</span>))</span></code></pre></div>
 </div>

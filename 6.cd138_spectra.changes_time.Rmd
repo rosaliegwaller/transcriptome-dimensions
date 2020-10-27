@@ -6,10 +6,12 @@ output:
     highlight: tango
   html_notebook: default
 ---
+Code to clean, normalize, and batch correction in the longitudinal CoMMpass RNA samples. Calculation of the CD138+ spectra in the longitudinal samples. Generation of Figure 7 - survival and spectra changes over time.
+
 
 ### 0. Setup
 
-!!! Define data directory !!!
+Define data directory
 ```{r}
 data_dir = "/path/to/data" # exclude ending "/"
 ```
@@ -134,11 +136,11 @@ rm(vr,cin_vr,dt,DAT,BATCH,MOD,cbat) # Cleanup variables
 1.9. DERIVE SPECTRA
 ```{r}
 dim_time = cbind(cbat.dt[,"SEQ_ID"],scale(data.matrix(cbat.dt[,-"SEQ_ID"]),center=gene.load$CENTER_MEAN,scale = FALSE) %*% data.matrix(gene.load[,-c("GENE_NAME","CENTER_MEAN")]))
-# Note, dimension values in baseline samples are slightly different as batch correction included a different sample set
+# Note, spectra values in baseline samples are slightly different as batch correction included a different sample set
 ```
 1.10. STANDARDIZE TO BASELINE CD138+ SPECTRA
 ```{r}
-pca.sd = apply(pca.score[,-"SEQ_ID"],2,sd) # find standard deviation of original MM dimensions
+pca.sd = apply(pca.score[,-"SEQ_ID"],2,sd) # find standard deviation of original MM spectra
 tme.sd = cbind(dim_time[,"SEQ_ID"],data.matrix(dim_time[,-"SEQ_ID"]) %*% diag(1/pca.sd)) # divide by SD
 colnames(tme.sd) = c("SEQ_ID",paste(colnames(dim_time[,-"SEQ_ID"]),"_SD",sep = ""))
 ```

@@ -430,19 +430,23 @@ summary {
 </div>
 
 
+<p>Code to investigate associations between CD138+ spectra and clinical risk cytogenetics and disease stage</p>
+<div id="setup" class="section level3">
+<h3>0. Setup</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># Install and load required R packages</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a><span class="kw">library</span>(ggplot2)</span>
 <span id="cb1-3"><a href="#cb1-3"></a><span class="kw">library</span>(MASS)</span>
 <span id="cb1-4"><a href="#cb1-4"></a><span class="kw">library</span>(survivalAnalysis)</span>
 <span id="cb1-5"><a href="#cb1-5"></a><span class="kw">library</span>(dplyr)</span>
 <span id="cb1-6"><a href="#cb1-6"></a><span class="kw">library</span>(data.table)</span></code></pre></div>
-<p><strong>!!! Define data directory !!!</strong></p>
+<p>Define data directory</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>data_dir =<span class="st"> &quot;/path/to/data&quot;</span> <span class="co"># exclude ending &quot;/&quot;</span></span></code></pre></div>
 <p>Load transcriptome spectra (PC1-PC)</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># read in spectra and clinical data</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a>spectra_clinical =<span class="st"> </span><span class="kw">read.csv</span>(<span class="dt">file =</span> <span class="kw">paste0</span>(data_dir,</span>
 <span id="cb3-3"><a href="#cb3-3"></a>                                  <span class="st">&quot;/baseline-clinical-spectra-sd.csv&quot;</span>)</span>
 <span id="cb3-4"><a href="#cb3-4"></a>                            ) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">data.table</span>()</span></code></pre></div>
+</div>
 <div id="cytogenetics" class="section level3">
 <h3>1. Cytogenetics</h3>
 <p>Large somatic chromosomal DNA aberrations detected by cytogenetics are used to define prognostic risk groups in myeloma. Clinical risk categories defined by mSMART7 include: high risk, del(17p) and t(14;16); intermediate risk, amp(1q) and t(4;14); and standard risk, t(11;14).</p>
@@ -538,25 +542,51 @@ summary {
 <span id="cb10-9"><a href="#cb10-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
 <span id="cb10-10"><a href="#cb10-10"></a>mod.risk<span class="op">$</span>d17p<span class="op">$</span>p</span></code></pre></div>
 <pre><code>## [1] 0.2961634</code></pre>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="co"># Check on p-value based on significant spectra only</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a><span class="co">#md2 = glm(data = md.dt, formula = D_TRI_CF_ABNORMALITYPR11 ~ PC3_SD + PC6_SD + PC39_SD, family = &quot;binomial&quot;)</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a><span class="co">#summary(md2)</span></span>
-<span id="cb12-4"><a href="#cb12-4"></a><span class="co">#pchisq(deviance(NLL)-deviance(md2),df.residual(NLL)-df.residual(md2),lower.tail=FALSE)</span></span></code></pre></div>
+<p>Run model with significant spectra only</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>md2 =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR11 <span class="op">~</span><span class="st"> </span>PC3_SD <span class="op">+</span><span class="st"> </span>PC6_SD <span class="op">+</span><span class="st"> </span>PC39_SD, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">summary</span>(md2)</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = D_TRI_CF_ABNORMALITYPR11 ~ PC3_SD + PC6_SD + PC39_SD, 
+##     family = &quot;binomial&quot;, data = DAT)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -0.9347  -0.5392  -0.4560  -0.3828   2.5694  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  -2.0722     0.1575 -13.153   &lt;2e-16 ***
+## PC3_SD        0.2493     0.1510   1.651   0.0988 .  
+## PC6_SD       -0.2745     0.1506  -1.823   0.0683 .  
+## PC39_SD       0.3362     0.1491   2.254   0.0242 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 318.68  on 435  degrees of freedom
+## Residual deviance: 308.03  on 432  degrees of freedom
+## AIC: 316.03
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(md2),<span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(md2),<span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span></code></pre></div>
+<pre><code>## [1] 0.01378549</code></pre>
 <p>1.2. t(14;16): D_TRI_CF_ABNORMALITYPR8 &amp; D_TRI_CF_T1416ABNORMAL (abundance)</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb13-2"><a href="#cb13-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_TRI_CF_ABNORMALITYPR8&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">filter</span>(D_TRI_CF_ABNORMALITYPR8<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span></span>
-<span id="cb13-4"><a href="#cb13-4"></a><span class="st">                </span>D_TRI_CF_ABNORMALITYPR8<span class="op">!=</span><span class="st">&quot;&quot;</span>)</span>
-<span id="cb13-5"><a href="#cb13-5"></a></span>
-<span id="cb13-6"><a href="#cb13-6"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,</span>
-<span id="cb13-7"><a href="#cb13-7"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8<span class="op">==</span><span class="st">&quot;Yes&quot;</span>,]),<span class="st">&quot;(+),&quot;</span>,</span>
-<span id="cb13-8"><a href="#cb13-8"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8<span class="op">==</span><span class="st">&quot;No&quot;</span>,]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_TRI_CF_ABNORMALITYPR8&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">filter</span>(D_TRI_CF_ABNORMALITYPR8<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a><span class="st">                </span>D_TRI_CF_ABNORMALITYPR8<span class="op">!=</span><span class="st">&quot;&quot;</span>)</span>
+<span id="cb16-5"><a href="#cb16-5"></a></span>
+<span id="cb16-6"><a href="#cb16-6"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,</span>
+<span id="cb16-7"><a href="#cb16-7"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8<span class="op">==</span><span class="st">&quot;Yes&quot;</span>,]),<span class="st">&quot;(+),&quot;</span>,</span>
+<span id="cb16-8"><a href="#cb16-8"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8<span class="op">==</span><span class="st">&quot;No&quot;</span>,]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;Baseline samples with data: 554 (total), 53 (+), 501 (-)&quot;</code></pre>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8)</span>
-<span id="cb15-2"><a href="#cb15-2"></a></span>
-<span id="cb15-3"><a href="#cb15-3"></a><span class="co"># Logistic regression</span></span>
-<span id="cb15-4"><a href="#cb15-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR8 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb15-5"><a href="#cb15-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR8)</span>
+<span id="cb18-2"><a href="#cb18-2"></a></span>
+<span id="cb18-3"><a href="#cb18-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR8 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb18-5"><a href="#cb18-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## glm(formula = D_TRI_CF_ABNORMALITYPR8 ~ ., family = &quot;binomial&quot;, 
@@ -618,37 +648,37 @@ summary {
 ## AIC: 307.27
 ## 
 ## Number of Fisher Scoring iterations: 7</code></pre>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a><span class="co"># Count sig spectra in model</span></span>
-<span id="cb17-2"><a href="#cb17-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span></span>
-<span id="cb17-3"><a href="#cb17-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
-<span id="cb17-4"><a href="#cb17-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="co"># Count sig spectra in model</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
+<span id="cb20-4"><a href="#cb20-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;12 of 39 spectra significant (p&lt;.05)&quot;</code></pre>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a><span class="co"># Save model</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">t1416=</span>MOD))</span>
-<span id="cb19-3"><a href="#cb19-3"></a></span>
-<span id="cb19-4"><a href="#cb19-4"></a><span class="co"># Overall p-value</span></span>
-<span id="cb19-5"><a href="#cb19-5"></a>NLL =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR8 <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb19-6"><a href="#cb19-6"></a></span>
-<span id="cb19-7"><a href="#cb19-7"></a>mod.risk<span class="op">$</span>t1416<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
-<span id="cb19-8"><a href="#cb19-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
-<span id="cb19-9"><a href="#cb19-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
-<span id="cb19-10"><a href="#cb19-10"></a>mod.risk<span class="op">$</span>t1416<span class="op">$</span>p</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a><span class="co"># Save model</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">t1416=</span>MOD))</span>
+<span id="cb22-3"><a href="#cb22-3"></a></span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="co"># Overall p-value</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a>NLL =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR8 <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb22-6"><a href="#cb22-6"></a></span>
+<span id="cb22-7"><a href="#cb22-7"></a>mod.risk<span class="op">$</span>t1416<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
+<span id="cb22-8"><a href="#cb22-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
+<span id="cb22-9"><a href="#cb22-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
+<span id="cb22-10"><a href="#cb22-10"></a>mod.risk<span class="op">$</span>t1416<span class="op">$</span>p</span></code></pre></div>
 <pre><code>## [1] 1.608411e-10</code></pre>
 <p>1.3. amp(1q): D_TRI_CF_ABNORMALITYPR13 &amp; D_TRI_CF_1PAMPLIFICATI2 (abundance)</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb21-2"><a href="#cb21-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_TRI_CF_ABNORMALITYPR13&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb21-3"><a href="#cb21-3"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">filter</span>(D_TRI_CF_ABNORMALITYPR13<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span></span>
-<span id="cb21-4"><a href="#cb21-4"></a><span class="st">                </span>D_TRI_CF_ABNORMALITYPR13<span class="op">!=</span><span class="st">&quot;&quot;</span>)</span>
-<span id="cb21-5"><a href="#cb21-5"></a></span>
-<span id="cb21-6"><a href="#cb21-6"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,</span>
-<span id="cb21-7"><a href="#cb21-7"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13<span class="op">==</span><span class="st">&quot;Yes&quot;</span>,]),<span class="st">&quot;(+),&quot;</span>,</span>
-<span id="cb21-8"><a href="#cb21-8"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13<span class="op">==</span><span class="st">&quot;No&quot;</span>,]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_TRI_CF_ABNORMALITYPR13&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">filter</span>(D_TRI_CF_ABNORMALITYPR13<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="st">                </span>D_TRI_CF_ABNORMALITYPR13<span class="op">!=</span><span class="st">&quot;&quot;</span>)</span>
+<span id="cb24-5"><a href="#cb24-5"></a></span>
+<span id="cb24-6"><a href="#cb24-6"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,</span>
+<span id="cb24-7"><a href="#cb24-7"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13<span class="op">==</span><span class="st">&quot;Yes&quot;</span>,]),<span class="st">&quot;(+),&quot;</span>,</span>
+<span id="cb24-8"><a href="#cb24-8"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13<span class="op">==</span><span class="st">&quot;No&quot;</span>,]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;Baseline samples with data: 525 (total), 202 (+), 323 (-)&quot;</code></pre>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13)</span>
-<span id="cb23-2"><a href="#cb23-2"></a></span>
-<span id="cb23-3"><a href="#cb23-3"></a><span class="co"># Logistic regression</span></span>
-<span id="cb23-4"><a href="#cb23-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR13 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb23-5"><a href="#cb23-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR13)</span>
+<span id="cb26-2"><a href="#cb26-2"></a></span>
+<span id="cb26-3"><a href="#cb26-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb26-4"><a href="#cb26-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR13 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb26-5"><a href="#cb26-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## glm(formula = D_TRI_CF_ABNORMALITYPR13 ~ ., family = &quot;binomial&quot;, 
@@ -710,37 +740,37 @@ summary {
 ## AIC: 523.73
 ## 
 ## Number of Fisher Scoring iterations: 5</code></pre>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a><span class="co"># Count sig spectra in model</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span></span>
-<span id="cb25-3"><a href="#cb25-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
-<span id="cb25-4"><a href="#cb25-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a><span class="co"># Count sig spectra in model</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
+<span id="cb28-4"><a href="#cb28-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;15 of 39 spectra significant (p&lt;.05)&quot;</code></pre>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a><span class="co"># Save model</span></span>
-<span id="cb27-2"><a href="#cb27-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">a1q=</span>MOD))</span>
-<span id="cb27-3"><a href="#cb27-3"></a></span>
-<span id="cb27-4"><a href="#cb27-4"></a><span class="co"># Overall p-value</span></span>
-<span id="cb27-5"><a href="#cb27-5"></a>NLL =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR13 <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb27-6"><a href="#cb27-6"></a></span>
-<span id="cb27-7"><a href="#cb27-7"></a>mod.risk<span class="op">$</span>a1q<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
-<span id="cb27-8"><a href="#cb27-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
-<span id="cb27-9"><a href="#cb27-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
-<span id="cb27-10"><a href="#cb27-10"></a>mod.risk<span class="op">$</span>a1q<span class="op">$</span>p</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a><span class="co"># Save model</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">a1q=</span>MOD))</span>
+<span id="cb30-3"><a href="#cb30-3"></a></span>
+<span id="cb30-4"><a href="#cb30-4"></a><span class="co"># Overall p-value</span></span>
+<span id="cb30-5"><a href="#cb30-5"></a>NLL =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR13 <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb30-6"><a href="#cb30-6"></a></span>
+<span id="cb30-7"><a href="#cb30-7"></a>mod.risk<span class="op">$</span>a1q<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
+<span id="cb30-8"><a href="#cb30-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
+<span id="cb30-9"><a href="#cb30-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
+<span id="cb30-10"><a href="#cb30-10"></a>mod.risk<span class="op">$</span>a1q<span class="op">$</span>p</span></code></pre></div>
 <pre><code>## [1] 1.071633e-33</code></pre>
 <p>1.4. t(4;14): D_TRI_CF_ABNORMALITYPR3 &amp; D_TRI_CF_T414ABNORMALC (abundance)</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb29-2"><a href="#cb29-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_TRI_CF_ABNORMALITYPR3&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb29-3"><a href="#cb29-3"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">filter</span>(D_TRI_CF_ABNORMALITYPR3<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span></span>
-<span id="cb29-4"><a href="#cb29-4"></a><span class="st">                </span>D_TRI_CF_ABNORMALITYPR3<span class="op">!=</span><span class="st">&quot;&quot;</span>)</span>
-<span id="cb29-5"><a href="#cb29-5"></a></span>
-<span id="cb29-6"><a href="#cb29-6"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,</span>
-<span id="cb29-7"><a href="#cb29-7"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3<span class="op">==</span><span class="st">&quot;Yes&quot;</span>,]),<span class="st">&quot;(+),&quot;</span>,</span>
-<span id="cb29-8"><a href="#cb29-8"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3<span class="op">==</span><span class="st">&quot;No&quot;</span>,]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb32-2"><a href="#cb32-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_TRI_CF_ABNORMALITYPR3&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb32-3"><a href="#cb32-3"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">filter</span>(D_TRI_CF_ABNORMALITYPR3<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span></span>
+<span id="cb32-4"><a href="#cb32-4"></a><span class="st">                </span>D_TRI_CF_ABNORMALITYPR3<span class="op">!=</span><span class="st">&quot;&quot;</span>)</span>
+<span id="cb32-5"><a href="#cb32-5"></a></span>
+<span id="cb32-6"><a href="#cb32-6"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,</span>
+<span id="cb32-7"><a href="#cb32-7"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3<span class="op">==</span><span class="st">&quot;Yes&quot;</span>,]),<span class="st">&quot;(+),&quot;</span>,</span>
+<span id="cb32-8"><a href="#cb32-8"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3<span class="op">==</span><span class="st">&quot;No&quot;</span>,]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;Baseline samples with data: 594 (total), 108 (+), 486 (-)&quot;</code></pre>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3)</span>
-<span id="cb31-2"><a href="#cb31-2"></a></span>
-<span id="cb31-3"><a href="#cb31-3"></a><span class="co"># Logistic regression</span></span>
-<span id="cb31-4"><a href="#cb31-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR3 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb31-5"><a href="#cb31-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR3)</span>
+<span id="cb34-2"><a href="#cb34-2"></a></span>
+<span id="cb34-3"><a href="#cb34-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb34-4"><a href="#cb34-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR3 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb34-5"><a href="#cb34-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## glm(formula = D_TRI_CF_ABNORMALITYPR3 ~ ., family = &quot;binomial&quot;, 
@@ -802,37 +832,37 @@ summary {
 ## AIC: 435.97
 ## 
 ## Number of Fisher Scoring iterations: 6</code></pre>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a><span class="co"># Count sig spectra in model</span></span>
-<span id="cb33-2"><a href="#cb33-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span></span>
-<span id="cb33-3"><a href="#cb33-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
-<span id="cb33-4"><a href="#cb33-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a><span class="co"># Count sig spectra in model</span></span>
+<span id="cb36-2"><a href="#cb36-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span></span>
+<span id="cb36-3"><a href="#cb36-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
+<span id="cb36-4"><a href="#cb36-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;10 of 39 spectra significant (p&lt;.05)&quot;</code></pre>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1"></a><span class="co"># Save model</span></span>
-<span id="cb35-2"><a href="#cb35-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">t414=</span>MOD))</span>
-<span id="cb35-3"><a href="#cb35-3"></a></span>
-<span id="cb35-4"><a href="#cb35-4"></a><span class="co"># Overall p-value</span></span>
-<span id="cb35-5"><a href="#cb35-5"></a>NLL =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR3 <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb35-6"><a href="#cb35-6"></a></span>
-<span id="cb35-7"><a href="#cb35-7"></a>mod.risk<span class="op">$</span>t414<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
-<span id="cb35-8"><a href="#cb35-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
-<span id="cb35-9"><a href="#cb35-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
-<span id="cb35-10"><a href="#cb35-10"></a>mod.risk<span class="op">$</span>t414<span class="op">$</span>p</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a><span class="co"># Save model</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">t414=</span>MOD))</span>
+<span id="cb38-3"><a href="#cb38-3"></a></span>
+<span id="cb38-4"><a href="#cb38-4"></a><span class="co"># Overall p-value</span></span>
+<span id="cb38-5"><a href="#cb38-5"></a>NLL =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR3 <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb38-6"><a href="#cb38-6"></a></span>
+<span id="cb38-7"><a href="#cb38-7"></a>mod.risk<span class="op">$</span>t414<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
+<span id="cb38-8"><a href="#cb38-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
+<span id="cb38-9"><a href="#cb38-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
+<span id="cb38-10"><a href="#cb38-10"></a>mod.risk<span class="op">$</span>t414<span class="op">$</span>p</span></code></pre></div>
 <pre><code>## [1] 8.207055e-25</code></pre>
 <p>1.5. t(11;14): D_TRI_CF_ABNORMALITYPR6 &amp; D_TRI_CF_T1114ABNORMAL (abundance)</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb37-2"><a href="#cb37-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_TRI_CF_ABNORMALITYPR6&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb37-3"><a href="#cb37-3"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">filter</span>(D_TRI_CF_ABNORMALITYPR6<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span></span>
-<span id="cb37-4"><a href="#cb37-4"></a><span class="st">                </span>D_TRI_CF_ABNORMALITYPR6<span class="op">!=</span><span class="st">&quot;&quot;</span>)</span>
-<span id="cb37-5"><a href="#cb37-5"></a></span>
-<span id="cb37-6"><a href="#cb37-6"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,</span>
-<span id="cb37-7"><a href="#cb37-7"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6<span class="op">==</span><span class="st">&quot;Yes&quot;</span>,]),<span class="st">&quot;(+),&quot;</span>,</span>
-<span id="cb37-8"><a href="#cb37-8"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6<span class="op">==</span><span class="st">&quot;No&quot;</span>,]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb40-2"><a href="#cb40-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_TRI_CF_ABNORMALITYPR6&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb40-3"><a href="#cb40-3"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">filter</span>(D_TRI_CF_ABNORMALITYPR6<span class="op">!=</span><span class="st">&quot;Not Done&quot;</span> <span class="op">&amp;</span></span>
+<span id="cb40-4"><a href="#cb40-4"></a><span class="st">                </span>D_TRI_CF_ABNORMALITYPR6<span class="op">!=</span><span class="st">&quot;&quot;</span>)</span>
+<span id="cb40-5"><a href="#cb40-5"></a></span>
+<span id="cb40-6"><a href="#cb40-6"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Baseline samples with data:&quot;</span>,<span class="kw">nrow</span>(DAT),<span class="st">&quot;(total),&quot;</span>,</span>
+<span id="cb40-7"><a href="#cb40-7"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6<span class="op">==</span><span class="st">&quot;Yes&quot;</span>,]),<span class="st">&quot;(+),&quot;</span>,</span>
+<span id="cb40-8"><a href="#cb40-8"></a>            <span class="kw">nrow</span>(DAT[DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6<span class="op">==</span><span class="st">&quot;No&quot;</span>,]),<span class="st">&quot;(-)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;Baseline samples with data: 594 (total), 153 (+), 441 (-)&quot;</code></pre>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6)</span>
-<span id="cb39-2"><a href="#cb39-2"></a></span>
-<span id="cb39-3"><a href="#cb39-3"></a><span class="co"># Logistic regression</span></span>
-<span id="cb39-4"><a href="#cb39-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR6 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb39-5"><a href="#cb39-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6 =<span class="st"> </span><span class="kw">as.factor</span>(DAT<span class="op">$</span>D_TRI_CF_ABNORMALITYPR6)</span>
+<span id="cb42-2"><a href="#cb42-2"></a></span>
+<span id="cb42-3"><a href="#cb42-3"></a><span class="co"># Logistic regression</span></span>
+<span id="cb42-4"><a href="#cb42-4"></a>MOD &lt;-<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR6 <span class="op">~</span><span class="st"> </span>., <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb42-5"><a href="#cb42-5"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## glm(formula = D_TRI_CF_ABNORMALITYPR6 ~ ., family = &quot;binomial&quot;, 
@@ -894,35 +924,35 @@ summary {
 ## AIC: 533.15
 ## 
 ## Number of Fisher Scoring iterations: 5</code></pre>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1"></a><span class="co"># Count sig spectra in model</span></span>
-<span id="cb41-2"><a href="#cb41-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span></span>
-<span id="cb41-3"><a href="#cb41-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
-<span id="cb41-4"><a href="#cb41-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a><span class="co"># Count sig spectra in model</span></span>
+<span id="cb44-2"><a href="#cb44-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(MOD)<span class="op">$</span>coeff[<span class="op">-</span><span class="dv">1</span>,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span></span>
+<span id="cb44-3"><a href="#cb44-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
+<span id="cb44-4"><a href="#cb44-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;10 of 39 spectra significant (p&lt;.05)&quot;</code></pre>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1"></a><span class="co"># Save model</span></span>
-<span id="cb43-2"><a href="#cb43-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">t1114=</span>MOD))</span>
-<span id="cb43-3"><a href="#cb43-3"></a></span>
-<span id="cb43-4"><a href="#cb43-4"></a><span class="co"># Overall p-value</span></span>
-<span id="cb43-5"><a href="#cb43-5"></a>NLL =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR6 <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb43-6"><a href="#cb43-6"></a></span>
-<span id="cb43-7"><a href="#cb43-7"></a>mod.risk<span class="op">$</span>t1114<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
-<span id="cb43-8"><a href="#cb43-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
-<span id="cb43-9"><a href="#cb43-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
-<span id="cb43-10"><a href="#cb43-10"></a>mod.risk<span class="op">$</span>t1114<span class="op">$</span>p</span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1"></a><span class="co"># Save model</span></span>
+<span id="cb46-2"><a href="#cb46-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">t1114=</span>MOD))</span>
+<span id="cb46-3"><a href="#cb46-3"></a></span>
+<span id="cb46-4"><a href="#cb46-4"></a><span class="co"># Overall p-value</span></span>
+<span id="cb46-5"><a href="#cb46-5"></a>NLL =<span class="st"> </span><span class="kw">glm</span>(<span class="dt">data =</span> DAT, <span class="dt">formula =</span> D_TRI_CF_ABNORMALITYPR6 <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb46-6"><a href="#cb46-6"></a></span>
+<span id="cb46-7"><a href="#cb46-7"></a>mod.risk<span class="op">$</span>t1114<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
+<span id="cb46-8"><a href="#cb46-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
+<span id="cb46-9"><a href="#cb46-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
+<span id="cb46-10"><a href="#cb46-10"></a>mod.risk<span class="op">$</span>t1114<span class="op">$</span>p</span></code></pre></div>
 <pre><code>## [1] 6.201022e-28</code></pre>
 </div>
 <div id="international-staging-system-iss" class="section level3">
 <h3>2. International staging system (ISS)</h3>
 <p>2.1. RUN LOGISTIC REGRESSION</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb45-2"><a href="#cb45-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_PT_iss&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>))</span>
-<span id="cb45-3"><a href="#cb45-3"></a></span>
-<span id="cb45-4"><a href="#cb45-4"></a><span class="co"># Order dependent variable</span></span>
-<span id="cb45-5"><a href="#cb45-5"></a>DAT<span class="op">$</span>ISS =<span class="st"> </span><span class="kw">factor</span>(DAT<span class="op">$</span>D_PT_iss, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>), <span class="dt">ordered =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb45-6"><a href="#cb45-6"></a></span>
-<span id="cb45-7"><a href="#cb45-7"></a><span class="co"># Ordinal logistic regression model</span></span>
-<span id="cb45-8"><a href="#cb45-8"></a>MOD =<span class="st"> </span><span class="kw">polr</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;D_PT_iss&quot;</span>)], <span class="dt">formula =</span> ISS <span class="op">~</span><span class="st"> </span>., <span class="dt">Hess =</span> T) </span>
-<span id="cb45-9"><a href="#cb45-9"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1"></a>DAT =<span class="st"> </span>spectra_clinical <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb48-2"><a href="#cb48-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;D_PT_iss&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>))</span>
+<span id="cb48-3"><a href="#cb48-3"></a></span>
+<span id="cb48-4"><a href="#cb48-4"></a><span class="co"># Order dependent variable</span></span>
+<span id="cb48-5"><a href="#cb48-5"></a>DAT<span class="op">$</span>ISS =<span class="st"> </span><span class="kw">factor</span>(DAT<span class="op">$</span>D_PT_iss, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>), <span class="dt">ordered =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb48-6"><a href="#cb48-6"></a></span>
+<span id="cb48-7"><a href="#cb48-7"></a><span class="co"># Ordinal logistic regression model</span></span>
+<span id="cb48-8"><a href="#cb48-8"></a>MOD =<span class="st"> </span><span class="kw">polr</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;D_PT_iss&quot;</span>)], <span class="dt">formula =</span> ISS <span class="op">~</span><span class="st"> </span>., <span class="dt">Hess =</span> T) </span>
+<span id="cb48-9"><a href="#cb48-9"></a><span class="kw">summary</span>(MOD)</span></code></pre></div>
 <pre><code>## Call:
 ## polr(formula = ISS ~ ., data = DAT[, -c(&quot;D_PT_iss&quot;)], Hess = T)
 ## 
@@ -976,24 +1006,24 @@ summary {
 ## Residual Deviance: 1479.279 
 ## AIC: 1561.279 
 ## (21 observations deleted due to missingness)</code></pre>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1"></a><span class="co"># Count sig spectra in model</span></span>
-<span id="cb47-2"><a href="#cb47-2"></a>sig =<span class="st"> </span><span class="kw">pnorm</span>(<span class="kw">abs</span>(<span class="kw">coef</span>(<span class="kw">summary</span>(MOD))[<span class="dv">1</span><span class="op">:</span><span class="dv">39</span>,<span class="st">&quot;t value&quot;</span>]),<span class="dt">lower.tail =</span> <span class="ot">FALSE</span>)<span class="op">*</span><span class="dv">2</span></span>
-<span id="cb47-3"><a href="#cb47-3"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(sig) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(sig<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
-<span id="cb47-4"><a href="#cb47-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1"></a><span class="co"># Count sig spectra in model</span></span>
+<span id="cb50-2"><a href="#cb50-2"></a>sig =<span class="st"> </span><span class="kw">pnorm</span>(<span class="kw">abs</span>(<span class="kw">coef</span>(<span class="kw">summary</span>(MOD))[<span class="dv">1</span><span class="op">:</span><span class="dv">39</span>,<span class="st">&quot;t value&quot;</span>]),<span class="dt">lower.tail =</span> <span class="ot">FALSE</span>)<span class="op">*</span><span class="dv">2</span></span>
+<span id="cb50-3"><a href="#cb50-3"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(sig) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(sig<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
+<span id="cb50-4"><a href="#cb50-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; of 39 spectra significant (p&lt;.05)&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;15 of 39 spectra significant (p&lt;.05)&quot;</code></pre>
-<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1"></a><span class="co"># Save model</span></span>
-<span id="cb49-2"><a href="#cb49-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">iss=</span>MOD))</span>
-<span id="cb49-3"><a href="#cb49-3"></a></span>
-<span id="cb49-4"><a href="#cb49-4"></a><span class="co"># Overall p-value</span></span>
-<span id="cb49-5"><a href="#cb49-5"></a>NLL =<span class="st"> </span><span class="kw">polr</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;D_PT_iss&quot;</span>)], <span class="dt">formula =</span> ISS <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">Hess =</span> T)</span>
-<span id="cb49-6"><a href="#cb49-6"></a></span>
-<span id="cb49-7"><a href="#cb49-7"></a>mod.risk<span class="op">$</span>iss<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
-<span id="cb49-8"><a href="#cb49-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
-<span id="cb49-9"><a href="#cb49-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
-<span id="cb49-10"><a href="#cb49-10"></a>mod.risk<span class="op">$</span>iss<span class="op">$</span>p</span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1"></a><span class="co"># Save model</span></span>
+<span id="cb52-2"><a href="#cb52-2"></a>mod.risk =<span class="st"> </span><span class="kw">c</span>(mod.risk,<span class="kw">list</span>(<span class="dt">iss=</span>MOD))</span>
+<span id="cb52-3"><a href="#cb52-3"></a></span>
+<span id="cb52-4"><a href="#cb52-4"></a><span class="co"># Overall p-value</span></span>
+<span id="cb52-5"><a href="#cb52-5"></a>NLL =<span class="st"> </span><span class="kw">polr</span>(<span class="dt">data =</span> DAT[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;D_PT_iss&quot;</span>)], <span class="dt">formula =</span> ISS <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">Hess =</span> T)</span>
+<span id="cb52-6"><a href="#cb52-6"></a></span>
+<span id="cb52-7"><a href="#cb52-7"></a>mod.risk<span class="op">$</span>iss<span class="op">$</span>p =<span class="st"> </span><span class="kw">pchisq</span>(<span class="kw">deviance</span>(NLL)<span class="op">-</span><span class="kw">deviance</span>(MOD),</span>
+<span id="cb52-8"><a href="#cb52-8"></a>                         <span class="kw">df.residual</span>(NLL)<span class="op">-</span><span class="kw">df.residual</span>(MOD),</span>
+<span id="cb52-9"><a href="#cb52-9"></a>                         <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)</span>
+<span id="cb52-10"><a href="#cb52-10"></a>mod.risk<span class="op">$</span>iss<span class="op">$</span>p</span></code></pre></div>
 <pre><code>## [1] 2.999079e-15</code></pre>
 <p><strong>Save model results</strong></p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1"></a><span class="kw">save</span>(mod.risk,<span class="dt">file =</span> <span class="st">&quot;rdata/mod.clinical-risk.rdata&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1"></a><span class="kw">save</span>(mod.risk,<span class="dt">file =</span> <span class="st">&quot;rdata/mod.clinical-risk.rdata&quot;</span>)</span></code></pre></div>
 </div>
 
 
