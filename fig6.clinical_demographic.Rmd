@@ -4,11 +4,19 @@ output:
   html_document:
     theme: united
     highlight: tango
-params:
-    data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
 ---
 
-```{r load_packages, message=F, include=F}
+!!! Define data directory !!!
+```{r}
+data_dir = "/path/to/data" # exclude ending "/"
+```
+```{r, include=FALSE}
+# real data directory
+data_dir = "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/spectra.v2/data"
+```
+
+Load packages
+```{r load_packages, message=F, include=T,error=F,warning=F}
 # Install and load required R packages
 library(dplyr)
 library(data.table)
@@ -18,10 +26,13 @@ library(ggpubr)
 
 Load model results
 ```{r}
-setwd("C:/Users/rosal/github/transcriptome-dimensions/notebook/")
 load(file = "rdata/mod.demographic-risk.rdata") # generated in demographic-risk.Rmd
 load(file = "rdata/mod.clinical-risk.rdata") # generated in clinical-risk.Rmd
-load(file = params$data) # load processed data
+
+# read in spectra and clinical data
+spectra_clinical = read.csv(file = paste0(data_dir,
+                                  "/baseline-clinical-spectra-sd.csv")
+                            ) %>% data.table()
 ```
 
 Plot Setup
@@ -39,32 +50,32 @@ theme_set(theme_classic() +
 ```{r}
 # check poly-spectra liability score calculation
 fit = mod.risk$a1q
-dat = merge(clinical[clinical$D_TRI_CF_ABNORMALITYPR13!="Not Done" & clinical$D_TRI_CF_ABNORMALITYPR13!="",
-                     c("SEQ_ID","D_TRI_CF_ABNORMALITYPR13")],score_sd)
+dat = spectra_clinical %>% 
+  dplyr::select("D_TRI_CF_ABNORMALITYPR13",starts_with("PC")) %>%
+  dplyr::filter(D_TRI_CF_ABNORMALITYPR13!="Not Done" &
+                D_TRI_CF_ABNORMALITYPR13!="") %>% data.table()
 
 ## calculate manually from beta values
 est = summary(fit)$coeff[-1,1] %>% data.table
-dat[,psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_TRI_CF_ABNORMALITYPR13")]) %*% diag(est$.)) + summary(fit)$coeff[1,1]]
+dat[,psl:= rowSums(data.matrix(dat[,-c("D_TRI_CF_ABNORMALITYPR13")]) %*%
+                     diag(est$.)) + summary(fit)$coeff[1,1]]
 
-pdt = dat[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR13","psl")]
-
-#data.table(sort(fit$linear.predictors),sort(dat$psl))
-
-## check on matching
-#unique(round(sort(fit$linear.predictors),digits = 8) == round(sort(dat$psl),digits = 8))
+pdt = dat[,c("D_TRI_CF_ABNORMALITYPR13","psl")]
 ```
 
 Plot
 ```{r}
-pdt = data.frame(a1q = fit$model$D_TRI_CF_ABNORMALITYPR13,predictors = fit$linear.predictors)
+pdt = data.frame(a1q = fit$model$D_TRI_CF_ABNORMALITYPR13,
+                 predictors = fit$linear.predictors)
 
 setorder(pdt,-predictors)
 w = ggplot(pdt,aes(y=predictors,x=1:nrow(pdt),fill=a1q)) +
   geom_bar(stat="identity") +
-  scale_fill_manual(values = c("gray","#F67280"), name = "amp(1q)", labels = c("N (n=323)","Y (n=202)")) +
+  scale_fill_manual(values = c("gray","#F67280"), 
+                    name = "amp(1q)", 
+                    labels = c("N (n=323)","Y (n=202)")) +
   xlab("Patients (N=525)") + ylab("amp(1q) PSL Score") +
   scale_x_continuous(limits = c(0,nrow(pdt)+1), breaks=seq(1,nrow(pdt),1)) +
-  #theme(legend.position = "top",
   theme(legend.position = c(1,1), legend.justification = c(1,1),
         axis.text = element_blank(), axis.ticks = element_blank())
 w
@@ -76,30 +87,31 @@ ggsave(filename = "plots/a1q_waterfall.pdf",plot = w,width=3.75,height=2)
 ```{r}
 # check poly-spectra liability score calculation
 fit = mod.risk$t1114
-dat = merge(clinical[clinical$D_TRI_CF_ABNORMALITYPR6!="Not Done" & clinical$D_TRI_CF_ABNORMALITYPR6!="",
-                     c("SEQ_ID","D_TRI_CF_ABNORMALITYPR6")],score_sd)
+dat = spectra_clinical %>% 
+  dplyr::select("D_TRI_CF_ABNORMALITYPR6",starts_with("PC")) %>%
+  dplyr::filter(D_TRI_CF_ABNORMALITYPR6!="Not Done" &
+                D_TRI_CF_ABNORMALITYPR6!="") %>% data.table()
 
 ## calculate manually from beta values
 est = summary(fit)$coeff[-1,1] %>% data.table
-dat[,psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_TRI_CF_ABNORMALITYPR6")]) %*% diag(est$.)) + summary(fit)$coeff[1,1]]
+dat[,psl:= rowSums(data.matrix(dat[,-c("D_TRI_CF_ABNORMALITYPR6")]) %*%
+                     diag(est$.)) + summary(fit)$coeff[1,1]]
 
-pdt = dat[,c("SEQ_ID","D_TRI_CF_ABNORMALITYPR6","psl")]
-
-#data.table(sort(fit$linear.predictors),sort(dat$psl))
-
-## check on matching
-#unique(round(sort(fit$linear.predictors),digits = 8) == round(sort(dat$psl),digits = 8))
+pdt = dat[,c("D_TRI_CF_ABNORMALITYPR6","psl")]
 ```
 
 Plot
 ```{r}
-pdt = data.frame(t1114 = fit$model$D_TRI_CF_ABNORMALITYPR6,predictors = fit$linear.predictors)
+pdt = data.frame(t1114 = fit$model$D_TRI_CF_ABNORMALITYPR6,
+                 predictors = fit$linear.predictors)
 
 #nrow(pdt[pdt$t1114=="No",])
 setorder(pdt,-predictors)
 w = ggplot(pdt,aes(y=predictors,x=1:nrow(pdt),fill=t1114)) +
   geom_bar(stat="identity") +
-  scale_fill_manual(values = c("gray","#355C7D"), name = "t(11;14)", labels = c("N (n=441)","Y (n=153)")) +
+  scale_fill_manual(values = c("gray","#355C7D"), 
+                    name = "t(11;14)", 
+                    labels = c("N (n=441)","Y (n=153)")) +
   xlab("Patients (N=594)") + ylab("t(11;14) PSL Score") +
   scale_x_continuous(limits = c(0,nrow(pdt)+1), breaks=seq(1,nrow(pdt),1)) +
   #theme(legend.position = "top",
@@ -115,13 +127,14 @@ ggsave(filename = "plots/t1114_waterfall.pdf",plot = w,width=3.75,height=2)
 fit = mod.risk$iss
 pdt = data.frame(iss = fit$model$ISS,predictors = fit$lp)
 
-dat = merge(clinical[!is.na(clinical$D_PT_iss),c("SEQ_ID","D_PT_iss")],score_sd)
+dat = spectra_clinical %>% 
+  dplyr::select("D_PT_iss",starts_with("PC")) %>% data.table()
 
 ## calculate manually from beta values
-dat[,psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_PT_iss")]) %*% diag(coef(fit)))]
+#dat[,psl:= rowSums(data.matrix(dat[,-c("D_PT_iss")]) %*% diag(coef(fit)))]
 
 ## check on matching
-#unique(round(sort(fit$lp),digits = 8) == round(sort(dat$psl),digits = 8))
+#unique(round(sort(fit$lp),digits = 7) == round(sort(dat$psl),digits = 7))
 ```
 
 Plot
@@ -147,17 +160,18 @@ ggsave(filename = "plots/iss_boxplot.pdf",plot = b,width=3.75,height=4)
 ### d) gender x race
 ```{r}
 ## calculate PSL scores from beta values
-dat = merge(clinical[,c("SEQ_ID","D_PT_gender","D_PT_race")],score_sd)
+dat = spectra_clinical %>% 
+  dplyr::select("D_PT_gender","D_PT_race",starts_with("PC")) %>% data.table()
 est = summary(glm.gender)$coeff[-1,1]
-dat[,gender_psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_PT_gender","D_PT_race")]) %*% diag(est)) + summary(glm.gender)$coeff[1,1]]
+dat[,gender_psl:= rowSums(data.matrix(dat[,-c("D_PT_gender","D_PT_race")]) %*% diag(est)) + summary(glm.gender)$coeff[1,1]]
 
 est = summary(glm.race)$coeff[-1,1]
-dat[,race_psl:= rowSums(data.matrix(dat[,-c("SEQ_ID","D_PT_gender","D_PT_race","gender_psl")]) %*% diag(est)) + summary(glm.race)$coeff[1,1]]
+dat[,race_psl:= rowSums(data.matrix(dat[,-c("D_PT_gender","D_PT_race","gender_psl")]) %*% diag(est)) + summary(glm.race)$coeff[1,1]]
 
-pdt = dat[,c("SEQ_ID","D_PT_gender","D_PT_race","gender_psl","race_psl")]
+pdt = dat[,c("D_PT_gender","D_PT_race","gender_psl","race_psl")]
 
 # clean up data table
-colnames(pdt) = c("ID","gender","race","gender_psl","race_psl")
+colnames(pdt) = c("gender","race","gender_psl","race_psl")
 
 pdt$gender = as.factor(pdt$gender)
 pdt[gender == 1,"gender"] = "male"

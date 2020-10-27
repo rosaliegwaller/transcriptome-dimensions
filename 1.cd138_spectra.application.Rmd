@@ -1,14 +1,12 @@
 ---
 title: "SPECTRA application to CoMMpass"
 author: "Rosalie Griffin Waller"
-date: "22-OCT-2020"
+date: "27-OCT-2020"
 output:
   html_document:
     theme: united
     highlight: tango
   pdf_document: default
-params:
-  data: /Volumes/m238409/manuscripts/waller-camp/mm-rna-spectra/data
 ---
 Code for SPECTRA approach and CD138+ spectra reported in "SPECTRA: AGNOSTIC EXPRESSION VARIABLES FOR FLEXIBLE TRANSCRIPTOME MODELING IN COMPLEX DISEASE" by Waller et al.
 
@@ -42,7 +40,7 @@ Download publicly available myeloma data and save to "data" directory.
 
 
 1.0. Install packages
-```{r load_packages, message=F, include=T}
+```{r load_packages, message=F, include=T, error=FALSE}
 # Install and load required R packages
 #install.packages("BiocManager")
 library(rtracklayer) # BiocManager::install("rtracklayer")
@@ -50,6 +48,15 @@ library(sva) # BiocManager::install("sva")
 library(ggplot2)
 library(dplyr)
 library(data.table)
+```
+
+**!!! Define data directory !!!**
+```{r}
+data_dir = "/path/to/data" # exclude ending "/"
+```
+```{r, include=FALSE}
+# real data directory
+data_dir = "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/spectra.v2/data"
 ```
 
 Define function
@@ -77,7 +84,7 @@ elbow_finder<-function(data) {
 1.1. LOAD GTF WITH RTRACKLAYER PACKAGE & COMPUTE GENE LENGTH AND NUMBER OF TRANSCRIPTS
 ```{r}
 # Read in GTF
-gtf <- readGFF(filepath=paste0(params$data,"/Homo_sapiens.GRCh37.74.gtf.gz")) 
+gtf <- readGFF(filepath=paste0(data_dir,"/Homo_sapiens.GRCh37.74.gtf.gz")) 
 gtf$length <- gtf$end - gtf$start + 1 # Compute length of each GTF feature
 tmp <- subset(gtf,type=='exon',) # Select exon features only
 sum_exons<-aggregate(length ~ seqid + gene_name + gene_id + gene_biotype + transcript_id, data=tmp, FUN=sum) # Find the total gene length by summing the exons
@@ -91,14 +98,16 @@ rm(gtf,tmp,sum_exons,n_name) # Clean-up variable space
 ```{r}
 # Read in counts and set to data table format
 counts <- data.table(
-  read.csv(file = paste0(params$data,
+  read.csv(file = paste0(data_dir,
                          "/MMRF_CoMMpass_IA14a_E74GTF_Salmon_V7.2_Filtered_Transcript_Counts.txt.gz"),
            header = T,sep = "\t",stringsAsFactors = F)
   )
 colnames(counts)[1]<-"transcript_id" # Rename column
 counts.gtf <- data.table(inner_join(gtf.dt,counts,by="transcript_id")) # Merge counts with GTF data
 rm(counts,gtf.dt) # Clean variable space
-seq_ids = counts.gtf %>% select(starts_with("MMRF") & ends_with("BM")) %>% colnames() # Get list of bone marrow sample ids
+seq_ids = counts.gtf %>% 
+  dplyr::select(starts_with("MMRF") & ends_with("BM")) %>% 
+  colnames() # Get list of bone marrow sample ids
 seq_nms = unique(gsub("_([1-9])_(BM|PB)","",seq_ids)) # Get list of individuals
 
 print(paste0(length(unique(counts.gtf$gene_name))," genes and ",length(unique(counts.gtf$transcript_id))," transcripts in CoMMpass expression dataset"))
@@ -109,7 +118,7 @@ print(paste0(length(unique(counts.gtf$gene_name))," genes and ",length(unique(co
 A. Per-visit
 ```{r}
 vis = data.table(
-  read.csv(file = paste0(params$data,
+  read.csv(file = paste0(data_dir,
                          "/MMRF_CoMMpass_IA14_PER_PATIENT_VISIT.csv")
                           ,stringsAsFactors = F)
   )[PUBLIC_ID%in%seq_nms, # Select samples with RNAseq
@@ -149,7 +158,7 @@ vis = vis[SEQ_ID%in%seq_ids] # Subset to samples with sequencing data
 B. Sequencing quality control
 ```{r}
 bat = data.table(
-  read.csv(file = paste0(params$data,"/MMRF_CoMMpass_IA14_Seq_QC_Summary.csv"))
+  read.csv(file = paste0(data_dir,"/MMRF_CoMMpass_IA14_Seq_QC_Summary.csv"))
   )[MMRF_Release_Status=="RNA-Yes",c(1:5)] # Read in QC data and select RNAseq samples 
 colnames(bat) = c("PUBLIC_ID","SPECTRUM_SEQ","COLLECTION_REASON","SEQ_ID","batch") # Rename columns
 bat$SEQ_ID <- gsub("_CD138pos_T([1-9]{1,2})_TSMRU_([L|K0-9]{6})","",bat$SEQ_ID) # Make sequence ids uniform
@@ -157,7 +166,7 @@ bat$SEQ_ID <- gsub("_CD138pos_T([1-9]{1,2})_TSMRU_([L|K0-9]{6})","",bat$SEQ_ID) 
 C. Per-patient
 ```{r}
 pat = data.table(
-  read.csv(file = paste0(params$data,"/MMRF_CoMMpass_IA14_PER_PATIENT.csv")
+  read.csv(file = paste0(data_dir,"/MMRF_CoMMpass_IA14_PER_PATIENT.csv")
            ,stringsAsFactors = F) # Read in per-patient clinical data
   )[PUBLIC_ID%in%seq_nms, # Select samples with RNAseq
                    c("PUBLIC_ID", # Select variables of interest
@@ -170,7 +179,7 @@ pat = data.table(
 D. Survival
 ```{r}
 sur = data.table(
-  read.csv(file = paste0(params$data,
+  read.csv(file = paste0(data_dir,
                          "/MMRF_CoMMpass_IA14_STAND_ALONE_SURVIVAL.csv"))
   )[public_id%in%seq_nms, # Select samples with RNAseq
                    c("public_id", # Select variables of interest
@@ -219,7 +228,7 @@ print(paste0("Keep ",length(keep.genes)," genes where < 5% of samples have < 100
 2.3. REMOVE DQ GENES FROM: https://doi.org/10.1038/s41598-020-59516-z
 ```{r}
 # Compare with discordantly quantified genes in  GTEx or TCGA from https://doi.org/10.1038/s41598-020-59516-z
-dq.genes = read.csv(file = paste0(params$data,"/Union_Discordant_genes_TCGA_GTEx_Arora_TS2B.csv")) %>% data.table()
+dq.genes = read.csv(file = paste0(data_dir,"/Union_Discordant_genes_TCGA_GTEx_Arora_TS2B.csv")) %>% data.table()
 #nrow(dq.genes[Union_DQ_genes%in%keep.genes])
 #nrow(dq.genes[Union_DQ_genes%in%gene$gene_name])
 print(paste0("Remove ",nrow(dq.genes[Union_DQ_genes%in%keep.genes])," genes of ", nrow(dq.genes[Union_DQ_genes%in%gene$gene_name])," genes on discordantly quanitifed list"))
@@ -341,7 +350,7 @@ print(paste("F-statistic of PC ~ batch associations, min p =",round(min(p),digit
 ```{r}
 pca.score = cbind(cbat.dt$SEQ_ID,pca$x[,elbow[selected=='Selected']$pc]) %>% data.table() # PC value for each baseline sample
 colnames(pca.score)[1] = "SEQ_ID" # Annotate sample names
-write.csv(pca.score,file = paste0(params$data,
+write.csv(pca.score,file = paste0(data_dir,
                                   "/baseline-spectra.csv")
           ,row.names = F)
 
@@ -351,7 +360,7 @@ pca.genes = cbind(
   pca$rotation[,elbow[selected=='Selected']$pc] %>% data.table() # Save gene loading
 )
 colnames(pca.genes)[1:2] = c("GENE_NAME","CENTER_MEAN")
-write.csv(pca.genes,file = paste0(params$data,
+write.csv(pca.genes,file = paste0(data_dir,
                                   "/spectra-gene-loadings.csv")
           ,row.names = F)
 ```
@@ -371,16 +380,19 @@ unique(round(sd.score$PC22_SD,digits = 8) == round(as.numeric(dt$PC22)/sd(as.num
 6.3. SAVE AS RDATA FOR ADDITIONAL ANALYSES
 ```{r}
 exp_cbat = cbat.dt # save normalized and batch corrected expression estimates
-write.csv(exp_cbat,file = paste0(params$data,
+write.csv(exp_cbat,file = paste0(data_dir,
                                  "/baseline-expression-norm-combat.csv")
           ,row.names = F)
 
 score_sd = sd.score # standardized spectra scores in baseline samples
+
+# save clinical data in all samples
 clinical = cin # clinical data
+write.csv(clinical,file = paste0(data_dir,"/clinical.csv"))
 
 # merge clinical and standardized spectra scores in baseline samples
 clin_spectra_sd = merge(clinical,score_sd,by="SEQ_ID")
-write.csv(clin_spectra_sd,file = paste0(params$data,
+write.csv(clin_spectra_sd,file = paste0(data_dir,
                                         "/baseline-clinical-spectra-sd.csv")
           ,row.names = F)
 
@@ -401,7 +413,7 @@ exp_time = counts.gtf %>% select("gene_name","name_n_transcripts",
                                  "transcript_id","length",
                                  all_of(time_ids)) 
 # save expression estimates in longitudinal samples
-write.csv(exp_time,file = paste0(params$data,
+write.csv(exp_time,file = paste0(data_dir,
                                  "/followup-expression.csv")
           ,row.names = F)
 

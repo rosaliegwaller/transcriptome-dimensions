@@ -4,11 +4,20 @@ output:
   html_document:
     theme: united
     highlight: tango
-params:
-  data: "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/transcriptome-dimensions/analysis/20200802_pipe_out.rdata"
 ---
+### 0. Setup
 
-```{r load_packages, message=F, include=F}
+!!! Define data directory !!!
+```{r}
+data_dir = "/path/to/data" # exclude ending "/"
+```
+```{r, include=FALSE}
+# real data directory
+data_dir = "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/spectra.v2/data"
+```
+
+Load packages
+```{r load_packages, message=F, include=T,error=F,warning=F}
 # Install and load required R packages
 library(dplyr)
 library(data.table)
@@ -16,15 +25,17 @@ library(ggplot2)
 library(grid)
 ```
 
-Load transcriptome dimensions (PC1-PC39)
+Load transcriptome spectra (PC1-PC39)
 ```{r}
-load(file = params$data) # load processed data
-rm(params,exp_time,exp_cbat,clinical) # remove extra variables
+# read in spectra data
+spectra = read.csv(file = paste0(data_dir,
+                                  "/baseline-clinical-spectra-sd.csv")
+                   ) %>% data.table() %>% dplyr::select("SEQ_ID",starts_with("PC"))
 ```
 
 Tidy data for plotting
 ```{r}
-molten <- melt(score_sd,id.vars = c("SEQ_ID"))
+molten <- melt(spectra,id.vars = c("SEQ_ID"))
 molten$sign <- ifelse(molten$value >= 0, "positive", "negative")
 ```
 
@@ -33,9 +44,10 @@ Select extreme examples
 #min(molten$value)
 #max(molten$value)
 
-score_sd$sum <- score_sd[,-1] %>% rowSums() #sum standardized pc values
-setorder(score_sd,sum)
-ids <- c(head(score_sd)[]$SEQ_ID,tail(score_sd)[]$SEQ_ID)
+spectra$sum <- spectra[,-1] %>% rowSums() #sum standardized pc values
+setorder(spectra,sum)
+#ids <- c(head(spectra)[]$SEQ_ID,tail(spectra)[]$SEQ_ID)
+ids = c("MMRF_2497_1_BM","MMRF_1854_1_BM","MMRF_2394_1_BM","MMRF_1392_1_BM")
 ex <- molten[SEQ_ID%in%ids]
 ```
 Plot
@@ -60,7 +72,8 @@ out$lv = if_else(out$value < -2, -2,
 theme_set(theme_minimal() + theme(axis.title=element_text(size=9), axis.text=element_text(size=8), 
                                   legend.title=element_text(size=9), legend.text=element_text(size=8)))
 
-dset = ids[c(1:2,11:12)]
+#dset = ids[c(1:2,11:12)]
+dset = ids
 p_a = ggplot(data=out[SEQ_ID%in%dset],aes(x=id, y=abs(value), fill=lv, group=variable)) +
   geom_bar(stat = "identity",position = position_stack(reverse = TRUE), color="black", width=0.9) +
   scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0) +

@@ -6,7 +6,7 @@ output:
     highlight: tango
 ---
 
-```{r load_packages, message=F}
+```{r load_packages, message=F, include=T,error=F,warning=F}
 # Install and load required R packages
 library("dplyr")
 library("data.table")
@@ -41,16 +41,14 @@ data.table(time=temp.surv$time,strata=temp.surv$strata,survival=temp.surv$surv)
 
 p1 = ggsurvplot(survfit(Surv(time = pdt$yrs, event = pdt$evt) ~ trt, data=pdt),
            palette=cbPalette[c(6,1,7)],
-           pval=F,pval.method = F,
-           #risk.table = "percentage",tables.col = "strata",fontsize = 3,
-           tables.y.text=FALSE,
            conf.int = TRUE,
            break.x.by = 1, xlab = "years",
            ggtheme = theme_set(theme_classic() + 
                                  theme(axis.title=element_text(size=11),
                                        axis.text=element_text(size=9),
                                        panel.grid.major.x = element_line(
-                                         colour = "gray",linetype = 3))
+                                         colour = "gray",linetype = 3)
+                                 )
                                )
            )
 p1

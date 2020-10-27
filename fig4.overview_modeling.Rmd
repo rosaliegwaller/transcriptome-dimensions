@@ -6,7 +6,8 @@ output:
     highlight: tango
 ---
 
-```{r load_packages, message=F}
+Load packages
+```{r load_packages, message=F, include=T,error=F,warning=F}
 # Install and load required R packages
 library(dplyr)
 library(data.table)

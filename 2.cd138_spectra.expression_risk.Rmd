@@ -4,29 +4,34 @@ output:
   html_document:
     theme: united
     highlight: tango
-params:
-    data: "/Volumes/m238409/manuscripts/waller-camp/mm-rna-spectra/data"
 ---
 
-```{r load_packages, message=F, include=T}
+```{r load_packages, message=F, include=T,error=F}
 # Install and load required R packages
 library(dplyr)
 library(data.table)
 library(ggplot2)
 ```
 
+**!!! Define data directory !!!**
+```{r}
+data_dir = "/path/to/data" # exclude ending "/"
+```
+```{r, include=FALSE}
+# real data directory
+data_dir = "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/spectra.v2/data"
+```
+
 Load data
 ```{r}
 # read in normalized and combat adjusted expression data on baseline samples
-exp_cbat = read.csv(file = paste0(params$data,
+exp_cbat = read.csv(file = paste0(data_dir,
                                   "/baseline-expression-norm-combat.csv"))
 
 # read in spectra and clinical data, remove clinical data
-score_sd = read.csv(file = paste0(params$data,
+spectra = read.csv(file = paste0(data_dir,
                                   "/baseline-clinical-spectra-sd.csv")
                     ) %>% dplyr::select("SEQ_ID",starts_with("PC"))
-
-load(paste0(params$data,"/20200802_pipe_out.rdata"))
 ```
 
 ### 1. University of Arkansas UAMS-70 gene panel to classify patients as low or high risk for relapse
@@ -101,7 +106,7 @@ text(x=2.42,y=20,labels = "2.42")
 
 1.2. **LINEAR REGRESSION WITH SPECTRA**
 ```{r}
-dt.70 = merge(x,score_sd,by="SEQ_ID") # Merge PCs with computed UAMS risk score
+dt.70 = merge(x,spectra,by="SEQ_ID") # Merge PCs with computed UAMS risk score
 lm.70 = lm(data = dt.70[,-c("SEQ_ID","up","dw")], formula = score ~ .) # run linear regression with UAMS risk score as dependent variable
 summary(lm.70)
 
@@ -219,7 +224,7 @@ DAT$score = data.matrix(anno_17) %*%
 
 2.2. **LINEAR REGRESSION WITH SPECTRA**
 ```{r}
-dt.17 = data.table(merge(DAT[,c("SEQ_ID","score")],score_sd))
+dt.17 = data.table(merge(DAT[,c("SEQ_ID","score")],spectra))
 
 # run linear regression with risk score as dependent variable
 lm.17 = lm(data = dt.17[,-c("SEQ_ID")], formula = score ~ .) 

@@ -1,5 +1,5 @@
 ---
-title: "Myeloma spectra and disease course"
+title: "CD138+ spectra and disease course"
 output:
   html_document:
     theme: united
@@ -8,7 +8,20 @@ output:
 
 **Test for associations between spectrum and overall survival (OS) and time to first-line treatment failure (TTF) in the MMRF CoMMpass data.**
 
-```{r load_packages, message=F}
+
+#### 0. Setup
+
+!!! Define data directory !!!
+```{r}
+data_dir = "/path/to/data" # exclude ending "/"
+```
+```{r, include=FALSE}
+# real data directory
+data_dir = "/Users/rosal/OneDrive - University of Utah/2020/analyze/data/spectra.v2/data"
+```
+
+Load packages
+```{r load_packages, message=F, include=T,error=F,warning=F}
 # Install and load required R packages
 library(dplyr)
 library(data.table)
@@ -17,13 +30,13 @@ library(MASS)
 library(survivalAnalysis)
 ```
 
-#### 0. Load spectra (PC1-PC39) and clinical data
+Load spectra (PC1-PC39) and clinical data
 ```{r}
-dt.all = read.csv(file = "data/baseline-clinical-spectra-sd.csv")
+dt.all = read.csv(paste0(data_dir,"/baseline-clinical-spectra-sd.csv"))
 ```
 
 #### 1. Overall Surival (OS)
-```{r}
+```{r,warning=F}
 dt.os = dt.all %>% dplyr::select("SEQ_ID","ttcos","censos",starts_with("PC")) # subset
 dt.os$censos = as.integer(dt.os$censos) # set variable type
 os = analyse_multivariate(data = dt.os,
@@ -34,7 +47,7 @@ summary(os$coxph)$logtest
 
 # count spectrum in model with p < .05
 nsig = data.table(summary(os$coxph)$coeff[,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow()
-print(paste0(nsig," spectrum significant at p < .05"))
+print(paste0(nsig," spectra significant at p<.05"))
 ```
 
 #### 2. Time to first-line treatment failure (TTF)
@@ -49,7 +62,7 @@ summary(tf$coxph)$logtest
 
 # count spectrum in model with p < .05
 nsig = data.table(summary(tf$coxph)$coeff[,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow()
-print(paste0(nsig," spectrum significant at p < .05"))
+print(paste0(nsig," spectra significant at p<.05"))
 ```
 
 **Save model results**
