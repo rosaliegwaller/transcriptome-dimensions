@@ -433,7 +433,7 @@ summary {
 <p><strong>Test for associations between spectrum and overall survival (OS) and time to first-line treatment failure (TTF) in the MMRF CoMMpass data.</strong></p>
 <div id="setup" class="section level4">
 <h4>0. Setup</h4>
-<p>!!! Define data directory !!!</p>
+<p>Define data directory</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>data_dir =<span class="st"> &quot;/path/to/data&quot;</span> <span class="co"># exclude ending &quot;/&quot;</span></span></code></pre></div>
 <p>Load packages</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># Install and load required R packages</span></span>
@@ -447,12 +447,13 @@ summary {
 </div>
 <div id="overall-surival-os" class="section level4">
 <h4>1. Overall Surival (OS)</h4>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>dt.os =<span class="st"> </span>dt.all <span class="op">%&gt;%</span><span class="st"> </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;ttcos&quot;</span>,<span class="st">&quot;censos&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="co"># subset</span></span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>dt.os =<span class="st"> </span>dt.all <span class="op">%&gt;%</span><span class="st"> </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;ttcos&quot;</span>,<span class="st">&quot;censos&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>))</span>
 <span id="cb4-2"><a href="#cb4-2"></a>dt.os<span class="op">$</span>censos =<span class="st"> </span><span class="kw">as.integer</span>(dt.os<span class="op">$</span>censos) <span class="co"># set variable type</span></span>
 <span id="cb4-3"><a href="#cb4-3"></a>os =<span class="st"> </span><span class="kw">analyse_multivariate</span>(<span class="dt">data =</span> dt.os,</span>
 <span id="cb4-4"><a href="#cb4-4"></a>                           <span class="dt">time_status =</span> <span class="kw">vars</span>(ttcos,censos),</span>
-<span id="cb4-5"><a href="#cb4-5"></a>                           <span class="dt">covariates =</span> <span class="kw">colnames</span>(dplyr<span class="op">::</span><span class="kw">select</span>(dt.os,<span class="kw">ends_with</span>(<span class="st">&quot;_SD&quot;</span>))))</span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">summary</span>(os<span class="op">$</span>coxph)</span></code></pre></div>
+<span id="cb4-5"><a href="#cb4-5"></a>                           <span class="dt">covariates =</span> <span class="kw">colnames</span>(dplyr<span class="op">::</span><span class="kw">select</span>(dt.os,</span>
+<span id="cb4-6"><a href="#cb4-6"></a>                                                               <span class="kw">ends_with</span>(<span class="st">&quot;_SD&quot;</span>))))</span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="kw">summary</span>(os<span class="op">$</span>coxph)</span></code></pre></div>
 <pre><code>## Call:
 ## coxph(formula = Surv(ttcos, censos) ~ PC1_SD + PC2_SD + PC3_SD + 
 ##     PC4_SD + PC5_SD + PC6_SD + PC7_SD + PC8_SD + PC9_SD + PC10_SD + 
@@ -556,18 +557,20 @@ summary {
 <pre><code>##         test           df       pvalue 
 ## 1.638210e+02 3.900000e+01 3.089567e-17</code></pre>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co"># count spectrum in model with p &lt; .05</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(os<span class="op">$</span>coxph)<span class="op">$</span>coeff[,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
-<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; spectra significant at p&lt;.05&quot;</span>))</span></code></pre></div>
+<span id="cb8-2"><a href="#cb8-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(os<span class="op">$</span>coxph)<span class="op">$</span>coeff[,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; spectra significant at p&lt;.05&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;12 spectra significant at p&lt;.05&quot;</code></pre>
 </div>
 <div id="time-to-first-line-treatment-failure-ttf" class="section level4">
 <h4>2. Time to first-line treatment failure (TTF)</h4>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>dt.tf =<span class="st"> </span>dt.all <span class="op">%&gt;%</span><span class="st"> </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;ttctf1&quot;</span>,<span class="st">&quot;censtf1&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>)) <span class="co"># subset</span></span>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>dt.tf =<span class="st"> </span>dt.all <span class="op">%&gt;%</span><span class="st"> </span>dplyr<span class="op">::</span><span class="kw">select</span>(<span class="st">&quot;SEQ_ID&quot;</span>,<span class="st">&quot;ttctf1&quot;</span>,<span class="st">&quot;censtf1&quot;</span>,<span class="kw">starts_with</span>(<span class="st">&quot;PC&quot;</span>))</span>
 <span id="cb10-2"><a href="#cb10-2"></a>dt.tf<span class="op">$</span>censtf1 =<span class="st"> </span><span class="kw">as.integer</span>(dt.tf<span class="op">$</span>censtf1) <span class="co"># set variable type</span></span>
 <span id="cb10-3"><a href="#cb10-3"></a>tf &lt;-<span class="st"> </span><span class="kw">analyse_multivariate</span>(<span class="dt">data =</span> dt.tf,</span>
 <span id="cb10-4"><a href="#cb10-4"></a>                           <span class="dt">time_status =</span> <span class="kw">vars</span>(ttctf1,censtf1),</span>
-<span id="cb10-5"><a href="#cb10-5"></a>                           <span class="dt">covariates =</span> <span class="kw">colnames</span>(dplyr<span class="op">::</span><span class="kw">select</span>(dt.tf,<span class="kw">ends_with</span>(<span class="st">&quot;_SD&quot;</span>))))</span>
-<span id="cb10-6"><a href="#cb10-6"></a><span class="kw">summary</span>(tf<span class="op">$</span>coxph)</span></code></pre></div>
+<span id="cb10-5"><a href="#cb10-5"></a>                           <span class="dt">covariates =</span> <span class="kw">colnames</span>(dplyr<span class="op">::</span><span class="kw">select</span>(dt.tf,</span>
+<span id="cb10-6"><a href="#cb10-6"></a>                                                               <span class="kw">ends_with</span>(<span class="st">&quot;_SD&quot;</span>))))</span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="kw">summary</span>(tf<span class="op">$</span>coxph)</span></code></pre></div>
 <pre><code>## Call:
 ## coxph(formula = Surv(ttctf1, censtf1) ~ PC1_SD + PC2_SD + PC3_SD + 
 ##     PC4_SD + PC5_SD + PC6_SD + PC7_SD + PC8_SD + PC9_SD + PC10_SD + 
@@ -671,8 +674,9 @@ summary {
 <pre><code>##         test           df       pvalue 
 ## 1.177001e+02 3.900000e+01 7.916211e-10</code></pre>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="co"># count spectrum in model with p &lt; .05</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(tf<span class="op">$</span>coxph)<span class="op">$</span>coeff[,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
-<span id="cb14-3"><a href="#cb14-3"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; spectra significant at p&lt;.05&quot;</span>))</span></code></pre></div>
+<span id="cb14-2"><a href="#cb14-2"></a>nsig =<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">summary</span>(tf<span class="op">$</span>coxph)<span class="op">$</span>coeff[,<span class="st">&quot;Pr(&gt;|z|)&quot;</span>]) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="st">  </span><span class="kw">subset</span>(V1<span class="op">&lt;</span><span class="fl">0.05</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nrow</span>()</span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="kw">print</span>(<span class="kw">paste0</span>(nsig,<span class="st">&quot; spectra significant at p&lt;.05&quot;</span>))</span></code></pre></div>
 <pre><code>## [1] &quot;8 spectra significant at p&lt;.05&quot;</code></pre>
 <p><strong>Save model results</strong></p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">save</span>(tf,os,<span class="dt">file =</span> <span class="st">&quot;rdata/mod.disease-course.rdata&quot;</span>)</span></code></pre></div>

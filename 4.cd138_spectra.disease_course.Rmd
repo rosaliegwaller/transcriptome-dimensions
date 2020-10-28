@@ -1,6 +1,7 @@
 ---
 title: "CD138+ spectra and disease course"
 output:
+  pdf_document: default
   html_document:
     theme: united
     highlight: tango
@@ -11,7 +12,7 @@ output:
 
 #### 0. Setup
 
-!!! Define data directory !!!
+Define data directory
 ```{r}
 data_dir = "/path/to/data" # exclude ending "/"
 ```
@@ -37,31 +38,35 @@ dt.all = read.csv(paste0(data_dir,"/baseline-clinical-spectra-sd.csv"))
 
 #### 1. Overall Surival (OS)
 ```{r,warning=F}
-dt.os = dt.all %>% dplyr::select("SEQ_ID","ttcos","censos",starts_with("PC")) # subset
+dt.os = dt.all %>% dplyr::select("SEQ_ID","ttcos","censos",starts_with("PC"))
 dt.os$censos = as.integer(dt.os$censos) # set variable type
 os = analyse_multivariate(data = dt.os,
                            time_status = vars(ttcos,censos),
-                           covariates = colnames(dplyr::select(dt.os,ends_with("_SD"))))
+                           covariates = colnames(dplyr::select(dt.os,
+                                                               ends_with("_SD"))))
 summary(os$coxph)
 summary(os$coxph)$logtest
 
 # count spectrum in model with p < .05
-nsig = data.table(summary(os$coxph)$coeff[,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow()
+nsig = data.table(summary(os$coxph)$coeff[,"Pr(>|z|)"]) %>% 
+  subset(V1<0.05) %>% nrow()
 print(paste0(nsig," spectra significant at p<.05"))
 ```
 
 #### 2. Time to first-line treatment failure (TTF)
 ```{r}
-dt.tf = dt.all %>% dplyr::select("SEQ_ID","ttctf1","censtf1",starts_with("PC")) # subset
+dt.tf = dt.all %>% dplyr::select("SEQ_ID","ttctf1","censtf1",starts_with("PC"))
 dt.tf$censtf1 = as.integer(dt.tf$censtf1) # set variable type
 tf <- analyse_multivariate(data = dt.tf,
                            time_status = vars(ttctf1,censtf1),
-                           covariates = colnames(dplyr::select(dt.tf,ends_with("_SD"))))
+                           covariates = colnames(dplyr::select(dt.tf,
+                                                               ends_with("_SD"))))
 summary(tf$coxph)
 summary(tf$coxph)$logtest
 
 # count spectrum in model with p < .05
-nsig = data.table(summary(tf$coxph)$coeff[,"Pr(>|z|)"]) %>% subset(V1<0.05) %>% nrow()
+nsig = data.table(summary(tf$coxph)$coeff[,"Pr(>|z|)"]) %>% 
+  subset(V1<0.05) %>% nrow()
 print(paste0(nsig," spectra significant at p<.05"))
 ```
 

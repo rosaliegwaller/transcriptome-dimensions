@@ -1,6 +1,9 @@
 ---
 title: "CD138+ spectra and clinical risk"
+author: "Rosalie Griffin Waller"
+date: "27-OCT-2020"
 output:
+  pdf_document: default
   html_document:
     theme: united
     highlight: tango
@@ -72,9 +75,12 @@ mod.risk$d17p$p
 
 Run model with significant spectra only
 ```{r}
-md2 = glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR11 ~ PC3_SD + PC6_SD + PC39_SD, family = "binomial")
+md2 = glm(data = DAT, 
+          formula = D_TRI_CF_ABNORMALITYPR11 ~ PC3_SD + PC6_SD + PC39_SD, 
+          family = "binomial")
 summary(md2)
-pchisq(deviance(NLL)-deviance(md2),df.residual(NLL)-df.residual(md2),lower.tail=FALSE)
+pchisq(deviance(NLL)-deviance(md2),
+       df.residual(NLL)-df.residual(md2),lower.tail=FALSE)
 ```
 
 1.2. t(14;16): D_TRI_CF_ABNORMALITYPR8 & D_TRI_CF_T1416ABNORMAL (abundance)
@@ -91,7 +97,7 @@ print(paste("Baseline samples with data:",nrow(DAT),"(total),",
 DAT$D_TRI_CF_ABNORMALITYPR8 = as.factor(DAT$D_TRI_CF_ABNORMALITYPR8)
 
 # Logistic regression
-MOD <- glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR8 ~ ., family = "binomial")
+MOD <- glm(data = DAT,formula = D_TRI_CF_ABNORMALITYPR8 ~ .,family = "binomial")
 summary(MOD)
 
 # Count sig spectra in model
@@ -103,7 +109,7 @@ print(paste0(nsig," of 39 spectra significant (p<.05)"))
 mod.risk = c(mod.risk,list(t1416=MOD))
 
 # Overall p-value
-NLL = glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR8 ~ 1, family = "binomial")
+NLL = glm(data = DAT,formula = D_TRI_CF_ABNORMALITYPR8 ~ 1,family = "binomial")
 
 mod.risk$t1416$p = pchisq(deviance(NLL)-deviance(MOD),
                          df.residual(NLL)-df.residual(MOD),
@@ -125,7 +131,7 @@ print(paste("Baseline samples with data:",nrow(DAT),"(total),",
 DAT$D_TRI_CF_ABNORMALITYPR13 = as.factor(DAT$D_TRI_CF_ABNORMALITYPR13)
 
 # Logistic regression
-MOD <- glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR13 ~ ., family = "binomial")
+MOD <- glm(data = DAT,formula = D_TRI_CF_ABNORMALITYPR13 ~ .,family = "binomial")
 summary(MOD)
 
 # Count sig spectra in model
@@ -137,7 +143,7 @@ print(paste0(nsig," of 39 spectra significant (p<.05)"))
 mod.risk = c(mod.risk,list(a1q=MOD))
 
 # Overall p-value
-NLL = glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR13 ~ 1, family = "binomial")
+NLL = glm(data = DAT,formula = D_TRI_CF_ABNORMALITYPR13 ~ 1,family = "binomial")
 
 mod.risk$a1q$p = pchisq(deviance(NLL)-deviance(MOD),
                          df.residual(NLL)-df.residual(MOD),
@@ -159,7 +165,7 @@ print(paste("Baseline samples with data:",nrow(DAT),"(total),",
 DAT$D_TRI_CF_ABNORMALITYPR3 = as.factor(DAT$D_TRI_CF_ABNORMALITYPR3)
 
 # Logistic regression
-MOD <- glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR3 ~ ., family = "binomial")
+MOD <- glm(data = DAT,formula = D_TRI_CF_ABNORMALITYPR3 ~ .,family = "binomial")
 summary(MOD)
 
 # Count sig spectra in model
@@ -171,7 +177,7 @@ print(paste0(nsig," of 39 spectra significant (p<.05)"))
 mod.risk = c(mod.risk,list(t414=MOD))
 
 # Overall p-value
-NLL = glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR3 ~ 1, family = "binomial")
+NLL = glm(data = DAT,formula = D_TRI_CF_ABNORMALITYPR3 ~ 1,family = "binomial")
 
 mod.risk$t414$p = pchisq(deviance(NLL)-deviance(MOD),
                          df.residual(NLL)-df.residual(MOD),
@@ -192,7 +198,7 @@ print(paste("Baseline samples with data:",nrow(DAT),"(total),",
 DAT$D_TRI_CF_ABNORMALITYPR6 = as.factor(DAT$D_TRI_CF_ABNORMALITYPR6)
 
 # Logistic regression
-MOD <- glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR6 ~ ., family = "binomial")
+MOD <- glm(data = DAT,formula = D_TRI_CF_ABNORMALITYPR6 ~ .,family = "binomial")
 summary(MOD)
 
 # Count sig spectra in model
@@ -204,7 +210,7 @@ print(paste0(nsig," of 39 spectra significant (p<.05)"))
 mod.risk = c(mod.risk,list(t1114=MOD))
 
 # Overall p-value
-NLL = glm(data = DAT, formula = D_TRI_CF_ABNORMALITYPR6 ~ 1, family = "binomial")
+NLL = glm(data = DAT,formula = D_TRI_CF_ABNORMALITYPR6 ~ 1,family = "binomial")
 
 mod.risk$t1114$p = pchisq(deviance(NLL)-deviance(MOD),
                          df.residual(NLL)-df.residual(MOD),

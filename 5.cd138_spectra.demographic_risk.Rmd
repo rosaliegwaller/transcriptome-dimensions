@@ -1,6 +1,7 @@
 ---
 title: "CD138+ spectra and demographic risk groups"
 output:
+  pdf_document: default
   html_document:
     theme: united
     highlight: tango
@@ -9,7 +10,7 @@ output:
 
 ### 0. Setup
 
-!!! Define data directory !!!
+Define data directory
 ```{r}
 data_dir = "/path/to/data" # exclude ending "/"
 ```
