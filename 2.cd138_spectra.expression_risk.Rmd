@@ -10,6 +10,8 @@ output: pdf_document
 library(dplyr)
 library(data.table)
 library(ggplot2)
+library("survival")
+library("survminer")
 ```
 
 Define data directory
@@ -31,6 +33,8 @@ exp_cbat = read.csv(file = paste0(data_dir,
 spectra = read.csv(file = paste0(data_dir,
                                   "/baseline-clinical-spectra-sd.csv")
                     ) %>% dplyr::select("SEQ_ID",starts_with("PC"))
+
+dt.all = read.csv(paste0(data_dir,"/baseline-clinical-spectra-sd.csv"))
 ```
 
 ### 1. University of Arkansas UAMS-70 gene panel to classify patients as low or high risk for relapse
@@ -163,6 +167,319 @@ NLL = glm(data = dt.70[,-c("SEQ_ID","up","dw","score")], formula = bin ~ 1, fami
 pchisq(deviance(NLL)-deviance(glm.70),
                          df.residual(NLL)-df.residual(glm.70),
                          lower.tail=FALSE)
+```
+
+1.3.1 **High v low Survival Kaplan-Meier curves**
+```{r}
+pdt = merge(dt.70[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttcos","censos")])
+pdt$yrs = pdt$ttcos/365
+
+fit = survfit(Surv(time = pdt$yrs, event = pdt$censos) ~ bin, data=pdt)
+temp.surv = summary(fit,times=c(1,3,5))
+data.table(time=temp.surv$time,strata=temp.surv$strata,survival=temp.surv$surv)
+
+p1 = ggsurvplot(survfit(Surv(time = pdt$yrs, event = pdt$censos) ~ bin, data=pdt),
+           conf.int = TRUE,
+           break.x.by = 1, xlab = "years",
+           ggtheme = theme_set(theme_classic() + 
+                                 theme(axis.title=element_text(size=11),
+                                       axis.text=element_text(size=9),
+                                       panel.grid.major.x = element_line(
+                                         colour = "gray",linetype = 3)
+                                 )
+                               )
+           )
+p1
+
+survdiff(formula = Surv(time = pdt$ttcos, event = pdt$censos) ~ bin, data=pdt)
+```
+UAMS High/Low and TTF
+```{r}
+pdt = merge(dt.70[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttctf1","censtf1")])
+pdt$yrs = pdt$ttctf1/365
+
+fit = survfit(Surv(time = pdt$yrs, event = pdt$censtf1) ~ bin, data=pdt)
+temp.surv = summary(fit,times=c(1,3,5))
+data.table(time=temp.surv$time,strata=temp.surv$strata,survival=temp.surv$surv)
+
+p1 = ggsurvplot(survfit(Surv(time = pdt$yrs, event = pdt$censtf1) ~ bin, data=pdt),
+           conf.int = TRUE,
+           break.x.by = 1, xlab = "years",
+           ggtheme = theme_set(theme_classic() + 
+                                 theme(axis.title=element_text(size=11),
+                                       axis.text=element_text(size=9),
+                                       panel.grid.major.x = element_line(
+                                         colour = "gray",linetype = 3)
+                                 )
+                               )
+           )
+p1
+
+survdiff(formula = Surv(time = pdt$ttctf1, event = pdt$censtf1) ~ bin, data=pdt)
+```
+
+**OS at 1 year**
+```{r}
+dat = merge(dt.70[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttcos","censos")])
+dat$category = if_else(dat$ttcos<=365 & dat$censos==1,"dead",
+                       if_else(dat$ttcos>365,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censos==1) %>% group_by(bin) %>% 
+  count(censos,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+#cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("UAMS high/low OS HR at 1 year = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
+```
+**OS at 3 years**
+```{r}
+dat = merge(dt.70[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttcos","censos")])
+dat$category = if_else(dat$ttcos<=365*3 & dat$censos==1,"dead",
+                       if_else(dat$ttcos>365*3,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censos==1) %>% group_by(bin) %>% 
+  count(censos,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+#cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("UAMS high/low OS HR at 3 years = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
+```
+**OS at 5 years**
+```{r}
+dat = merge(dt.70[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttcos","censos")])
+dat$category = if_else(dat$ttcos<=365*5 & dat$censos==1,"dead",
+                       if_else(dat$ttcos>365*5,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censos==1) %>% group_by(bin) %>% 
+  count(censos,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+#cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("UAMS high/low OS HR at 5 years = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
+```
+
+
+**TTF at 1 year**
+```{r}
+dat = merge(dt.70[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttctf1","censtf1")])
+dat$category = if_else(dat$ttctf1<=365 & dat$censtf1==1,"dead",
+                       if_else(dat$ttctf1>365,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censtf1==1) %>% group_by(bin) %>% 
+  count(censtf1,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+#cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("UAMS high/low TTF HR at 1 year = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
+```
+
+**TTF at 3 years**
+```{r}
+dat = merge(dt.70[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttctf1","censtf1")])
+dat$category = if_else(dat$ttctf1<=365*3 & dat$censtf1==1,"dead",
+                       if_else(dat$ttctf1>365*3,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censtf1==1) %>% group_by(bin) %>% 
+  count(censtf1,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("UMAS high/low TTF HR at 3 years = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
+```
+
+
+**TTF at 5 years**
+```{r}
+dat = merge(dt.70[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttctf1","censtf1")])
+dat$category = if_else(dat$ttctf1<=365*5 & dat$censtf1==1,"dead",
+                       if_else(dat$ttctf1>365*5,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censtf1==1) %>% group_by(bin) %>% 
+  count(censtf1,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("UMAS high/low TTF HR at 5 years = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
 ```
 
 1.4. **PLOT**
@@ -320,6 +637,230 @@ w <- ggplot(actual_preds,aes(y=predicted-high.cut,x=1:nrow(actual_preds),fill=bi
         axis.text = element_blank(), axis.ticks = element_blank())
 w
 ggsave(filename = "plots/SBUK-17_waterfall.pdf",plot = w,width=3.75,height=2)
+```
+
+1.3.1 **High v low Survival Kaplan-Meier curves**
+```{r}
+pdt = merge(actual_preds[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttcos","censos")])
+pdt$yrs = pdt$ttcos/365
+
+fit = survfit(Surv(time = pdt$yrs, event = pdt$censos) ~ bin, data=pdt)
+temp.surv = summary(fit,times=c(1,3,5))
+data.table(time=temp.surv$time,strata=temp.surv$strata,survival=temp.surv$surv)
+
+p1 = ggsurvplot(survfit(Surv(time = pdt$yrs, event = pdt$censos) ~ bin, data=pdt),
+           conf.int = TRUE,
+           break.x.by = 1, xlab = "years",
+           ggtheme = theme_set(theme_classic() + 
+                                 theme(axis.title=element_text(size=11),
+                                       axis.text=element_text(size=9),
+                                       panel.grid.major.x = element_line(
+                                         colour = "gray",linetype = 3)
+                                 )
+                               )
+           )
+p1
+
+survdiff(formula = Surv(time = pdt$ttcos, event = pdt$censos) ~ bin, data=pdt)
+```
+High/Low and TTF
+```{r}
+pdt = merge(actual_preds[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttctf1","censtf1")])
+pdt$yrs = pdt$ttctf1/365
+
+fit = survfit(Surv(time = pdt$yrs, event = pdt$censtf1) ~ bin, data=pdt)
+temp.surv = summary(fit,times=c(1,3,5))
+data.table(time=temp.surv$time,strata=temp.surv$strata,survival=temp.surv$surv)
+
+p1 = ggsurvplot(survfit(Surv(time = pdt$yrs, event = pdt$censtf1) ~ bin, data=pdt),
+           conf.int = TRUE,
+           break.x.by = 1, xlab = "years",
+           ggtheme = theme_set(theme_classic() + 
+                                 theme(axis.title=element_text(size=11),
+                                       axis.text=element_text(size=9),
+                                       panel.grid.major.x = element_line(
+                                         colour = "gray",linetype = 3)
+                                 )
+                               )
+           )
+p1
+
+survdiff(formula = Surv(time = pdt$ttctf1, event = pdt$censtf1) ~ bin, data=pdt)
+```
+
+**OS at 1 year**
+```{r}
+dat = merge(actual_preds[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttcos","censos")])
+dat$category = if_else(dat$ttcos<=365 & dat$censos==1,"dead",
+                       if_else(dat$ttcos>365,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censos==1) %>% group_by(bin) %>% 
+  count(censos,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+#cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("SBUK high/low OS HR at 1 year = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
+```
+**OS at 3 years**
+```{r}
+dat = merge(actual_preds[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttcos","censos")])
+dat$category = if_else(dat$ttcos<=365*3 & dat$censos==1,"dead",
+                       if_else(dat$ttcos>365*3,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censos==1) %>% group_by(bin) %>% 
+  count(censos,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+#cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("SBUK high/low OS HR at 3 years = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
+```
+
+**TTF at 1 year**
+```{r}
+dat = merge(actual_preds[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttctf1","censtf1")])
+dat$category = if_else(dat$ttctf1<=365 & dat$censtf1==1,"dead",
+                       if_else(dat$ttctf1>365,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censtf1==1) %>% group_by(bin) %>% 
+  count(censtf1,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+#cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("SBUK high/low TTF HR at 1 year = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
+```
+
+**TTF at 3 years**
+```{r}
+dat = merge(actual_preds[,c("SEQ_ID","bin")],dt.all[,c("SEQ_ID","ttctf1","censtf1")])
+dat$category = if_else(dat$ttctf1<=365*3 & dat$censtf1==1,"dead",
+                       if_else(dat$ttctf1>365*3,"alive","censored")) 
+
+# number of events
+evts = dat %>% filter(censtf1==1) %>% group_by(bin) %>% 
+  count(censtf1,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(bin) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(bin) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(bin) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="bin",all = T)
+              ,by="bin",all=T)
+        ,by="bin",all=T)
+)[,c("bin","events","n.dead","n.alive","n.censored")]
+cnt
+
+
+a = cnt[bin%in%"high",n.dead]
+b = cnt[bin%in%"high",n.alive]
+c = sum(cnt[bin%in%"low",n.dead])
+d = sum(cnt[bin%in%"low",n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0("SBUK high/low TTF HR at 3 years = ",
+       round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
 ```
 
 **Save model results**

@@ -253,12 +253,49 @@ unique(round(os$coxph$linear.predictors,12) == round(psl,12))
 trl = cut(psl,quantile(psl,c(0,1/3,2/3,1)),
           include.lowest = T,labels = F)
 dat = data.table(os$data[,c(1:2)],psl=psl,tertile=trl)
+
+dat$grp = if_else(dat$tertile==3,1,0) %>% as.factor()
 ```
 
 **OS at X years**
 ```{r}
-dat$category = if_else(dat$ttcos<=324 & dat$censos==1,"dead",
-                       if_else(dat$ttcos>324,"alive","censored")) 
+dat$category = if_else(dat$ttcos<=365*1 & dat$censos==1,"dead",
+                       if_else(dat$ttcos>365*1,"alive","censored")) 
+# number of events
+evts = dat %>% filter(censos==1) %>% group_by(grp) %>% 
+  count(censos,name="events")  
+
+# count number in each category
+dead = dat %>% filter(category=="dead") %>% group_by(grp) %>% 
+  count(category,name = "n.dead")
+aliv = dat %>% filter(category=="alive") %>% group_by(grp) %>% 
+  count(category,name = "n.alive")
+cens = dat %>% filter(category=="censored") %>% group_by(grp) %>% 
+  count(category,name="n.censored")
+cnt = data.table(
+  merge(evts,
+        merge(dead,
+              merge(aliv,cens,by="grp",all = T)
+              ,by="grp",all=T)
+        ,by="grp",all=T)
+)[,c("grp","events","n.dead","n.alive","n.censored")]
+cnt
+
+# calculate hazard ratio
+a = cnt[grp%in%c(1),n.dead]
+b = cnt[grp%in%c(1),n.alive]
+c = sum(cnt[grp%in%c(0),n.dead])
+d = sum(cnt[grp%in%c(0),n.alive])
+
+hr = (a/b)/(c/d)
+se = sqrt((1/a)+(1/b)+(1/c)+(1/d))
+cil = exp(log(hr)-1.96*se)
+ciu = exp(log(hr)+1.96*se)
+
+paste0(round(hr,digits = 2)," (",
+       round(cil,digits = 2),"-",
+       round(ciu,digits = 2),")")
+
 ```
 
 Summarize counts by tertile at X years
