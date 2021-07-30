@@ -1,0 +1,369 @@
+---
+title: "Spectra descriptive models"
+author: "Rosalie Griffin Waller, PhD"
+output:
+  html_document:
+    df_print: paged
+---
+
+Notebook to describe spectra variation by associations with demographic and tumor characteristics.
+
+## Setup code
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/path/to/data/dir/")
+
+library(tidyverse)
+library(data.table)
+library(cowplot)
+
+color.codes = c("#648FFF","#785EF0","#DC267F","#FE6100","#FFB000")
+```
+
+## Load data
+```{r}
+# Baseline spectra
+spectra = read.csv(file = "data/commpass_spectra_baseline_os_20210601.csv") %>% data.table()
+spectra[,SPECTRUM_SEQ:=tstrsplit(sample_id,'_BM')[1]]
+spectra[,patient_id:=tstrsplit(sample_id,'_')[2]]
+
+# Per-patient visit data
+per_vis = read.csv(file = "data/MMRF_CoMMpass_IA14_PER_PATIENT_VISIT.csv") %>% data.table()
+
+# Per-patient data
+per_pat = read.csv(file = "data/MMRF_CoMMpass_IA15_PER_PATIENT.csv") %>% data.table()
+per_pat[,patient_id:=tstrsplit(PUBLIC_ID,'_')[2]]
+```
+
+## Select variables and merge data
+```{r}
+sp_vis = merge(spectra,per_vis,by = "SPECTRUM_SEQ")
+
+sp_vis$`del(17p)` = as.factor(sp_vis$D_TRI_CF_ABNORMALITYPR11)
+sp_vis$`del(17p)`[sp_vis$`del(17p)`==""] <- NA
+sp_vis$`del(17p)`[sp_vis$`del(17p)`=="Not Done"] <- NA
+sp_vis$`t(14;16)` = as.factor(sp_vis$D_TRI_CF_ABNORMALITYPR8)
+sp_vis$`t(14;16)`[sp_vis$`t(14;16)`==""] <- NA
+sp_vis$`t(14;16)`[sp_vis$`t(14;16)`=="Not Done"] <- NA
+sp_vis$`amp(1q)` = as.factor(sp_vis$D_TRI_CF_ABNORMALITYPR13)
+sp_vis$`amp(1q)`[sp_vis$`amp(1q)`==""] <- NA
+sp_vis$`amp(1q)`[sp_vis$`amp(1q)`=="Not Done"] <- NA
+sp_vis$`t(4;14)` = as.factor(sp_vis$D_TRI_CF_ABNORMALITYPR3)
+sp_vis$`t(4;14)`[sp_vis$`t(4;14)`==""] <- NA
+sp_vis$`t(4;14)`[sp_vis$`t(4;14)`=="Not Done"] <- NA
+sp_vis$`t(11;14)` = as.factor(sp_vis$D_TRI_CF_ABNORMALITYPR6)
+sp_vis$`t(11;14)`[sp_vis$`t(11;14)`==""] <- NA
+sp_vis$`t(11;14)`[sp_vis$`t(11;14)`=="Not Done"] <- NA
+
+dat = sp_vis %>% select("sample_id","patient_id","del(17p)","t(14;16)","amp(1q)","t(4;14)","t(11;14)",starts_with("Sp")) %>% droplevels()
+
+sp_vis_pat = merge(dat,per_pat,by = "patient_id")
+
+sp_vis_pat$age = sp_vis_pat$D_PT_age
+sp_vis_pat$gender = as.factor(sp_vis_pat$D_PT_gender)
+sp_vis_pat$race = as.factor(sp_vis_pat$D_PT_race)
+sp_vis_pat$race[sp_vis_pat$race=="4"] <- NA
+sp_vis_pat$race[sp_vis_pat$race=="6"] <- NA
+
+sp_vis_pat %>% select("age","gender","race") %>% summary()
+
+DAT = sp_vis_pat %>% select("sample_id","age","gender","race","del(17p)","t(14;16)","amp(1q)","t(4;14)","t(11;14)",starts_with("Sp"),-"SPECTRUM_SEQ") %>% droplevels()
+
+rm(sp_vis,sp_vis_pat,dat)
+```
+
+## Generate summary table
+```{r}
+spectra = 1:39 # number of spectra analyzed in each model
+
+smd = data.table("beta"=as.numeric(),
+                "pval"=as.numeric(),
+                "y"=as.character(),
+                "spectra"=as.numeric(),
+                "md_pval"=as.numeric())
+```
+
+## Age at diagnosis
+```{r}
+mini.dat = DAT %>% select("age",starts_with("Sp"))
+
+lm.age = lm(data = mini.dat,formula = age ~ .)
+summary(lm.age)
+
+md = lm.age
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "Age"
+tb$spectra = spectra
+
+# overall p-value
+fval = summary(lm.age)$fstatistic[1]
+df_1 = summary(lm.age)$fstatistic[2]
+df_2 = summary(lm.age)$fstatistic[3]
+tb$md_pval = pf(fval,df_1,df_2,lower.tail = FALSE)
+
+smd = rbind(smd,tb)
+rm(tb)
+```
+
+## Gender
+```{r}
+mini.dat = DAT %>% select("gender",starts_with("Sp"))
+
+glm.gender = glm(data = mini.dat,formula = gender ~ .,family = "binomial")
+summary(glm.gender)
+
+md = glm.gender
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "Gender"
+tb$spectra = spectra
+
+# overall p-value
+NLL = glm(data = mini.dat, formula = gender ~ 1, family = "binomial")
+tb$md_pval = pchisq(deviance(NLL)-deviance(glm.gender),
+                    df.residual(NLL)-df.residual(glm.gender),
+                    lower.tail = FALSE)
+
+smd = rbind(smd,tb)
+rm(tb)
+```
+
+## Self reported race
+```{r}
+mini.dat = DAT %>% select("race",starts_with("Sp"))
+
+glm.race = glm(data = mini.dat,formula = race ~ .,family = "binomial")
+summary(glm.race)
+
+md = glm.race
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "Race"
+tb$spectra = spectra
+
+# overall p-value
+NLL = glm(data = mini.dat, formula = race ~ 1, family = "binomial")
+tb$md_pval = pchisq(deviance(NLL)-deviance(glm.race),
+                    df.residual(NLL)-df.residual(glm.race),
+                    lower.tail = FALSE)
+
+smd = rbind(smd,tb)
+rm(tb)
+```
+
+## del(17p)
+```{r}
+mini.dat = DAT %>% select("del(17p)",starts_with("Sp"))
+
+glm.del17p = glm(data = mini.dat,formula = `del(17p)` ~ .,family = "binomial")
+summary(glm.del17p)
+
+md = glm.del17p
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "del(17p)"
+tb$spectra = spectra
+
+# overall p-value
+NLL = glm(data = mini.dat, formula = `del(17p)` ~ 1, family = "binomial")
+tb$md_pval = pchisq(deviance(NLL)-deviance(glm.del17p),
+                    df.residual(NLL)-df.residual(glm.del17p),
+                    lower.tail = FALSE)
+
+smd = rbind(smd,tb)
+rm(tb)
+```
+
+## t(14;16)
+```{r}
+mini.dat = DAT %>% select("t(14;16)",starts_with("Sp"))
+
+glm.t1416 = glm(data = mini.dat,formula = `t(14;16)` ~ .,family = "binomial")
+summary(glm.t1416)
+
+md = glm.t1416
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "t(14;16)"
+tb$spectra = spectra
+
+# overall p-value
+NLL = glm(data = mini.dat, formula = `t(14;16)` ~ 1, family = "binomial")
+tb$md_pval = pchisq(deviance(NLL)-deviance(glm.t1416),
+                    df.residual(NLL)-df.residual(glm.t1416),
+                    lower.tail = FALSE)
+
+smd = rbind(smd,tb)
+rm(tb)
+```
+
+## amp(1q)
+```{r}
+mini.dat = DAT %>% select("amp(1q)",starts_with("Sp"))
+
+glm.a1q = glm(data = mini.dat,formula = `amp(1q)` ~ .,family = "binomial")
+summary(glm.a1q)
+
+md = glm.a1q
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "amp(1q)"
+tb$spectra = spectra
+
+# overall p-value
+NLL = glm(data = mini.dat, formula = `amp(1q)` ~ 1, family = "binomial")
+tb$md_pval = pchisq(deviance(NLL)-deviance(glm.a1q),
+                    df.residual(NLL)-df.residual(glm.a1q),
+                    lower.tail = FALSE)
+
+smd = rbind(smd,tb)
+rm(tb)
+```
+
+## t(4;14)
+```{r}
+mini.dat = DAT %>% select("t(4;14)",starts_with("Sp"))
+
+glm.t414 = glm(data = mini.dat,formula = `t(4;14)` ~ .,family = "binomial")
+summary(glm.t414)
+
+md = glm.t414
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "t(4;14)"
+tb$spectra = spectra
+
+# overall p-value
+NLL = glm(data = mini.dat, formula = `t(4;14)` ~ 1, family = "binomial")
+tb$md_pval = pchisq(deviance(NLL)-deviance(glm.t414),
+                    df.residual(NLL)-df.residual(glm.t414),
+                    lower.tail = FALSE)
+
+smd = rbind(smd,tb)
+rm(tb)
+```
+
+## t(11;14)
+```{r}
+mini.dat = DAT %>% select("t(11;14)",starts_with("Sp"))
+
+glm.t1114 = glm(data = mini.dat,formula = `t(11;14)` ~ .,family = "binomial")
+summary(glm.t1114)
+
+md = glm.t1114
+beta = coef(md)[-1]
+pval = coef(summary(md))[-1,4]
+tb = as.data.table(cbind(beta,pval))
+tb$y = "t(11;14)"
+tb$spectra = spectra
+
+# overall p-value
+NLL = glm(data = mini.dat, formula = `t(11;14)` ~ 1, family = "binomial")
+tb$md_pval = pchisq(deviance(NLL)-deviance(glm.t1114),
+                    df.residual(NLL)-df.residual(glm.t1114),
+                    lower.tail = FALSE)
+
+smd = rbind(smd,tb)
+rm(tb)
+```
+
+## Tidy summary table
+```{r}
+df <- as.data.frame(smd)
+df$sig = as.factor(if_else(df$pval<0.05,1,0))
+
+df$sig_level = if_else(df$pval<0.05 & df$pval>0.01,1,
+                       if_else(df$pval<0.01 & df$pval>0.001,2,
+                               if_else(df$pval<0.001 & df$pval>0.0001,3,
+                                       if_else(df$pval<0.0001 & df$pval>0.00001,4,
+                                               if_else(df$pval<0.00001 & df$pval>0.000001,5,
+                                                       if_else(df$pval<0.000001,6,0))))))
+df$dir = if_else(df$beta<0,-1,1)
+
+df$dir_sig_level = df$dir * df$sig_level
+
+ordr <- c("Age","Gender","Race",
+          "t(11;14)","t(4;14)","amp(1q)","t(14;16)","del(17p)")
+ordr2 <- c("del(17p)","t(14;16)","amp(1q)","t(4;14)","t(11;14)",
+           "Race","Gender","Age")
+df$y <- factor(df$y,levels = ordr2)
+df[df$sig==0,] <- NA 
+pldt <- droplevels(na.omit(df))
+
+# reformat overall-pvalue
+pldt$mdp2 = formatC(x = pldt$md_pval,digits = 2,format = "G",flag = "#")
+#pldt$mdp3 = gsub("E","x10",pldt$mdp2)
+pldt$mdp3 = gsub("E","x10^",pldt$mdp2)
+pval_format = str_split(string = pldt$mdp3,pattern = "\\^",simplify = TRUE) 
+pldt$mdp4 = paste0(pval_format[,1],'<sup>',as.numeric(pval_format[,2]),"</sup>")
+pldt$mdp5 = gsub("<sup>NA</sup>","",pldt$mdp4)
+
+summary(pldt)
+```
+
+## Plot
+```{r}
+library(cowplot)
+library(ggtext)
+
+ordA1 <- c("Age")
+allcomb_plA1 <- pldt %>% filter(y %in% ordA1) 
+allcomb_plA1$y.level <- factor(allcomb_plA1$y, levels=ordA1)
+plotA1 <- ggplot(allcomb_plA1) + 
+  geom_point(aes(spectra, y.level, fill = beta, color = as.factor(dir)), 
+             size = 4, stroke = 1, shape = 21, show.legend = FALSE) + 
+  scale_fill_gradient2(low="#2CA02CFF",mid="white",high="#9467BDFF",midpoint=0,na.value="#0072B2") +
+  #scale_fill_manual(values=c("#2CA02CFF","#9467BDFF")) +
+  scale_color_manual(values=c("#2CA02CFF","#9467BDFF")) +
+  scale_x_continuous(expand = c(0,0), limits = c(0,43), breaks=seq(1,39,1)) +
+  theme_minimal() + ylab("") + theme(panel.grid.minor = element_blank()) + 
+  theme(axis.title.x=element_blank(),axis.text.x=element_blank(),
+        axis.text.y=element_text(face = "bold"),axis.ticks.x=element_blank()) + 
+  geom_richtext(aes(y = y.level, label = mdp5),x = 41.5, size = 3,label.color = NA)
+
+ordA <- rev(c("Gender","Race"))
+allcomb_plA <- pldt %>% filter(y %in% ordA) 
+allcomb_plA$y.level <- factor(allcomb_plA$y, levels=ordA)
+plotA <- ggplot(allcomb_plA) + 
+  geom_point(aes(spectra, y.level, fill = beta, color = as.factor(dir)),
+             size = 4, stroke = 1, shape = 21, show.legend = FALSE) + 
+  scale_fill_gradient2(low="#2CA02CFF",mid="white",high="#9467BDFF",midpoint=0,na.value="#0072B2") +
+  #scale_fill_manual(values=c("#2CA02CFF","#9467BDFF")) +
+  scale_color_manual(values=c("#2CA02CFF","#9467BDFF")) +
+  scale_x_continuous(expand = c(0,0), limits = c(0,43), breaks=seq(1,39,1)) +
+  theme_minimal() + ylab("") + theme(panel.grid.minor = element_blank()) + 
+  theme(axis.title.x=element_blank(),axis.text.x=element_blank(),
+        axis.text.y=element_text(face = "bold"),axis.ticks.x=element_blank()) + 
+  geom_richtext(aes(y = y.level, label = mdp5),x = 41.5, size = 3,label.color = NA)
+
+ordB <- c("del(17p)","t(14;16)","amp(1q)","t(4;14)","t(11;14)")
+allcomb_plB <- pldt %>% filter(y %in% ordB) 
+allcomb_plB$y.level <- factor(allcomb_plB$y, levels=ordB)
+
+
+plotB <- ggplot(allcomb_plB) + 
+  geom_point(aes(spectra, y.level, fill = beta, color = as.factor(dir)),
+             size = 4, stroke = 1, shape = 21, show.legend = FALSE) + 
+  scale_fill_gradient2(low="#2CA02CFF",mid="white",high="#9467BDFF",midpoint=0,na.value="#0072B2") +
+  #scale_fill_manual(values=c("#2CA02CFF","#9467BDFF")) +
+  scale_color_manual(values=c("#2CA02CFF","#9467BDFF")) +
+  scale_x_continuous(expand = c(0,0), limits = c(0,43), breaks=seq(1,39,1)) +
+  theme_minimal() + ylab("") + theme(panel.grid.minor = element_blank()) + 
+  theme(axis.text.y=element_text(face = "bold"),axis.text.x=element_text(size = 8)) + 
+  geom_richtext(aes(y = y.level, label = mdp5),x = 41.5, size = 3,label.color = NA)
+
+plotAB = plot_grid(plotA1, plotA, plotB, nrow=3, rel_heights=c(1,2,6), 
+                   align = "v", labels=c("A","","B"), label_size = 10)
+plotAB
+
+ggsave(filename = "Figure_7_descriptive.png", plot = plotAB, width=8,height=5)
+```
+

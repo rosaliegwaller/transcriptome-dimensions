@@ -1,0 +1,168 @@
+---
+title: "Spectra in follow-up samples"
+author: "Rosalie Griffin Waller, PhD"
+output:
+  html_document:
+    df_print: paged
+---
+
+Notebook to:
+a) calculate spectra in follow-up CoMMpass samples
+b) calculate spectra OS linear predictor in follow-up samples
+c) plot spectra OS linear predictor over time
+
+### Setup ###
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/path/to/data/dir/") 
+
+library(tidyverse)
+library(data.table)
+library(cowplot)
+
+color.codes = c("#648FFF","#785EF0","#DC267F","#FE6100","#FFB000")
+```
+
+## Load data
+```{r}
+# Normalized and ComBat corrected expression estimates in follow-up samples (long data format)
+exp_est = read.csv(file = "data/commpass_followup_only_combat_nrmd_expr_20210602.csv.gz") %>% data.table()
+#head(exp_est)
+
+# Spectra gene loadings (rotation matrix)
+gweight = read.csv(file = "data/spectra_rotation_matrix-gene_centers-2021-06-01.csv.gz") %>% data.table()
+#head(gweight)
+
+# Baseline spectra standard deviation values
+base_sd = read.csv(file = "data/commpass_baseline_spectra_sds_20210602.csv") %>% data.table()
+#head(base_sd)
+
+# Baseline spectra
+spectra = read.csv(file = "data/commpass_spectra_baseline_os_20210601.csv") %>% data.table()
+
+# Baseline spectra OS beta values to calculate linear predictor
+beta_os = read.csv(file = "data/CoMMpass_survival_beta_table_20210604.csv") %>% data.table()
+
+# Per-patient visit data (to get sample time-point)
+per_vis = read.csv(file = "data/MMRF_CoMMpass_IA14_PER_PATIENT_VISIT.csv") %>% data.table()
+```
+
+**Un-melt expression estimates**
+```{r}
+cbat <- list("melt"=exp_est)
+cbat.dt <- dcast(cbat$melt, sample_id ~ gene_id, value.var='adjlogcpkmed') # sample x gene
+```
+
+## Calcualte spectra in followup samples
+```{r}
+dim_time = cbind(cbat.dt[,"sample_id"],
+                 scale(data.matrix(cbat.dt[,-"sample_id"]),
+                       center=gweight$mean,scale = FALSE) %*%
+                   data.matrix(gweight[,-c("gene_id","mean")]))
+```
+
+**Standardize to baseline spectra**
+```{r}
+tme.sd = cbind(dim_time[,"sample_id"],
+               data.matrix(dim_time[,-"sample_id"]) %*% 
+                 diag(1/base_sd$Sp_SD)) # divide by baseline spectra SD
+colnames(tme.sd) = c("sample_id",gsub(x = colnames(dim_time[,-"sample_id"]),pattern = "PC",replacement = "Sp"))
+```
+
+## Write Spectra variables
+```{r}
+write.csv(tme.sd,file = "data/Spectra_Variables_CoMMpass_Followup_Samples.csv",
+          row.names = FALSE)
+```
+
+## Calculate OS linear predictors in followup samples
+```{r}
+os_pcs = tme.sd %>% select("sample_id",beta_os[!is.na(OS)]$spectra)
+
+os_pcs$os_lp = rowSums(data.matrix(os_pcs[,-"sample_id"]) %*% diag(beta_os[!is.na(OS)]$OS))
+```
+
+**Calculate in baseline samples**
+```{r}
+base_os_pcs = spectra %>% select("sample_id","ttcos","censos",beta_os[!is.na(OS)]$spectra)
+
+base_os_pcs$os_lp = rowSums(data.matrix(base_os_pcs[,-c("sample_id","ttcos","censos")]) %*% diag(beta_os[!is.na(OS)]$OS))
+```
+
+**Generate short ID**
+```{r}
+base_os_pcs[,brief_id:=tstrsplit(sample_id,'_')[2]]
+# merge
+os_lp = rbind(base_os_pcs %>% select("sample_id","os_lp"),
+              os_pcs %>% select("sample_id","os_lp"))
+os_lp[,brief_id:=tstrsplit(sample_id,'_')[2]]
+# annotate survival data
+dat = merge(os_lp,base_os_pcs[,c("brief_id","ttcos","censos")],by = "brief_id")
+```
+
+**Find samples with multiple time-points**
+```{r}
+count.dt = as.data.frame(table(os_lp$brief_id))
+
+plot.samples = droplevels(count.dt[count.dt$Freq>2,]$Var1)
+
+plot.data = dat[brief_id%in%plot.samples] %>% data.table()
+#summary(plot.data)
+```
+
+**Annotate sample time-point**
+```{r}
+plot.data
+plot.data[,SPECTRUM_SEQ:=tstrsplit(sample_id,'_BM')[1]]
+
+pdt2 = merge(plot.data,per_vis[,c("SPECTRUM_SEQ","VJ_INTERVAL","VISITDY")],by = "SPECTRUM_SEQ")
+pdt2[,month:=tstrsplit(VJ_INTERVAL,' ')[2]]
+pdt2$month[is.na(pdt2$month)] <- 0
+pdt2$month = as.integer(pdt2$month)
+#summary(pdt2$month)
+
+pdt2$sample_year = pdt2$VISITDY/365.25
+pdt2$ttcos_year = pdt2$ttcos/365.25
+```
+
+## Plot
+```{r}
+p1 = ggplot(data=pdt2,aes(x=sample_year,y=os_lp,color=brief_id)) +
+        geom_line(size = 1,linetype = 1) +
+        geom_point(size = 4,shape = 18) +
+        ylab("OS Spectra Score") + 
+        xlab("Years") + #ggtitle("Overall Survival") +
+        scale_color_manual(values = c("#AA0DFE","#3283FE","#1CBE4F",
+                                      "#C4451C","#FE00FA","#FEAF16",
+                                      "#2ED9FF","#1CFFCE","#B10DA1",
+                                      "#FBE426","#325A9B")) +
+        theme_classic()
+```
+
+**Add survival point**
+```{r}
+pdt2_last = pdt2 %>% group_by(brief_id) %>% top_n(1,sample_year)
+pdt2_last$patient = as.numeric(pdt2_last$brief_id) * as.numeric(pdt2_last$censos)
+pdt2_last$patient = as.factor(pdt2_last$patient)
+
+p2 = p1 + geom_segment(data = pdt2_last, size = 0.3,
+                       aes(color = brief_id, x = sample_year, xend = ttcos_year,
+                           y = os_lp, yend = os_lp),linetype = 3) +
+  geom_rect(data = pdt2_last, mapping = aes(xmin = ttcos_year - 0.015,
+                                            xmax = ttcos_year + 0.015,
+                                            ymin =os_lp - 0.075,
+                                            ymax = os_lp + 0.075,
+                                            fill = patient),
+            size=0.3) +
+  geom_hline(yintercept = 1.0525, color = "dark gray") +
+  scale_fill_manual(values = c("white","#1CBE4F","#B10DA1","#FBE426","#325A9B")) +
+  theme(legend.position = "none")
+p2
+```
+
+```{r}
+ggsave(filename = "Figure_5_OS_over_time.pdf", plot = p2, 
+       device = "pdf", width = 6.5, height = 4, units = "in")
+```
+
+

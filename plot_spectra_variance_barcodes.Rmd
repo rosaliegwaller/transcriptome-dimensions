@@ -1,0 +1,96 @@
+---
+title: "Spectra variance and barcodes"
+author: "Rosalie Griffin Waller, PhD"
+output:
+  html_document:
+    df_print: paged
+---
+
+### Setup ###
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/path/to/data/dir/") 
+
+library(tidyverse)
+library(data.table)
+library(cowplot)
+
+color.codes = c("#648FFF","#785EF0","#DC267F","#FE6100","#FFB000")
+```
+
+## Read in MM data
+```{r}
+spectra = read.csv(file = "data/commpass_spectra_baseline_os_20210601.csv") %>% data.table() %>% select(-"ttcos",-"censos")
+pcvar = read.csv(file = "data/pca_details-2021-06-01.csv") %>% data.table()
+```
+
+**Melt spectra**
+```{r}
+mm.molten <- melt(spectra,variable.name='component',value.name='score_sd',id.vars=c('sample_id'))
+
+#mm.molten[,score_sd:=score/sd(score),by='spectra']
+mm.molten[,adj_score:=score_sd]
+mm.molten[score_sd>2,adj_score:=2]
+mm.molten[score_sd<(-2),adj_score:=-2]
+mm.molten$spectra<-as.factor(gsub('Sp','',mm.molten$component))
+mm.molten$spectra<-factor(mm.molten$spectra,levels=order(levels(mm.molten$spectra)))
+#mm.molten[,new_sample_id:=paste0(batch,index)]
+mm.molten[,brief_id:=tstrsplit(sample_id,'_')[2]]
+```
+
+
+# Figure 3: Spectra variance and barcodes
+
+**Plot variance explained by each spectra**
+```{r}
+pcvar$spectra<-as.factor(gsub('PC','',pcvar$pc))
+pcvar$spectra<-factor(pcvar$spectra,levels=order(levels(pcvar$spectra)))
+
+scree_plot = ggplot(data = pcvar[selected=="Selected"],aes(y = propvar*100,x = spectra)) +
+  geom_bar(stat="identity",fill="gray") +
+  xlab("Spectra") + ylab("Variance (%)") +
+  theme_classic()
+scree_plot
+```
+
+**Plot spectra barcodes**
+```{r}
+samples.of.interest<-c('2497','1854','2394','1392')
+
+codes_plot = ggplot(mm.molten[brief_id%in%samples.of.interest])+
+  geom_tile(aes(x=spectra,y=0,fill=adj_score,width=1,height=1,group=component),color='black',stat='identity',size=0.5)+
+  scale_fill_gradient2(low="#00A087",mid="white",high="#3C5488",midpoint=0,name='')+
+  theme(legend.position = 'none',
+        axis.ticks = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        panel.background = element_blank(),
+        panel.spacing=unit(1,'lines'),
+        strip.background = element_blank(),
+        panel.grid = element_blank())+
+  #ggtitle('CoMMpass Spectra')+
+  xlab('Spectra')+
+  ylab('Sample')+
+  facet_wrap(~brief_id,ncol=1,strip.position='left')
+codes_plot
+```
+
+**Plot together**
+```{r}
+scree_barcodes = 
+  plot_grid(scree_plot, codes_plot, 
+          labels = c('A', 'B'), label_size = 12, 
+          ncol=1, rel_heights = c(1, 3),
+          align = "v",
+          axis = "lr")
+scree_barcodes
+
+ggsave(filename="Figure_3_scree_barcodes.pdf", plot=scree_barcodes, 
+       device="pdf", width=8, height=8, units="in")
+```
+
+
+
+
+
+
